@@ -32,6 +32,7 @@
 | Runtime | Bun | 1.3.x | 高速起動、TypeScriptネイティブ |
 | Language | TypeScript | 5.8.x | 型安全性 |
 | Linter/Formatter | Biome | 2.x | 高速、設定シンプル |
+| Test Framework | Vitest | 3.x | 高速、ESM対応、Bun互換 |
 | CLI Parser | Commander | 13.x | 軽量、標準的 |
 | Browser | playwright-cli | latest | SPA完全対応、セッション管理 |
 | DOM Parser | JSDOM | 26.x | Node.js標準的なDOM実装 |
