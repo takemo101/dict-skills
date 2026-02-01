@@ -87,6 +87,38 @@ export class OutputWriter {
 		return false;
 	}
 
+	/** 次のページ番号を取得 */
+	getNextPageNumber(): number {
+		return this.pageCount + 1;
+	}
+
+	/** ページを登録（インデックスに追加） */
+	registerPage(
+		url: string,
+		file: string,
+		depth: number,
+		links: string[],
+		metadata: PageMetadata,
+		title: string | null,
+		hash?: string,
+	): CrawledPage {
+		this.pageCount++;
+		const pageCrawledAt = new Date().toISOString();
+		const page: CrawledPage = {
+			url,
+			title: metadata.title || title,
+			file,
+			depth,
+			links,
+			metadata,
+			hash: hash ?? this.computeHash(""),
+			crawledAt: pageCrawledAt,
+		};
+		this.result.pages.push(page);
+		this.result.totalPages++;
+		return page;
+	}
+
 	/** ページを保存 */
 	savePage(
 		url: string,
@@ -97,8 +129,7 @@ export class OutputWriter {
 		title: string | null,
 		hash?: string,
 	): string {
-		this.pageCount++;
-		const pageNum = String(this.pageCount).padStart(3, "0");
+		const pageNum = String(this.getNextPageNumber()).padStart(3, "0");
 		const pageFile = `pages/page-${pageNum}.md`;
 		const pagePath = join(this.config.outputDir, pageFile);
 		const pageCrawledAt = new Date().toISOString();
@@ -120,18 +151,7 @@ export class OutputWriter {
 
 		writeFileSync(pagePath, frontmatter + markdown);
 
-		const page: CrawledPage = {
-			url,
-			title: metadata.title || title,
-			file: pageFile,
-			depth,
-			links,
-			metadata,
-			hash: computedHash,
-			crawledAt: pageCrawledAt,
-		};
-		this.result.pages.push(page);
-		this.result.totalPages++;
+		this.registerPage(url, pageFile, depth, links, metadata, title, computedHash);
 
 		return pageFile;
 	}
