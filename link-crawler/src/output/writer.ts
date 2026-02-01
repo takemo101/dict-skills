@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import type {
@@ -15,6 +16,11 @@ const specPatterns: Record<string, RegExp> = {
 	graphql: /\/schema\.graphql$/i,
 };
 
+/** コンテンツハッシュを生成（SHA-256の先頭16文字） */
+function generateHash(content: string): string {
+	return createHash("sha256").update(content).digest("hex").slice(0, 16);
+}
+
 /** ファイル書き込みクラス */
 export class OutputWriter {
 	private pageCount = 0;
@@ -26,7 +32,7 @@ export class OutputWriter {
 			baseUrl: config.startUrl,
 			config: {
 				maxDepth: config.maxDepth,
-				spa: config.spa,
+				diff: config.diff,
 				sameDomain: config.sameDomain,
 			},
 			totalPages: 0,
@@ -89,7 +95,11 @@ export class OutputWriter {
 			.filter(Boolean)
 			.join("\n");
 
-		writeFileSync(pagePath, frontmatter + markdown);
+		const fullContent = frontmatter + markdown;
+		writeFileSync(pagePath, fullContent);
+
+		// コンテンツハッシュを生成
+		const hash = generateHash(markdown);
 
 		const page: CrawledPage = {
 			url,
@@ -98,6 +108,7 @@ export class OutputWriter {
 			depth,
 			links,
 			metadata,
+			hash,
 		};
 		this.result.pages.push(page);
 		this.result.totalPages++;

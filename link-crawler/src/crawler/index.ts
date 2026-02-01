@@ -14,17 +14,19 @@ export class Crawler {
 	private visited = new Set<string>();
 
 	constructor(private config: CrawlConfig) {
-		this.fetcher = config.spa ? new SPAFetcher(config) : new StaticFetcher(config);
+		// spaWait > 0 ならSPAモードとして扱う
+		this.fetcher = config.spaWait > 0 ? new SPAFetcher(config) : new StaticFetcher(config);
 		this.writer = new OutputWriter(config);
 	}
 
 	/** クロール開始 */
 	async run(): Promise<void> {
+		const isSpaMode = this.config.spaWait > 0;
 		console.log(`\n🕷️  Link Crawler v2.0`);
 		console.log(`   URL: ${this.config.startUrl}`);
 		console.log(`   Depth: ${this.config.maxDepth}`);
 		console.log(`   Output: ${this.config.outputDir}`);
-		console.log(`   Mode: ${this.config.spa ? "SPA (playwright-cli)" : "Static"}`);
+		console.log(`   Mode: ${isSpaMode ? "SPA (playwright-cli)" : "Static"}`);
 		console.log(`   Same domain only: ${this.config.sameDomain}`);
 		console.log("");
 
