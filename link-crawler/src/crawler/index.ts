@@ -4,8 +4,7 @@ import { htmlToMarkdown } from "../parser/converter.js";
 import { extractContent, extractMetadata } from "../parser/extractor.js";
 import { extractLinks } from "../parser/links.js";
 import type { CrawlConfig, Fetcher } from "../types.js";
-import { SPAFetcher } from "./spa.js";
-import { StaticFetcher } from "./static.js";
+import { PlaywrightFetcher } from "./fetcher.js";
 
 /** クローラーエンジン */
 export class Crawler {
@@ -14,7 +13,7 @@ export class Crawler {
 	private visited = new Set<string>();
 
 	constructor(private config: CrawlConfig) {
-		this.fetcher = config.spa ? new SPAFetcher(config) : new StaticFetcher(config);
+		this.fetcher = new PlaywrightFetcher(config);
 		this.writer = new OutputWriter(config);
 	}
 
@@ -24,7 +23,7 @@ export class Crawler {
 		console.log(`   URL: ${this.config.startUrl}`);
 		console.log(`   Depth: ${this.config.maxDepth}`);
 		console.log(`   Output: ${this.config.outputDir}`);
-		console.log(`   Mode: ${this.config.spa ? "SPA (playwright-cli)" : "Static"}`);
+		console.log(`   Mode: playwright-cli`);
 		console.log(`   Same domain only: ${this.config.sameDomain}`);
 		console.log("");
 

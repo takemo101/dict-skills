@@ -8,7 +8,6 @@ export interface CrawlConfig {
 	excludePattern: RegExp | null;
 	delay: number;
 	timeout: number;
-	spa: boolean;
 	spaWait: number;
 	headed: boolean;
 }

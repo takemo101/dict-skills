@@ -10,7 +10,6 @@ export function parseConfig(options: Record<string, unknown>, startUrl: string):
 		excludePattern: options.exclude ? new RegExp(String(options.exclude)) : null,
 		delay: Number(options.delay) || 500,
 		timeout: (Number(options.timeout) || 30) * 1000,
-		spa: Boolean(options.spa),
 		spaWait: Number(options.wait) || 2000,
 		headed: Boolean(options.headed),
 	};
