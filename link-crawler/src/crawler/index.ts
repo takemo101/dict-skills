@@ -83,25 +83,67 @@ export class Crawler {
 			? this.loadPageContentsFromDisk(pages)
 			: this.pageContents;
 
+		let fullMdContent = "";
+
 		// Merger実行 (--no-merge時はスキップ)
 		if (this.config.merge) {
 			console.log("\n🔄 Running Merger...");
 			const merger = new Merger(this.config.outputDir);
 			const fullPath = merger.writeFull(pages, pageContents);
 			console.log(`   ✓ full.md: ${fullPath}`);
+			// Chunker用に内容を読み込み
+			try {
+				fullMdContent = readFileSync(fullPath, "utf-8");
+			} catch {
+				fullMdContent = "";
+			}
+		} else if (this.config.chunks) {
+			// mergeなしでchunksのみの場合は、メモリから結合内容を生成
+			const merger = new Merger(this.config.outputDir);
+			fullMdContent = this.buildFullMarkdown(pages, pageContents);
 		}
 
 		// Chunker実行 (--no-chunks時はスキップ)
-		if (this.config.chunks) {
+		if (this.config.chunks && fullMdContent) {
 			console.log("\n🔄 Running Chunker...");
 			const chunker = new Chunker(this.config.outputDir);
-			const chunkFiles = chunker.writeChunks(pages, pageContents);
+			const chunkFiles = chunker.chunkAndWrite(fullMdContent);
 			if (chunkFiles.length > 0) {
 				console.log(`   ✓ chunks: ${chunkFiles.length} files in chunks/`);
 			} else {
 				console.log("   ℹ️  No chunks created (content too small)");
 			}
 		}
+	}
+
+	/** Markdownを結合してfull.md内容を生成 */
+	private buildFullMarkdown(
+		pages: CrawledPage[],
+		pageContents: Map<string, string>,
+	): string {
+		const sections: string[] = [];
+
+		for (const page of pages) {
+			const title = page.title || page.url;
+			const header = `# ${title}`;
+			const urlLine = `> Source: ${page.url}`;
+			const content = pageContents.get(page.file) || "";
+			// frontmatterを除去
+			const cleanContent = content.replace(/^---[\s\S]*?---\n*/, "").trim();
+			// タイトルを除去
+			const lines = cleanContent.split("\n");
+			if (lines.length > 0 && lines[0].startsWith("# ")) {
+				lines.shift();
+				while (lines.length > 0 && lines[0].trim() === "") {
+					lines.shift();
+				}
+			}
+			const body = lines.join("\n");
+
+			sections.push(`${header}\n\n${urlLine}\n\n${body}`);
+		}
+
+		return sections.join("\n\n---\n\n");
 	}
 
 	/** ページ内容をディスクから読み込む */

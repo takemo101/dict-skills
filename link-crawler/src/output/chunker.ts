@@ -1,190 +1,115 @@
-import { writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { CrawledPage } from "../types.js";
-
-/** チャンク設定 */
-export interface ChunkerConfig {
-	/** チャンクサイズ（文字数） */
-	chunkSize: number;
-	/** チャンク間の重複文字数 */
-	overlap: number;
-}
-
-/** チャンク情報 */
-export interface Chunk {
-	/** チャンクID */
-	id: string;
-	/** チャンク内容 */
-	content: string;
-	/** ソースURL */
-	sourceUrl: string;
-	/** ソースタイトル */
-	sourceTitle: string | null;
-	/** チャンク内の開始位置 */
-	startPosition: number;
-	/** チャンク内の終了位置 */
-	endPosition: number;
-}
 
 /**
- * コンテンツチャンカー
- * 長いドキュメントを指定サイズのチャンクに分割
+ * Markdownチャンク分割クラス
+ * full.mdをH1見出しベースでチャンク分割
  */
 export class Chunker {
-	private config: ChunkerConfig;
-
-	constructor(
-		private outputDir: string,
-		config?: Partial<ChunkerConfig>,
-	) {
-		this.config = {
-			chunkSize: config?.chunkSize ?? 4000,
-			overlap: config?.overlap ?? 200,
-		};
-	}
+	constructor(private outputDir: string) {}
 
 	/**
-	 * Markdownコンテンツをチャンクに分割
-	 * @param content Markdown文字列
-	 * @returns チャンク配列
+	 * MarkdownをH1見出しで分割
+	 * @param fullMarkdown 結合されたMarkdown文字列
+	 * @returns 分割されたチャンクの配列
 	 */
-	chunk(content: string): string[] {
+	chunk(fullMarkdown: string): string[] {
+		if (!fullMarkdown.trim()) {
+			return [];
+		}
+
+		// H1見出し（# ）で分割
+		// ただし、frontmatter内の#は除外
 		const chunks: string[] = [];
-		const { chunkSize, overlap } = this.config;
+		const lines = fullMarkdown.split("\n");
+		let currentChunk: string[] = [];
+		let inFrontmatter = false;
+		let isFirstH1 = true;
 
-		// 空コンテンツの場合
-		if (!content || content.length === 0) {
-			return chunks;
-		}
-
-		// チャンクサイズ未満の場合はそのまま
-		if (content.length <= chunkSize) {
-			return [content];
-		}
-
-		// 段落単位で分割
-		const paragraphs = content.split(/\n{2,}/);
-		let currentChunk = "";
-
-		for (const paragraph of paragraphs) {
-			// 段落を追加してもチャンクサイズを超えない場合
-			if (currentChunk.length + paragraph.length + 2 <= chunkSize) {
-				currentChunk = currentChunk ? `${currentChunk}\n\n${paragraph}` : paragraph;
-			} else {
-				// 現在のチャンクを保存
-				if (currentChunk) {
-					chunks.push(currentChunk);
-				}
-
-				// 新しいチャンクを開始（重複を考慮）
-				if (currentChunk.length > overlap) {
-					// 前のチャンクの末尾からoverlap分を取得
-					const overlapText = currentChunk.slice(-overlap);
-					currentChunk = overlapText + "\n\n" + paragraph;
-				} else {
-					currentChunk = paragraph;
-				}
+		for (const line of lines) {
+			// frontmatterの検出
+			if (line.trim() === "---") {
+				inFrontmatter = !inFrontmatter;
+				currentChunk.push(line);
+				continue;
 			}
+
+			// frontmatter内は無条件で追加
+			if (inFrontmatter) {
+				currentChunk.push(line);
+				continue;
+			}
+
+			// H1見出しの検出（行頭が"# "）
+			if (line.startsWith("# ")) {
+				if (!isFirstH1 && currentChunk.length > 0) {
+					// 前のチャンクを保存
+					chunks.push(currentChunk.join("\n").trim());
+					currentChunk = [];
+				}
+				isFirstH1 = false;
+			}
+
+			currentChunk.push(line);
 		}
 
 		// 最後のチャンクを追加
-		if (currentChunk) {
-			chunks.push(currentChunk);
+		if (currentChunk.length > 0) {
+			chunks.push(currentChunk.join("\n").trim());
 		}
 
-		return chunks;
+		return chunks.filter((chunk) => chunk.length > 0);
 	}
 
 	/**
-	 * 全ページをチャンク化して保存
-	 * @param pages クロール済みページ一覧
-	 * @param pageContents ページ内容のMap (file -> markdown)
-	 * @returns 生成されたチャンクファイルパスの配列
+	 * チャンクをファイルに出力
+	 * @param chunks チャンクの配列
+	 * @returns 出力されたファイルパスの配列
 	 */
-	writeChunks(
-		pages: CrawledPage[],
-		pageContents: Map<string, string>,
-	): string[] {
-		const chunkFiles: string[] = [];
-		let globalChunkIndex = 0;
-
-		for (const page of pages) {
-			const content = pageContents.get(page.file) || "";
-			if (!content.trim()) continue;
-
-			const chunks = this.chunk(content);
-
-			for (let i = 0; i < chunks.length; i++) {
-				globalChunkIndex++;
-				const chunkNum = String(globalChunkIndex).padStart(4, "0");
-				const chunkFile = `chunks/chunk-${chunkNum}.md`;
-				const chunkPath = join(this.outputDir, chunkFile);
-
-				const title = page.title || page.url;
-				const header = `# Chunk ${globalChunkIndex} - ${title}`;
-				const urlLine = `> Source: ${page.url}`;
-				const partLine = `> Part: ${i + 1}/${chunks.length}`;
-
-				const chunkContent = [header, "", urlLine, partLine, "", chunks[i]].join(
-					"\n",
-				);
-
-				writeFileSync(chunkPath, chunkContent);
-				chunkFiles.push(chunkFile);
-			}
+	writeChunks(chunks: string[]): string[] {
+		if (chunks.length === 0) {
+			return [];
 		}
 
-		return chunkFiles;
+		// chunksディレクトリ作成
+		const chunksDir = join(this.outputDir, "chunks");
+		mkdirSync(chunksDir, { recursive: true });
+
+		const outputPaths: string[] = [];
+
+		for (let i = 0; i < chunks.length; i++) {
+			const chunkNum = String(i + 1).padStart(3, "0");
+			const chunkFile = `chunk-${chunkNum}.md`;
+			const chunkPath = join(chunksDir, chunkFile);
+
+			writeFileSync(chunkPath, chunks[i]);
+			outputPaths.push(chunkPath);
+		}
+
+		return outputPaths;
 	}
 
 	/**
-	 * チャンクインデックスを生成
-	 * @param pages クロール済みページ一覧
-	 * @param pageContents ページ内容のMap
-	 * @returns チャンクインデックス
+	 * full.mdを読み込んでチャンク分割し、ファイルに出力
+	 * @param fullMarkdown 結合されたMarkdown文字列
+	 * @returns 出力されたファイルパスの配列
 	 */
-	generateIndex(
-		pages: CrawledPage[],
-		pageContents: Map<string, string>,
-	): Array<{
-		id: number;
-		file: string;
-		sourceUrl: string;
-		sourceTitle: string | null;
-		part: number;
-		totalParts: number;
-	}> {
-		const index: Array<{
-			id: number;
-			file: string;
-			sourceUrl: string;
-			sourceTitle: string | null;
-			part: number;
-			totalParts: number;
-		}> = [];
-		let globalChunkIndex = 0;
+	chunkAndWrite(fullMarkdown: string): string[] {
+		const chunks = this.chunk(fullMarkdown);
+		return this.writeChunks(chunks);
+	}
 
-		for (const page of pages) {
-			const content = pageContents.get(page.file) || "";
-			if (!content.trim()) continue;
-
-			const chunks = this.chunk(content);
-
-			for (let i = 0; i < chunks.length; i++) {
-				globalChunkIndex++;
-				const chunkNum = String(globalChunkIndex).padStart(4, "0");
-
-				index.push({
-					id: globalChunkIndex,
-					file: `chunks/chunk-${chunkNum}.md`,
-					sourceUrl: page.url,
-					sourceTitle: page.title,
-					part: i + 1,
-					totalParts: chunks.length,
-				});
-			}
+	/**
+	 * full.mdファイルを読み込んでチャンク分割
+	 * @returns 出力されたファイルパスの配列
+	 */
+	chunkFullMd(): string[] {
+		const fullMdPath = join(this.outputDir, "full.md");
+		try {
+			const content = readFileSync(fullMdPath, "utf-8");
+			return this.chunkAndWrite(content);
+		} catch {
+			return [];
 		}
-
-		return index;
 	}
 }

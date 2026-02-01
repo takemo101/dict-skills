@@ -1,37 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdirSync, rmSync, readFileSync, existsSync } from "node:fs";
+import { mkdirSync, rmSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { Chunker } from "../../src/output/chunker.js";
-import type { CrawledPage, PageMetadata } from "../../src/types.js";
 
 const testOutputDir = "./test-output-chunker";
-
-const createPage = (
-	url: string,
-	title: string | null,
-	file: string,
-): CrawledPage => ({
-	url,
-	title,
-	file,
-	depth: 0,
-	links: [],
-	metadata: {
-		title,
-		description: null,
-		keywords: null,
-		author: null,
-		ogTitle: null,
-		ogType: null,
-	},
-	hash: "abc123",
-	crawledAt: new Date().toISOString(),
-});
 
 describe("Chunker", () => {
 	beforeEach(() => {
 		mkdirSync(testOutputDir, { recursive: true });
-		mkdirSync(join(testOutputDir, "chunks"), { recursive: true });
 	});
 
 	afterEach(() => {
@@ -39,96 +15,188 @@ describe("Chunker", () => {
 	});
 
 	describe("chunk", () => {
-		it("should return empty array for empty content", () => {
+		it("should return empty array for empty markdown", () => {
 			const chunker = new Chunker(testOutputDir);
 			const result = chunker.chunk("");
 			expect(result).toEqual([]);
 		});
 
-		it("should return single chunk for small content", () => {
+		it("should return single chunk for markdown without H1", () => {
 			const chunker = new Chunker(testOutputDir);
-			const content = "Small content.";
-			const result = chunker.chunk(content);
+			const markdown = "Some content without heading.\n\nMore content.";
+			const result = chunker.chunk(markdown);
 			expect(result).toHaveLength(1);
-			expect(result[0]).toBe(content);
+			expect(result[0]).toBe(markdown);
 		});
 
-		it("should split large content into multiple chunks", () => {
-			const chunker = new Chunker(testOutputDir, { chunkSize: 50, overlap: 10 });
-			const content = "Paragraph 1 with more text\n\nParagraph 2 with more text\n\nParagraph 3 with more text\n\nParagraph 4 with more text";
-			const result = chunker.chunk(content);
-			expect(result.length).toBeGreaterThan(1);
+		it("should split markdown by H1 headings", () => {
+			const chunker = new Chunker(testOutputDir);
+			const markdown = `# First Section
+
+Content of first section.
+
+# Second Section
+
+Content of second section.`;
+
+			const result = chunker.chunk(markdown);
+
+			expect(result).toHaveLength(2);
+			expect(result[0]).toContain("# First Section");
+			expect(result[0]).toContain("Content of first section.");
+			expect(result[1]).toContain("# Second Section");
+			expect(result[1]).toContain("Content of second section.");
+		});
+
+		it("should handle multiple H1 headings", () => {
+			const chunker = new Chunker(testOutputDir);
+			const markdown = `# Section 1
+Content 1
+# Section 2
+Content 2
+# Section 3
+Content 3`;
+
+			const result = chunker.chunk(markdown);
+
+			expect(result).toHaveLength(3);
+			expect(result[0]).toContain("# Section 1");
+			expect(result[1]).toContain("# Section 2");
+			expect(result[2]).toContain("# Section 3");
+		});
+
+		it("should not split by H2 or lower headings", () => {
+			const chunker = new Chunker(testOutputDir);
+			const markdown = `# Main Section
+
+## Sub Section
+
+Content here.
+
+### Deep Section
+
+More content.
+
+# Another Main Section
+
+Final content.`;
+
+			const result = chunker.chunk(markdown);
+
+			expect(result).toHaveLength(2);
+			expect(result[0]).toContain("## Sub Section");
+			expect(result[0]).toContain("### Deep Section");
+			expect(result[1]).toContain("# Another Main Section");
+		});
+
+		it("should handle frontmatter correctly", () => {
+			const chunker = new Chunker(testOutputDir);
+			const markdown = `---
+title: Test Document
+---
+
+# First Section
+
+Content.
+
+# Second Section
+
+More content.`;
+
+			const result = chunker.chunk(markdown);
+
+			expect(result).toHaveLength(2);
+			expect(result[0]).toContain("---");
+			expect(result[0]).toContain("title: Test Document");
+			expect(result[0]).toContain("# First Section");
+		});
+
+		it("should trim whitespace from chunks", () => {
+			const chunker = new Chunker(testOutputDir);
+			const markdown = `
+# Section
+
+Content.
+
+# Another Section
+
+More content.
+`;
+
+			const result = chunker.chunk(markdown);
+
+			expect(result).toHaveLength(2);
+			expect(result[0]).not.toMatch(/^\s/);
+			expect(result[0]).not.toMatch(/\s$/);
 		});
 	});
 
 	describe("writeChunks", () => {
-		it("should write chunk files", () => {
+		it("should return empty array for empty chunks", () => {
 			const chunker = new Chunker(testOutputDir);
-			const pages = [
-				createPage("https://example.com/page1", "Page 1", "pages/page-001.md"),
-			];
-			const pageContents = new Map([
-				["pages/page-001.md", "# Page 1\n\nThis is content that should be chunked.".repeat(50)],
-			]);
-
-			const chunkFiles = chunker.writeChunks(pages, pageContents);
-
-			expect(chunkFiles.length).toBeGreaterThan(0);
-			for (const file of chunkFiles) {
-				const chunkPath = join(testOutputDir, file);
-				expect(existsSync(chunkPath)).toBe(true);
-			}
+			const result = chunker.writeChunks([]);
+			expect(result).toEqual([]);
 		});
 
-		it("should include source URL and title in chunks", () => {
+		it("should write chunks with 3-digit zero padding", () => {
 			const chunker = new Chunker(testOutputDir);
-			const pages = [
-				createPage("https://example.com/page1", "Page 1", "pages/page-001.md"),
-			];
-			const pageContents = new Map([
-				["pages/page-001.md", "# Page 1\n\nThis is content that should be chunked.".repeat(50)],
-			]);
+			const chunks = ["# Chunk 1", "# Chunk 2", "# Chunk 3"];
 
-			const chunkFiles = chunker.writeChunks(pages, pageContents);
-			const chunkPath = join(testOutputDir, chunkFiles[0]);
-			const content = readFileSync(chunkPath, "utf-8");
+			const result = chunker.writeChunks(chunks);
 
-			expect(content).toContain("Source: https://example.com/page1");
-			expect(content).toContain("Chunk 1 - Page 1");
+			expect(result).toHaveLength(3);
+			expect(result[0]).toContain("chunk-001.md");
+			expect(result[1]).toContain("chunk-002.md");
+			expect(result[2]).toContain("chunk-003.md");
 		});
 
-		it("should handle empty content gracefully", () => {
+		it("should write chunk content to files", () => {
 			const chunker = new Chunker(testOutputDir);
-			const pages = [
-				createPage("https://example.com/page1", "Page 1", "pages/page-001.md"),
-			];
-			const pageContents = new Map([["pages/page-001.md", ""]]);
+			const chunks = ["# First Chunk\n\nContent 1", "# Second Chunk\n\nContent 2"];
 
-			const chunkFiles = chunker.writeChunks(pages, pageContents);
+			chunker.writeChunks(chunks);
 
-			expect(chunkFiles).toEqual([]);
+			const content1 = readFileSync(join(testOutputDir, "chunks", "chunk-001.md"), "utf-8");
+			const content2 = readFileSync(join(testOutputDir, "chunks", "chunk-002.md"), "utf-8");
+
+			expect(content1).toBe("# First Chunk\n\nContent 1");
+			expect(content2).toBe("# Second Chunk\n\nContent 2");
+		});
+
+		it("should create chunks directory", () => {
+			const chunker = new Chunker(testOutputDir);
+			chunker.writeChunks(["# Test"]);
+
+			const stats = readFileSync(join(testOutputDir, "chunks", "chunk-001.md"));
+			expect(stats).toBeDefined();
 		});
 	});
 
-	describe("generateIndex", () => {
-		it("should generate chunk index", () => {
+	describe("chunkAndWrite", () => {
+		it("should chunk and write in one operation", () => {
 			const chunker = new Chunker(testOutputDir);
-			const pages = [
-				createPage("https://example.com/page1", "Page 1", "pages/page-001.md"),
-			];
-			const pageContents = new Map([
-				["pages/page-001.md", "# Page 1\n\nThis is content that should be chunked.".repeat(50)],
-			]);
+			const markdown = `# Section 1
 
-			const index = chunker.generateIndex(pages, pageContents);
+Content 1.
 
-			expect(index.length).toBeGreaterThan(0);
-			expect(index[0]).toHaveProperty("id");
-			expect(index[0]).toHaveProperty("file");
-			expect(index[0]).toHaveProperty("sourceUrl");
-			expect(index[0]).toHaveProperty("sourceTitle");
-			expect(index[0]).toHaveProperty("part");
-			expect(index[0]).toHaveProperty("totalParts");
+# Section 2
+
+Content 2.`;
+
+			const result = chunker.chunkAndWrite(markdown);
+
+			expect(result).toHaveLength(2);
+			expect(result[0]).toContain("chunk-001.md");
+			expect(result[1]).toContain("chunk-002.md");
+
+			const content1 = readFileSync(result[0], "utf-8");
+			expect(content1).toContain("# Section 1");
+		});
+
+		it("should return empty array for empty markdown", () => {
+			const chunker = new Chunker(testOutputDir);
+			const result = chunker.chunkAndWrite("");
+			expect(result).toEqual([]);
 		});
 	});
 });
