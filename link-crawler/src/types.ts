@@ -41,6 +41,10 @@ export interface CrawledPage {
 	depth: number;
 	links: string[];
 	metadata: PageMetadata;
+	/** コンテンツのSHA-256ハッシュ（差分検出用） */
+	hash: string;
+	/** このページがクロールされた日時 */
+	crawledAt: string;
 }
 
 /** 検出されたAPI仕様 */
