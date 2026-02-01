@@ -1,4 +1,5 @@
-import { mkdirSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import type {
 	CrawlConfig,
@@ -19,8 +20,24 @@ const specPatterns: Record<string, RegExp> = {
 export class OutputWriter {
 	private pageCount = 0;
 	private result: CrawlResult;
+	/** 既存のページ情報（URL→CrawledPage） */
+	private existingPages: Map<string, CrawledPage> = new Map();
 
 	constructor(private config: CrawlConfig) {
+		// 既存のindex.jsonを読み込み
+		const indexPath = join(config.outputDir, "index.json");
+		if (existsSync(indexPath)) {
+			try {
+				const existingResult = JSON.parse(readFileSync(indexPath, "utf-8")) as CrawlResult;
+				for (const page of existingResult.pages) {
+					this.existingPages.set(page.url, page);
+				}
+				console.log(`  📂 既存index.json読み込み: ${existingResult.pages.length}ページ`);
+			} catch {
+				console.log("  ⚠️ 既存index.jsonの読み込みに失敗（新規作成）");
+			}
+		}
+
 		this.result = {
 			crawledAt: new Date().toISOString(),
 			baseUrl: config.startUrl,
@@ -36,6 +53,16 @@ export class OutputWriter {
 		// ディレクトリ作成
 		mkdirSync(join(config.outputDir, "pages"), { recursive: true });
 		mkdirSync(join(config.outputDir, "specs"), { recursive: true });
+	}
+
+	/** コンテンツのハッシュを計算 */
+	computeHash(content: string): string {
+		return createHash("sha256").update(content, "utf-8").digest("hex");
+	}
+
+	/** 既存ページのハッシュを取得 */
+	getExistingHash(url: string): string | undefined {
+		return this.existingPages.get(url)?.hash;
 	}
 
 	/** API仕様ファイルを検出・保存 */
@@ -74,6 +101,8 @@ export class OutputWriter {
 		const pageNum = String(this.pageCount).padStart(3, "0");
 		const pageFile = `pages/page-${pageNum}.md`;
 		const pagePath = join(this.config.outputDir, pageFile);
+		const pageCrawledAt = new Date().toISOString();
+		const computedHash = hash ?? this.computeHash(markdown);
 
 		const frontmatter = [
 			"---",
@@ -81,7 +110,7 @@ export class OutputWriter {
 			`title: "${(metadata.title || title || "").replace(/"/g, '\\"')}"`,
 			metadata.description ? `description: "${metadata.description.replace(/"/g, '\\"')}"` : null,
 			metadata.keywords ? `keywords: "${metadata.keywords}"` : null,
-			`crawledAt: ${new Date().toISOString()}`,
+			`crawledAt: ${pageCrawledAt}`,
 			`depth: ${depth}`,
 			"---",
 			"",
@@ -98,7 +127,8 @@ export class OutputWriter {
 			depth,
 			links,
 			metadata,
-			hash,
+			hash: computedHash,
+			crawledAt: pageCrawledAt,
 		};
 		this.result.pages.push(page);
 		this.result.totalPages++;

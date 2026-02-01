@@ -1,6 +1,12 @@
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 
+/** ページハッシュマップ型 */
+export interface PageHash {
+	url: string;
+	hash: string;
+}
+
 /** index.json構造（ハッシュ読み込み用） */
 interface IndexJson {
 	pages?: Array<{
