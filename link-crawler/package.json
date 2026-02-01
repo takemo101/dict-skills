@@ -1,0 +1,15 @@
+{
+	"name": "link-crawler",
+	"version": "1.0.0",
+	"type": "module",
+	"description": "Recursive link crawler for technical documentation sites",
+	"author": "",
+	"license": "MIT",
+	"dependencies": {
+		"@mozilla/readability": "^0.6.0",
+		"jsdom": "^27.0.1",
+		"turndown": "^7.2.0",
+		"turndown-plugin-gfm": "^1.0.2",
+		"commander": "^12.0.0"
+	}
+}
