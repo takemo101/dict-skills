@@ -33,6 +33,12 @@ cd link-crawler
 bun install
 ```
 
+### piスキルとして登録（オプション）
+
+```bash
+ln -s /path/to/dict-skills/link-crawler ~/.pi/agent/skills/link-crawler
+```
+
 ## 使用方法
 
 ### 基本コマンド
@@ -65,6 +71,9 @@ bun run link-crawler/src/crawl.ts https://docs.example.com --include "/api/"
 
 # AIコンテキスト用（結合ファイルのみ）
 bun run link-crawler/src/crawl.ts https://docs.example.com --no-pages --no-chunks
+
+# 結果確認
+cat ./crawled/full.md
 ```
 
 ### 出力形式
