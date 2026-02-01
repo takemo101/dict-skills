@@ -68,6 +68,7 @@ export class OutputWriter {
 		links: string[],
 		metadata: PageMetadata,
 		title: string | null,
+		hash?: string,
 	): string {
 		this.pageCount++;
 		const pageNum = String(this.pageCount).padStart(3, "0");
@@ -97,6 +98,7 @@ export class OutputWriter {
 			depth,
 			links,
 			metadata,
+			hash,
 		};
 		this.result.pages.push(page);
 		this.result.totalPages++;

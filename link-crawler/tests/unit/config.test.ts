@@ -11,9 +11,12 @@ describe("parseConfig", () => {
 		expect(config.sameDomain).toBe(true);
 		expect(config.delay).toBe(500);
 		expect(config.timeout).toBe(30000);
-		expect(config.spa).toBe(false);
 		expect(config.spaWait).toBe(2000);
 		expect(config.headed).toBe(false);
+		expect(config.diff).toBe(false);
+		expect(config.pages).toBe(true);
+		expect(config.merge).toBe(true);
+		expect(config.chunks).toBe(true);
 	});
 
 	it("should parse config with custom options", () => {

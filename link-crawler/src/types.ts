@@ -41,6 +41,7 @@ export interface CrawledPage {
 	depth: number;
 	links: string[];
 	metadata: PageMetadata;
+	hash?: string;
 }
 
 /** 検出されたAPI仕様 */
