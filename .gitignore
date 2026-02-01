@@ -2,5 +2,8 @@
 .pi
 
 # pi-issue-runner
-.worktrees
-.improve-logs
+.worktrees/
+.improve-logs/
+.pi-runner.yaml.local
+.pi-prompt.md
+*.swp
