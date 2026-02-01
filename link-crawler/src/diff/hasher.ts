@@ -75,4 +75,11 @@ export class Hasher {
 	getHash(url: string): string | undefined {
 		return this.hashes.get(url);
 	}
+
+	/**
+	 * 読み込まれたハッシュの数を取得
+	 */
+	get size(): number {
+		return this.hashes.size;
+	}
 }

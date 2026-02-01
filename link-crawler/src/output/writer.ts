@@ -56,7 +56,7 @@ export class OutputWriter {
 	}
 
 	/** コンテンツのハッシュを計算 */
-	private computeHash(content: string): string {
+	computeHash(content: string): string {
 		return createHash("sha256").update(content, "utf-8").digest("hex");
 	}
 
@@ -95,13 +95,14 @@ export class OutputWriter {
 		links: string[],
 		metadata: PageMetadata,
 		title: string | null,
+		hash?: string,
 	): string {
 		this.pageCount++;
 		const pageNum = String(this.pageCount).padStart(3, "0");
 		const pageFile = `pages/page-${pageNum}.md`;
 		const pagePath = join(this.config.outputDir, pageFile);
 		const pageCrawledAt = new Date().toISOString();
-		const hash = this.computeHash(markdown);
+		const computedHash = hash ?? this.computeHash(markdown);
 
 		const frontmatter = [
 			"---",
@@ -126,7 +127,7 @@ export class OutputWriter {
 			depth,
 			links,
 			metadata,
-			hash,
+			hash: computedHash,
 			crawledAt: pageCrawledAt,
 		};
 		this.result.pages.push(page);

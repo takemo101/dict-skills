@@ -65,6 +65,7 @@ describe("Hasher", () => {
 
 			expect(hasher.getHash("https://example.com/page1")).toBe("abc123");
 			expect(hasher.getHash("https://example.com/page2")).toBe("def456");
+			expect(hasher.size).toBe(2);
 		});
 
 		it("should handle missing index.json", async () => {
@@ -74,6 +75,7 @@ describe("Hasher", () => {
 			await hasher.loadHashes(indexPath);
 
 			expect(hasher.getHash("https://example.com/page1")).toBeUndefined();
+			expect(hasher.size).toBe(0);
 		});
 
 		it("should handle empty pages array", async () => {
@@ -84,6 +86,7 @@ describe("Hasher", () => {
 			await hasher.loadHashes(indexPath);
 
 			expect(hasher.getHash("https://example.com/page1")).toBeUndefined();
+			expect(hasher.size).toBe(0);
 		});
 
 		it("should skip pages without hash", async () => {
@@ -101,6 +104,7 @@ describe("Hasher", () => {
 
 			expect(hasher.getHash("https://example.com/page1")).toBeUndefined();
 			expect(hasher.getHash("https://example.com/page2")).toBe("def456");
+			expect(hasher.size).toBe(1);
 		});
 
 		it("should handle invalid JSON", async () => {
@@ -111,6 +115,7 @@ describe("Hasher", () => {
 			await hasher.loadHashes(indexPath);
 
 			expect(hasher.getHash("https://example.com/page1")).toBeUndefined();
+			expect(hasher.size).toBe(0);
 		});
 	});
 
@@ -196,6 +201,30 @@ describe("Hasher", () => {
 			const hasher = new Hasher();
 
 			expect(hasher.getHash("https://example.com/unknown")).toBeUndefined();
+		});
+	});
+
+	describe("size", () => {
+		it("should return 0 for empty hasher", () => {
+			const hasher = new Hasher();
+			expect(hasher.size).toBe(0);
+		});
+
+		it("should return correct count after loading", async () => {
+			const indexPath = join(testDir, "index.json");
+			const indexData = {
+				pages: [
+					{ url: "https://example.com/page1", hash: "hash1" },
+					{ url: "https://example.com/page2", hash: "hash2" },
+					{ url: "https://example.com/page3", hash: "hash3" },
+				],
+			};
+			await writeFile(indexPath, JSON.stringify(indexData));
+
+			const hasher = new Hasher();
+			await hasher.loadHashes(indexPath);
+
+			expect(hasher.size).toBe(3);
 		});
 	});
 });
