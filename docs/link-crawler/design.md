@@ -320,7 +320,7 @@ crawled/
       "url": "https://docs.example.com/getting-started",
       "title": "Getting Started",
       "file": "pages/page-001.md",
-      "hash": "sha256:a1b2c3d4e5f6...",
+      "hash": "a1b2c3d4e5f6...",
       "depth": 1,
       "crawledAt": "2026-02-01T14:00:01.000Z"
     }
