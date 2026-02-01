@@ -17,6 +17,10 @@ program
 	.option("--timeout <sec>", "Request timeout in seconds", "30")
 	.option("--wait <ms>", "Wait time for page rendering in ms", "2000")
 	.option("--headed", "Show browser window", false)
+	.option("--diff", "Show diff from previous crawl", false)
+	.option("--no-pages", "Skip individual page output")
+	.option("--no-merge", "Skip merged output file")
+	.option("--no-chunks", "Skip chunked output files")
 	.parse();
 
 const options = program.opts();

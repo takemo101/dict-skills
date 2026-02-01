@@ -10,14 +10,10 @@ export interface CrawlConfig {
 	timeout: number;
 	spaWait: number;
 	headed: boolean;
-	/** 差分モード: 変更があったページのみ出力 */
 	diff: boolean;
-	/** ページ出力ディレクトリ */
-	outputPages: string;
-	/** マージ出力ファイルパス */
-	outputMerge: string;
-	/** チャンク出力ディレクトリ */
-	outputChunks: string;
+	pages: boolean;
+	merge: boolean;
+	chunks: boolean;
 }
 
 /** フェッチ結果 */
@@ -45,16 +41,6 @@ export interface CrawledPage {
 	depth: number;
 	links: string[];
 	metadata: PageMetadata;
-	/** コンテンツハッシュ（差分検出用） */
-	hash: string;
-}
-
-/** ページインデックス（index.json用） */
-export interface PageIndex {
-	/** URL -> ハッシュのマッピング */
-	pages: Record<string, string>;
-	/** 最終更新日時 */
-	updatedAt: string;
 }
 
 /** 検出されたAPI仕様 */
