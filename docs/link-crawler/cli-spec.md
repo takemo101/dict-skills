@@ -1,138 +1,167 @@
 # Link Crawler CLI仕様
 
-## 基本構文
+## 1. 基本構文
 
 ```bash
 crawl <url> [options]
 ```
 
-## 引数
+## 2. 引数
 
 | 引数 | 必須 | 説明 |
 |------|------|------|
 | `<url>` | ✓ | クロール開始URL |
 
-## オプション
+## 3. オプション一覧
 
-### クロール制御
+### 3.1 クロール制御
 
 | オプション | 短縮 | デフォルト | 説明 |
 |-----------|------|-----------|------|
 | `--depth <num>` | `-d` | `1` | 最大クロール深度（上限10） |
 | `--delay <ms>` | | `500` | リクエスト間隔（ミリ秒） |
 | `--timeout <sec>` | | `30` | リクエストタイムアウト（秒） |
-| `--same-domain` | | `true` | 同一ドメインのみクロール |
-| `--no-same-domain` | | | クロスドメインリンクも追跡 |
+| `--wait <ms>` | | `2000` | ページレンダリング待機時間（ミリ秒） |
+| `--headed` | | `false` | ブラウザを表示（デバッグ用） |
 
-### フィルタリング
+### 3.2 スコープ制御
 
-| オプション | 短縮 | 説明 |
-|-----------|------|------|
+| オプション | デフォルト | 説明 |
+|-----------|-----------|------|
+| `--same-domain` | `true` | 同一ドメインのみクロール |
+| `--no-same-domain` | | クロスドメインリンクも追跡 |
 | `--include <pattern>` | | 含めるURLパターン（正規表現） |
 | `--exclude <pattern>` | | 除外するURLパターン（正規表現） |
 
-### SPAモード
+### 3.3 差分クロール
 
-| オプション | 短縮 | デフォルト | 説明 |
-|-----------|------|-----------|------|
-| `--spa` | | `false` | SPAモードを有効化（playwright-cli使用） |
-| `--wait <ms>` | | `2000` | SPAモード時のレンダリング待機時間 |
-| `--headed` | | `false` | ブラウザを表示（デバッグ用） |
+| オプション | デフォルト | 説明 |
+|-----------|-----------|------|
+| `--diff` | `false` | 差分クロール（変更ページのみ更新） |
 
-### 出力
+### 3.4 出力制御
 
 | オプション | 短縮 | デフォルト | 説明 |
 |-----------|------|-----------|------|
 | `--output <dir>` | `-o` | `./crawled` | 出力ディレクトリ |
+| `--no-pages` | | | ページ単位ファイル出力を無効化 |
+| `--no-merge` | | | 結合ファイル(full.md)出力を無効化 |
+| `--no-chunks` | | | チャンク分割出力を無効化 |
 
-### その他
+### 3.5 ヘルプ
 
 | オプション | 短縮 | 説明 |
 |-----------|------|------|
 | `--help` | `-h` | ヘルプ表示 |
 | `--version` | `-V` | バージョン表示 |
 
-## 使用例
+---
 
-### 基本的なクロール
+## 4. 使用例
+
+### 4.1 基本的なクロール
 
 ```bash
-# ドキュメントサイトを深度2でクロール
+# 深度2でクロール
 crawl https://docs.example.com -d 2
 
-# 特定ディレクトリ配下のみ
-crawl https://docs.example.com/api --include "/api/"
+# 出力先を指定
+crawl https://docs.example.com -o ./my-docs
 ```
 
-### SPAサイトのクロール
+### 4.2 差分クロール
 
 ```bash
-# Reactアプリをクロール
-crawl https://spa-app.example.com --spa
+# 初回クロール
+crawl https://docs.example.com -o ./docs -d 3
 
-# デバッグ用にブラウザ表示
-crawl https://spa-app.example.com --spa --headed
-
-# レンダリング待機時間を長めに
-crawl https://slow-spa.example.com --spa --wait 5000
+# 2回目以降（変更ページのみ更新）
+crawl https://docs.example.com -o ./docs -d 3 --diff
 ```
 
-### フィルタリング
+### 4.3 スコープ制御
 
 ```bash
-# ブログ記事のみ
-crawl https://example.com --include "/blog/"
+# 特定パス配下のみ
+crawl https://docs.example.com --include "/api/"
 
 # 特定パスを除外
 crawl https://docs.example.com --exclude "/v1/|/deprecated/"
 
 # 組み合わせ
-crawl https://docs.example.com \
-  --include "/api/" \
-  --exclude "/internal/"
+crawl https://docs.example.com --include "/guide/" --exclude "/internal/"
 ```
 
-## 出力構造
+### 4.4 出力形式制御
+
+```bash
+# AIコンテキスト用: 結合ファイルのみ
+crawl https://docs.example.com --no-pages --no-chunks
+
+# ページ単位のみ
+crawl https://docs.example.com --no-merge --no-chunks
+
+# チャンクのみ
+crawl https://docs.example.com --no-pages --no-merge
+```
+
+### 4.5 デバッグ・調整
+
+```bash
+# ブラウザを表示して動作確認
+crawl https://docs.example.com --headed
+
+# 遅いサイト向けに待機時間延長
+crawl https://slow-site.example.com --wait 5000
+
+# サーバー負荷軽減のためリクエスト間隔延長
+crawl https://docs.example.com --delay 2000
+```
+
+---
+
+## 5. 出力構造
+
+### 5.1 ディレクトリ構成
 
 ```
 crawled/
-├── index.json          # クロール結果インデックス
-├── pages/
-│   ├── page-001.md     # クロールしたページ（Markdown）
+├── index.json       # メタデータ・ハッシュ情報
+├── full.md          # 全ページ結合（AIコンテキスト用）
+├── chunks/          # 見出しベースチャンク分割
+│   ├── chunk-001.md
+│   ├── chunk-002.md
+│   └── ...
+├── pages/           # ページ単位
+│   ├── page-001.md
 │   ├── page-002.md
 │   └── ...
-└── specs/
-    ├── openapi.yaml    # 検出したAPI仕様
-    └── schema.json
+└── specs/           # 検出されたAPI仕様
+    ├── openapi.yaml
+    └── ...
 ```
 
-### index.json 構造
+### 5.2 index.json
+
+クロール結果のメタデータ。差分クロール用のハッシュ情報を含む。
 
 ```json
 {
   "crawledAt": "2026-02-01T14:00:00.000Z",
   "baseUrl": "https://docs.example.com",
   "config": {
-    "maxDepth": 2,
-    "spa": false,
+    "depth": 2,
     "sameDomain": true
   },
   "totalPages": 15,
   "pages": [
     {
-      "url": "https://docs.example.com/",
-      "title": "Documentation",
+      "url": "https://docs.example.com/getting-started",
+      "title": "Getting Started",
       "file": "pages/page-001.md",
-      "depth": 0,
-      "links": ["https://docs.example.com/getting-started"],
-      "metadata": {
-        "title": "Documentation",
-        "description": "Official documentation",
-        "keywords": null,
-        "author": null,
-        "ogTitle": "Documentation",
-        "ogType": "website"
-      }
+      "hash": "sha256:a1b2c3d4e5f6...",
+      "depth": 1,
+      "crawledAt": "2026-02-01T14:00:01.000Z"
     }
   ],
   "specs": [
@@ -145,27 +174,96 @@ crawled/
 }
 ```
 
-### Markdownファイル構造
+### 5.3 full.md
+
+全ページを `# タイトル` で結合したファイル。LLMへの入力に最適。
+
+```markdown
+# Getting Started
+
+導入部分の内容...
+
+# Installation
+
+インストール手順...
+
+# Configuration
+
+設定方法...
+```
+
+### 5.4 chunks/*.md
+
+見出し（h1）を境界としてチャンク分割。
+
+```markdown
+<!-- chunk-001.md -->
+# Getting Started
+
+導入部分...
+
+## Prerequisites
+
+前提条件...
+
+## Quick Start
+
+クイックスタート...
+```
+
+```markdown
+<!-- chunk-002.md -->
+# Installation
+
+インストール手順...
+
+## npm
+
+npm install...
+```
+
+### 5.5 pages/*.md
+
+ページ単位でfrontmatter付きMarkdown。
 
 ```markdown
 ---
 url: https://docs.example.com/getting-started
 title: "Getting Started"
-description: "Quick start guide"
-crawledAt: 2026-02-01T14:00:00.000Z
+hash: "sha256:a1b2c3d4e5f6..."
+crawledAt: 2026-02-01T14:00:01.000Z
 depth: 1
 ---
 
 # Getting Started
 
-本文がここに続く...
+本文...
 ```
 
-## 終了コード
+---
 
-| コード | 意味 |
-|--------|------|
-| `0` | 正常終了 |
-| `1` | 一般エラー（ネットワーク等） |
-| `2` | 引数エラー |
-| `3` | playwright-cli未インストール（SPAモード時） |
+## 6. 終了コード
+
+| コード | 意味 | 対応 |
+|--------|------|------|
+| `0` | 正常終了 | - |
+| `1` | 一般エラー | エラーメッセージを確認 |
+| `2` | 引数エラー | `--help` でオプション確認 |
+| `3` | playwright-cli未インストール | `npm install -g @playwright/cli` |
+
+---
+
+## 7. 環境変数
+
+| 変数 | 説明 |
+|------|------|
+| `DEBUG=1` | デバッグログを出力 |
+
+---
+
+## 8. 注意事項
+
+- クロール対象サイトの利用規約を確認すること
+- 過度なリクエストを避けるため `--delay` を適切に設定
+- 大規模サイトは `--include` でスコープを限定
+- playwright-cliが必要: `npm install -g @playwright/cli`

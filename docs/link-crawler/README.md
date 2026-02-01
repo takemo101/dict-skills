@@ -1,35 +1,51 @@
 # Link Crawler v2.0
 
-技術ドキュメントサイトを再帰的にクロールし、Markdown形式で保存するCLIツール。
+技術ドキュメントサイトをクロールし、AIコンテキスト用のMarkdownとして保存するCLIツール。
 
 ## 概要
 
 | 項目 | 説明 |
 |------|------|
-| 目的 | 技術ドキュメントサイトのコンテンツをローカルMarkdownとして取得 |
-| 主要機能 | HTML→Markdown変換、再帰クロール、SPA対応 |
-| 対象ユーザー | AIエージェント、開発者 |
+| 目的 | 技術ドキュメントをLLM入力用Markdownとして取得 |
+| 主要機能 | SPA対応クロール、差分更新、結合出力、チャンク分割 |
+| 対象 | AIエージェント、開発者 |
 
 ## 主要機能
 
-- **静的サイトクロール**: fetch + JSDOM による高速クロール
-- **SPAサイト対応**: playwright-cli による動的コンテンツ取得
-- **Markdown変換**: Readability + Turndown による高品質変換
-- **API仕様検出**: OpenAPI/GraphQL/JSON Schema の自動検出・保存
+| 機能 | 説明 |
+|------|------|
+| **playwright-cliクロール** | SPA/静的サイト両対応 |
+| **差分クロール** | ハッシュベースで変更ページのみ更新 |
+| **結合出力 (full.md)** | 全ページを1ファイルに結合、AIコンテキストに最適 |
+| **チャンク分割** | 見出しベースで分割、RAG等に利用 |
+| **API仕様検出** | OpenAPI/GraphQL/JSON Schema自動検出 |
+
+## クイックスタート
+
+```bash
+cd link-crawler
+bun install
+
+# クロール実行
+bun run dev https://docs.example.com -d 2
+
+# 出力確認
+cat crawled/full.md
+```
 
 ## piスキル統合
 
-pi-monoでグローバルスキルとして利用可能。
+グローバルスキルとして登録:
 
 ```bash
-# グローバル登録
 ln -s /path/to/link-crawler ~/.pi/agent/skills/link-crawler
 ```
 
-## ドキュメント一覧
+## ドキュメント
 
-| ドキュメント | 説明 |
+| ドキュメント | 内容 |
 |-------------|------|
-| [設計書](./design.md) | アーキテクチャ・技術スタック・スキル統合 |
-| [CLI仕様](./cli-spec.md) | コマンドライン引数・オプション |
-| [開発ガイド](./development.md) | 開発環境セットアップ・コーディング規約 |
+| [設計書](../docs/link-crawler/design.md) | アーキテクチャ・データ構造・モジュール設計 |
+| [CLI仕様](../docs/link-crawler/cli-spec.md) | オプション・使用例・出力形式 |
+| [開発ガイド](../docs/link-crawler/development.md) | 開発環境・コーディング規約 |
+| [SKILL.md](./SKILL.md) | piエージェント向けスキル定義 |

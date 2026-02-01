@@ -1,132 +1,169 @@
 # link-crawler
 
-技術ドキュメントサイトを再帰的にクロールし、Markdown形式で保存するCLIツール。
+技術ドキュメントサイトをクロールし、AIコンテキスト用のMarkdownとして保存するCLIツール。
 
 ## 用途
 
-- 技術ドキュメントのローカル保存
-- AIエージェントの知識ベース構築
-- SPAサイトのコンテンツ取得
+- 最新技術ドキュメントをローカルに保存
+- LLMに読み込ませる知識ベース構築
+- フレームワークのベストプラクティスを参考に設計相談
 
 ## 前提条件
 
-- Bun がインストール済み
-- SPAモード使用時: `npm install -g @playwright/cli`
+- Bun インストール済み
+- playwright-cli: `npm install -g @playwright/cli`
+
+---
 
 ## 基本コマンド
 
 ```bash
-# 静的サイトをクロール
 bun run <skill-path>/src/crawl.ts <url> [options]
-
-# SPAサイトをクロール
-bun run <skill-path>/src/crawl.ts <url> --spa [options]
 ```
+
+---
 
 ## オプション
 
+### クロール制御
+
 | オプション | 短縮 | デフォルト | 説明 |
 |-----------|------|-----------|------|
-| `--depth <num>` | `-d` | `1` | 最大クロール深度（上限10） |
-| `--output <dir>` | `-o` | `./crawled` | 出力ディレクトリ |
-| `--same-domain` | | `true` | 同一ドメインのみクロール |
-| `--no-same-domain` | | | クロスドメインリンクも追跡 |
-| `--include <pattern>` | | | 含めるURLパターン（正規表現） |
-| `--exclude <pattern>` | | | 除外するURLパターン（正規表現） |
-| `--delay <ms>` | | `500` | リクエスト間隔（ミリ秒） |
-| `--timeout <sec>` | | `30` | リクエストタイムアウト（秒） |
-| `--spa` | | `false` | SPAモード（playwright-cli使用） |
-| `--wait <ms>` | | `2000` | SPAレンダリング待機時間 |
-| `--headed` | | `false` | ブラウザを表示（デバッグ用） |
+| `--depth <num>` | `-d` | `1` | 最大クロール深度 |
+| `--delay <ms>` | | `500` | リクエスト間隔 |
+| `--wait <ms>` | | `2000` | レンダリング待機時間 |
+| `--headed` | | `false` | ブラウザ表示 |
+
+### スコープ制御
+
+| オプション | デフォルト | 説明 |
+|-----------|-----------|------|
+| `--same-domain` | `true` | 同一ドメインのみ |
+| `--include <pattern>` | | 含めるURL（正規表現） |
+| `--exclude <pattern>` | | 除外するURL（正規表現） |
+
+### 差分・出力
+
+| オプション | 短縮 | デフォルト | 説明 |
+|-----------|------|-----------|------|
+| `--output <dir>` | `-o` | `./crawled` | 出力先 |
+| `--diff` | | `false` | 差分クロール |
+| `--no-pages` | | | ページ単位出力無効 |
+| `--no-merge` | | | 結合ファイル無効 |
+| `--no-chunks` | | | チャンク出力無効 |
+
+---
 
 ## 使用例
 
-### 静的ドキュメントサイト
+### 基本
 
 ```bash
 # 深度2でクロール
 bun run <skill-path>/src/crawl.ts https://docs.example.com -d 2
 
-# 特定パス配下のみ
+# 特定パスのみ
 bun run <skill-path>/src/crawl.ts https://docs.example.com --include "/api/"
-
-# 出力先を指定
-bun run <skill-path>/src/crawl.ts https://docs.example.com -o ./docs-backup
 ```
 
-### SPAサイト（React/Vue/Angularなど）
+### 差分クロール
 
 ```bash
-# SPAモードでクロール
-bun run <skill-path>/src/crawl.ts https://spa-docs.example.com --spa
+# 初回
+bun run <skill-path>/src/crawl.ts https://docs.example.com -o ./docs -d 3
 
-# レンダリング待機時間を延長
-bun run <skill-path>/src/crawl.ts https://slow-spa.example.com --spa --wait 5000
-
-# デバッグ用にブラウザ表示
-bun run <skill-path>/src/crawl.ts https://spa-docs.example.com --spa --headed
+# 2回目以降（変更のみ更新）
+bun run <skill-path>/src/crawl.ts https://docs.example.com -o ./docs -d 3 --diff
 ```
 
-### フィルタリング
+### AIコンテキスト用
 
 ```bash
-# 特定パスを除外
-bun run <skill-path>/src/crawl.ts https://docs.example.com --exclude "/v1/|/deprecated/"
-
-# 複合条件
-bun run <skill-path>/src/crawl.ts https://docs.example.com \
-  --include "/api/" \
-  --exclude "/internal/" \
-  -d 3
+# 結合ファイルのみ取得
+bun run <skill-path>/src/crawl.ts https://docs.example.com --no-pages --no-chunks
+# → crawled/full.md のみ出力
 ```
+
+---
 
 ## 出力形式
 
 ```
 crawled/
-├── index.json          # クロール結果インデックス
-├── pages/
-│   ├── page-001.md     # Markdownに変換されたページ
-│   ├── page-002.md
+├── index.json    # メタデータ・ハッシュ
+├── full.md       # 全ページ結合 ★ AIコンテキスト用
+├── chunks/       # 見出しベース分割
 │   └── ...
-└── specs/
-    ├── openapi.yaml    # 検出されたAPI仕様
-    └── schema.json
+├── pages/        # ページ単位
+│   └── ...
+└── specs/        # API仕様
+    └── ...
 ```
 
-### index.json
+### full.md（推奨）
 
-クロール結果のメタデータ。ページ一覧、リンク関係、検出されたAPI仕様を含む。
-
-### pages/*.md
-
-各ページはfrontmatter付きMarkdown形式：
+全ページを `# タイトル` で結合。LLMに直接読み込ませる用途に最適。
 
 ```markdown
----
-url: https://docs.example.com/getting-started
-title: "Getting Started"
-description: "Quick start guide"
-crawledAt: 2026-02-01T14:00:00.000Z
-depth: 1
----
-
 # Getting Started
 
-本文...
+導入...
+
+# Installation
+
+インストール...
 ```
 
-## エラー時の対応
+### chunks/*.md
 
-| 終了コード | 意味 | 対応 |
-|-----------|------|------|
+h1見出しを境界として分割。長大ドキュメントの分割に利用。
+
+---
+
+## AIコンテキストとしての利用
+
+### LLMへの資料提供
+
+```bash
+# 1. クロール
+bun run <skill-path>/src/crawl.ts https://docs.example.com -d 3
+
+# 2. LLMに読み込ませる
+cat crawled/full.md | llm "この技術について要約して"
+```
+
+### 設計相談
+
+```bash
+# Next.jsドキュメント取得
+bun run <skill-path>/src/crawl.ts https://nextjs.org/docs -d 2 -o ./nextjs-docs
+
+# 設計相談
+cat ./nextjs-docs/full.md | llm "App Routerのベストプラクティスに従って設計して"
+```
+
+### 定期更新
+
+```bash
+# cron等で定期実行（差分のみ）
+bun run <skill-path>/src/crawl.ts https://docs.example.com -o ./docs --diff
+```
+
+---
+
+## 終了コード
+
+| コード | 意味 | 対応 |
+|--------|------|------|
 | `0` | 正常終了 | - |
-| `1` | 一般エラー | エラーメッセージを確認 |
-| `2` | 引数エラー | `--help` でオプション確認 |
-| `3` | playwright-cli未インストール | `npm install -g @playwright/cli` |
+| `1` | 一般エラー | エラーメッセージ確認 |
+| `2` | 引数エラー | `--help` 確認 |
+| `3` | playwright-cli未インストール | `npm i -g @playwright/cli` |
+
+---
 
 ## 注意事項
 
-- クロール対象サイトの利用規約を確認すること
-- 過度なリクエストを避けるため `--delay` を適切に設定
-- 大規模サイトは `--include` でスコープを限定
+- 対象サイトの利用規約を確認
+- `--delay` で適切なリクエスト間隔を設定
+- 大規模サイトは `--include` でスコープ限定
