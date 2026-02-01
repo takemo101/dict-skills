@@ -1,2 +1,6 @@
 # Pi Agent
 .pi
+
+# pi-issue-runner
+.worktrees
+.improve-logs
