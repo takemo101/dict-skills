@@ -1,15 +1,29 @@
 {
 	"name": "link-crawler",
-	"version": "1.0.0",
+	"version": "2.0.0",
 	"type": "module",
-	"description": "Recursive link crawler for technical documentation sites",
-	"author": "",
-	"license": "MIT",
+	"bin": {
+		"crawl": "./dist/crawl.js"
+	},
+	"scripts": {
+		"dev": "bun run src/crawl.ts",
+		"build": "bun build src/crawl.ts --outdir dist --target node",
+		"check": "biome check .",
+		"fix": "biome check --write .",
+		"typecheck": "tsc --noEmit"
+	},
 	"dependencies": {
-		"@mozilla/readability": "^0.6.0",
-		"jsdom": "^27.0.1",
+		"@mozilla/readability": "^0.5.0",
+		"commander": "^13.0.0",
+		"jsdom": "^26.0.0",
 		"turndown": "^7.2.0",
-		"turndown-plugin-gfm": "^1.0.2",
-		"commander": "^12.0.0"
+		"turndown-plugin-gfm": "^1.0.2"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.0.0",
+		"@types/bun": "^1.2.0",
+		"@types/jsdom": "^21.1.7",
+		"@types/turndown": "^5.0.5",
+		"typescript": "^5.8.0"
 	}
 }

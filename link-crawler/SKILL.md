@@ -1,96 +1,132 @@
----
-name: link-crawler
-description: Crawls technical documentation sites by following links recursively. Extracts text, metadata, and API specifications (OpenAPI, JSON Schema). Use for collecting documentation from manual sites with depth limits and duplicate link prevention.
----
+# link-crawler
 
-# Link Crawler
+技術ドキュメントサイトを再帰的にクロールし、Markdown形式で保存するCLIツール。
 
-技術ドキュメントサイトを再帰的にクロールし、情報を収集するスキル。
+## 用途
 
-## Setup
+- 技術ドキュメントのローカル保存
+- AIエージェントの知識ベース構築
+- SPAサイトのコンテンツ取得
 
-```bash
-cd {baseDir}
-npm install
-```
+## 前提条件
 
-## 基本的な使用方法
+- Bun がインストール済み
+- SPAモード使用時: `npm install -g @playwright/cli`
 
-### 単一ページの取得
+## 基本コマンド
 
 ```bash
-{baseDir}/crawl.js https://example.com/docs
+# 静的サイトをクロール
+bun run <skill-path>/src/crawl.ts <url> [options]
+
+# SPAサイトをクロール
+bun run <skill-path>/src/crawl.ts <url> --spa [options]
 ```
 
-### 再帰的クロール
+## オプション
+
+| オプション | 短縮 | デフォルト | 説明 |
+|-----------|------|-----------|------|
+| `--depth <num>` | `-d` | `1` | 最大クロール深度（上限10） |
+| `--output <dir>` | `-o` | `./crawled` | 出力ディレクトリ |
+| `--same-domain` | | `true` | 同一ドメインのみクロール |
+| `--no-same-domain` | | | クロスドメインリンクも追跡 |
+| `--include <pattern>` | | | 含めるURLパターン（正規表現） |
+| `--exclude <pattern>` | | | 除外するURLパターン（正規表現） |
+| `--delay <ms>` | | `500` | リクエスト間隔（ミリ秒） |
+| `--timeout <sec>` | | `30` | リクエストタイムアウト（秒） |
+| `--spa` | | `false` | SPAモード（playwright-cli使用） |
+| `--wait <ms>` | | `2000` | SPAレンダリング待機時間 |
+| `--headed` | | `false` | ブラウザを表示（デバッグ用） |
+
+## 使用例
+
+### 静的ドキュメントサイト
 
 ```bash
-{baseDir}/crawl.js https://example.com/docs --depth 2         # 2階層まで辿る
-{baseDir}/crawl.js https://example.com/docs --depth 3 -o ./output  # 出力先指定
+# 深度2でクロール
+bun run <skill-path>/src/crawl.ts https://docs.example.com -d 2
+
+# 特定パス配下のみ
+bun run <skill-path>/src/crawl.ts https://docs.example.com --include "/api/"
+
+# 出力先を指定
+bun run <skill-path>/src/crawl.ts https://docs.example.com -o ./docs-backup
 ```
 
-### オプション
+### SPAサイト（React/Vue/Angularなど）
 
-- `-d, --depth <num>` - クロール深度 (default: 1, max: 10)
-- `-o, --output <dir>` - 出力ディレクトリ (default: ./crawled)
-- `--same-domain` - 同一ドメインのみ辿る (default: true)
-- `--include <pattern>` - 含めるURLパターン (正規表現)
-- `--exclude <pattern>` - 除外するURLパターン (正規表現)
-- `--delay <ms>` - リクエスト間隔 (default: 500ms)
-- `--timeout <sec>` - タイムアウト秒数 (default: 30)
+```bash
+# SPAモードでクロール
+bun run <skill-path>/src/crawl.ts https://spa-docs.example.com --spa
+
+# レンダリング待機時間を延長
+bun run <skill-path>/src/crawl.ts https://slow-spa.example.com --spa --wait 5000
+
+# デバッグ用にブラウザ表示
+bun run <skill-path>/src/crawl.ts https://spa-docs.example.com --spa --headed
+```
+
+### フィルタリング
+
+```bash
+# 特定パスを除外
+bun run <skill-path>/src/crawl.ts https://docs.example.com --exclude "/v1/|/deprecated/"
+
+# 複合条件
+bun run <skill-path>/src/crawl.ts https://docs.example.com \
+  --include "/api/" \
+  --exclude "/internal/" \
+  -d 3
+```
 
 ## 出力形式
 
-### ディレクトリ構造
-
 ```
-output/
-├── index.json          # クロール結果のインデックス
-├── pages/              # Markdownページ
-│   ├── page-001.md
-│   └── page-002.md
-└── specs/              # API仕様書
-    ├── openapi.yaml
+crawled/
+├── index.json          # クロール結果インデックス
+├── pages/
+│   ├── page-001.md     # Markdownに変換されたページ
+│   ├── page-002.md
+│   └── ...
+└── specs/
+    ├── openapi.yaml    # 検出されたAPI仕様
     └── schema.json
 ```
 
 ### index.json
 
-```json
-{
-  "crawledAt": "2024-01-01T00:00:00Z",
-  "baseUrl": "https://example.com/docs",
-  "totalPages": 10,
-  "pages": [
-    {
-      "url": "https://example.com/docs",
-      "title": "Documentation",
-      "file": "pages/page-001.md",
-      "depth": 0,
-      "links": ["https://example.com/docs/guide"]
-    }
-  ],
-  "specs": [
-    {
-      "url": "https://example.com/api/openapi.yaml",
-      "type": "openapi",
-      "file": "specs/openapi.yaml"
-    }
-  ]
-}
+クロール結果のメタデータ。ページ一覧、リンク関係、検出されたAPI仕様を含む。
+
+### pages/*.md
+
+各ページはfrontmatter付きMarkdown形式：
+
+```markdown
+---
+url: https://docs.example.com/getting-started
+title: "Getting Started"
+description: "Quick start guide"
+crawledAt: 2026-02-01T14:00:00.000Z
+depth: 1
+---
+
+# Getting Started
+
+本文...
 ```
 
-## API仕様の自動検出
+## エラー時の対応
 
-以下のファイルを自動的に検出・保存:
+| 終了コード | 意味 | 対応 |
+|-----------|------|------|
+| `0` | 正常終了 | - |
+| `1` | 一般エラー | エラーメッセージを確認 |
+| `2` | 引数エラー | `--help` でオプション確認 |
+| `3` | playwright-cli未インストール | `npm install -g @playwright/cli` |
 
-- OpenAPI/Swagger: `openapi.yaml`, `openapi.json`, `swagger.yaml`, `swagger.json`
-- JSON Schema: `*.schema.json`, `schema.json`
-- GraphQL Schema: `schema.graphql`
+## 注意事項
 
-## When to Use
-
-- 技術ドキュメントのオフライン保存
-- API仕様書の収集
-- ドキュメントサイトの構造化データ抽出
-- マニュアルサイトの情報収集
+- クロール対象サイトの利用規約を確認すること
+- 過度なリクエストを避けるため `--delay` を適切に設定
+- 大規模サイトは `--include` でスコープを限定
