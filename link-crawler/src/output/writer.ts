@@ -26,7 +26,6 @@ export class OutputWriter {
 			baseUrl: config.startUrl,
 			config: {
 				maxDepth: config.maxDepth,
-				spa: config.spa,
 				sameDomain: config.sameDomain,
 			},
 			totalPages: 0,

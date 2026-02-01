@@ -1,8 +1,8 @@
 import { $ } from "bun";
 import type { CrawlConfig, Fetcher, FetchResult } from "../types.js";
 
-/** SPA用 Fetcher (playwright-cli) */
-export class SPAFetcher implements Fetcher {
+/** Playwright-CLI Fetcher (全サイト対応) */
+export class PlaywrightFetcher implements Fetcher {
 	private sessionId: string;
 	private initialized = false;
 
@@ -49,7 +49,7 @@ export class SPAFetcher implements Fetcher {
 			};
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
-			console.error(`  ✗ SPA Error: ${message} - ${url}`);
+			console.error(`  ✗ Fetch Error: ${message} - ${url}`);
 			return null;
 		}
 	}
