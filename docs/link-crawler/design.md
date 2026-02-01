@@ -94,10 +94,9 @@ link-crawler/
 │   │   └── hasher.ts           # SHA256ハッシュ・差分検知
 │   │
 │   └── output/
-│       ├── writer.ts           # ページ書き込み
+│       ├── writer.ts           # ページ書き込み + index.json 生成
 │       ├── merger.ts           # full.md 生成
-│       ├── chunker.ts          # chunks/*.md 生成
-│       └── index-writer.ts     # index.json 生成
+│       └── chunker.ts          # chunks/*.md 生成
 │
 ├── package.json
 ├── tsconfig.json
@@ -115,10 +114,9 @@ link-crawler/
 | `Converter` | Markdown変換 | ContentHTML | Markdown |
 | `LinksParser` | リンク抽出 | HTML | URLs |
 | `Hasher` | ハッシュ計算・比較 | Content | Hash, Changed |
-| `PageWriter` | ページ保存 | Page | File |
+| `PageWriter` | ページ保存、index.json 生成 | Page | File, index.json |
 | `Merger` | 全ページ結合 | Pages | full.md |
 | `Chunker` | チャンク分割 | full.md | chunks/*.md |
-| `IndexWriter` | メタデータ保存 | CrawlResult | index.json |
 
 ---
 
