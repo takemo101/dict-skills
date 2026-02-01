@@ -15,9 +15,8 @@ program
 	.option("--exclude <pattern>", "Exclude URL pattern (regex)")
 	.option("--delay <ms>", "Delay between requests in ms", "500")
 	.option("--timeout <sec>", "Request timeout in seconds", "30")
-	.option("--spa", "Enable SPA mode (uses playwright-cli)", false)
-	.option("--wait <ms>", "Wait time for SPA rendering in ms", "2000")
-	.option("--headed", "Show browser window (SPA mode only)", false)
+	.option("--wait <ms>", "Wait time for page rendering in ms", "2000")
+	.option("--headed", "Show browser window", false)
 	.parse();
 
 const options = program.opts();

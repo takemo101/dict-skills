@@ -1,5 +1,6 @@
 node_modules/
 dist/
 crawled/
+coverage/
 *.log
 .DS_Store
