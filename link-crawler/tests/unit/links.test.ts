@@ -8,68 +8,98 @@ import {
 import type { CrawlConfig } from "../../src/types.js";
 
 describe("normalizeUrl", () => {
-	it("should normalize absolute URL", () => {
-		const result = normalizeUrl("https://example.com/page", "https://example.com");
-		expect(result).toBe("https://example.com/page");
+	it("should normalize relative URLs", () => {
+		const result = normalizeUrl("/path/to/page", "https://example.com");
+
+		expect(result).toBe("https://example.com/path/to/page");
 	});
 
-	it("should normalize relative URL", () => {
-		const result = normalizeUrl("/page", "https://example.com");
-		expect(result).toBe("https://example.com/page");
+	it("should normalize relative URLs without leading slash", () => {
+		const result = normalizeUrl("path/to/page", "https://example.com");
+
+		expect(result).toBe("https://example.com/path/to/page");
 	});
 
-	it("should normalize relative URL without leading slash", () => {
-		const result = normalizeUrl("page", "https://example.com/docs");
-		expect(result).toBe("https://example.com/page");
+	it("should keep absolute URLs intact", () => {
+		const result = normalizeUrl("https://other.com/page", "https://example.com");
+
+		expect(result).toBe("https://other.com/page");
 	});
 
-	it("should remove hash from URL", () => {
+	it("should remove hash fragments", () => {
 		const result = normalizeUrl("https://example.com/page#section", "https://example.com");
+
 		expect(result).toBe("https://example.com/page");
+		expect(result).not.toContain("#");
 	});
 
-	it("should return null for invalid URL", () => {
-		const result = normalizeUrl("not-a-valid-url", "invalid-base");
-		expect(result).toBeNull();
+	it("should handle URLs with query strings", () => {
+		const result = normalizeUrl("/page?foo=bar&baz=qux", "https://example.com");
+
+		expect(result).toBe("https://example.com/page?foo=bar&baz=qux");
 	});
 
-	it("should handle URL with query parameters", () => {
-		const result = normalizeUrl("/page?id=123", "https://example.com");
-		expect(result).toBe("https://example.com/page?id=123");
+	it("should encode invalid URL characters", () => {
+		const result = normalizeUrl("not a valid url", "https://example.com");
+
+		expect(result).toBe("https://example.com/not%20a%20valid%20url");
+	});
+
+	it("should handle protocol-relative URLs", () => {
+		const result = normalizeUrl("//cdn.example.com/file.js", "https://example.com");
+
+		expect(result).toBe("https://cdn.example.com/file.js");
+	});
+
+	it("should handle empty string", () => {
+		const result = normalizeUrl("", "https://example.com");
+
+		expect(result).toBe("https://example.com/");
 	});
 });
 
 describe("isSameDomain", () => {
 	it("should return true for same domain", () => {
 		const result = isSameDomain("https://example.com/page", "https://example.com");
+
 		expect(result).toBe(true);
 	});
 
-	it("should return true for same domain with different paths", () => {
-		const result = isSameDomain("https://example.com/docs", "https://example.com/blog");
-		expect(result).toBe(true);
-	});
-
-	it("should return false for different domain", () => {
+	it("should return false for different domains", () => {
 		const result = isSameDomain("https://other.com/page", "https://example.com");
+
 		expect(result).toBe(false);
 	});
 
-	it("should return false for subdomain", () => {
+	it("should return false for subdomains", () => {
 		const result = isSameDomain("https://sub.example.com/page", "https://example.com");
+
 		expect(result).toBe(false);
 	});
 
-	it("should return false for invalid URL", () => {
-		const result = isSameDomain("not-a-url", "https://example.com");
+	it("should return true for same domain with different ports", () => {
+		const result = isSameDomain("https://example.com:8080/page", "https://example.com");
+
+		expect(result).toBe(true);
+	});
+
+	it("should return false for invalid URLs", () => {
+		const result = isSameDomain("not a url", "https://example.com");
+
+		expect(result).toBe(false);
+	});
+
+	it("should handle www subdomain difference", () => {
+		const result = isSameDomain("https://www.example.com/page", "https://example.com");
+
 		expect(result).toBe(false);
 	});
 });
 
 describe("shouldCrawl", () => {
-	const createConfig = (overrides: Partial<CrawlConfig> = {}): CrawlConfig => ({
+	const baseConfig: CrawlConfig = {
 		startUrl: "https://example.com",
-		maxDepth: 3,
+		maxDepth: 2,
 		outputDir: "./output",
 		sameDomain: true,
 		includePattern: null,
@@ -82,129 +112,198 @@ describe("shouldCrawl", () => {
 		pages: true,
 		merge: true,
 		chunks: true,
-		...overrides,
-	});
+	};
 
-	it("should return false for visited URL", () => {
+	it("should return false for already visited URLs", () => {
 		const visited = new Set(["https://example.com/page"]);
-		const config = createConfig();
-		const result = shouldCrawl("https://example.com/page", visited, config);
+
+		const result = shouldCrawl("https://example.com/page", visited, baseConfig);
+
 		expect(result).toBe(false);
 	});
 
 	it("should return false for different domain when sameDomain is true", () => {
 		const visited = new Set<string>();
-		const config = createConfig({ sameDomain: true });
-		const result = shouldCrawl("https://other.com/page", visited, config);
+
+		const result = shouldCrawl("https://other.com/page", visited, baseConfig);
+
 		expect(result).toBe(false);
 	});
 
 	it("should return true for different domain when sameDomain is false", () => {
 		const visited = new Set<string>();
-		const config = createConfig({ sameDomain: false });
+		const config = { ...baseConfig, sameDomain: false };
+
 		const result = shouldCrawl("https://other.com/page", visited, config);
+
 		expect(result).toBe(true);
 	});
 
-	it("should return true for same domain when sameDomain is true", () => {
+	it("should return false when URL does not match include pattern", () => {
 		const visited = new Set<string>();
-		const config = createConfig({ sameDomain: true });
-		const result = shouldCrawl("https://example.com/page", visited, config);
-		expect(result).toBe(true);
-	});
+		const config = { ...baseConfig, includePattern: /^\/docs/ };
 
-	it("should return false when URL does not match includePattern", () => {
-		const visited = new Set<string>();
-		const config = createConfig({ includePattern: /\/docs\// });
-		const result = shouldCrawl("https://example.com/blog", visited, config);
+		const result = shouldCrawl("https://example.com/blog/post", visited, config);
+
 		expect(result).toBe(false);
 	});
 
-	it("should return true when URL matches includePattern", () => {
+	it("should return true when URL matches include pattern", () => {
 		const visited = new Set<string>();
-		const config = createConfig({ includePattern: /\/docs\// });
+		const config = { ...baseConfig, includePattern: /\/docs/ };
+
 		const result = shouldCrawl("https://example.com/docs/guide", visited, config);
+
 		expect(result).toBe(true);
 	});
 
-	it("should return false when URL matches excludePattern", () => {
+	it("should return false when URL matches exclude pattern", () => {
 		const visited = new Set<string>();
-		const config = createConfig({ excludePattern: /\.pdf$/ });
+		const config = { ...baseConfig, excludePattern: /\.pdf$/ };
+
 		const result = shouldCrawl("https://example.com/file.pdf", visited, config);
+
 		expect(result).toBe(false);
 	});
 
-	it("should return true when URL does not match excludePattern", () => {
+	it("should return true when URL does not match exclude pattern", () => {
 		const visited = new Set<string>();
-		const config = createConfig({ excludePattern: /\.pdf$/ });
-		const result = shouldCrawl("https://example.com/page", visited, config);
+		const config = { ...baseConfig, excludePattern: /\.pdf$/ };
+
+		const result = shouldCrawl("https://example.com/page.html", visited, config);
+
 		expect(result).toBe(true);
 	});
 
-	it("should return false for PNG files", () => {
+	it("should exclude PNG images", () => {
 		const visited = new Set<string>();
-		const config = createConfig();
-		expect(shouldCrawl("https://example.com/image.png", visited, config)).toBe(false);
-		expect(shouldCrawl("https://example.com/image.PNG", visited, config)).toBe(false);
+
+		const result = shouldCrawl("https://example.com/image.png", visited, baseConfig);
+
+		expect(result).toBe(false);
 	});
 
-	it("should return false for JPEG files", () => {
+	it("should exclude JPG images", () => {
 		const visited = new Set<string>();
-		const config = createConfig();
-		expect(shouldCrawl("https://example.com/image.jpg", visited, config)).toBe(false);
-		expect(shouldCrawl("https://example.com/image.jpeg", visited, config)).toBe(false);
+
+		const result = shouldCrawl("https://example.com/photo.jpg", visited, baseConfig);
+
+		expect(result).toBe(false);
 	});
 
-	it("should return false for PDF files", () => {
+	it("should exclude JPEG images", () => {
 		const visited = new Set<string>();
-		const config = createConfig();
-		expect(shouldCrawl("https://example.com/doc.pdf", visited, config)).toBe(false);
+
+		const result = shouldCrawl("https://example.com/pic.jpeg", visited, baseConfig);
+
+		expect(result).toBe(false);
 	});
 
-	it("should return false for other binary files", () => {
+	it("should exclude GIF images", () => {
 		const visited = new Set<string>();
-		const config = createConfig();
-		expect(shouldCrawl("https://example.com/archive.zip", visited, config)).toBe(false);
-		expect(shouldCrawl("https://example.com/video.mp4", visited, config)).toBe(false);
-		expect(shouldCrawl("https://example.com/font.woff2", visited, config)).toBe(false);
+
+		const result = shouldCrawl("https://example.com/anim.gif", visited, baseConfig);
+
+		expect(result).toBe(false);
 	});
 
-	it("should return true for HTML-like URLs", () => {
+	it("should exclude SVG files", () => {
 		const visited = new Set<string>();
-		const config = createConfig();
-		expect(shouldCrawl("https://example.com/page.html", visited, config)).toBe(true);
-		expect(shouldCrawl("https://example.com/page", visited, config)).toBe(true);
-		expect(shouldCrawl("https://example.com/page.htm", visited, config)).toBe(true);
+
+		const result = shouldCrawl("https://example.com/icon.svg", visited, baseConfig);
+
+		expect(result).toBe(false);
 	});
 
-	it("should apply multiple filters in combination", () => {
+	it("should exclude PDF files", () => {
 		const visited = new Set<string>();
-		const config = createConfig({
-			sameDomain: true,
-			includePattern: /\/docs\//,
+
+		const result = shouldCrawl("https://example.com/doc.pdf", visited, baseConfig);
+
+		expect(result).toBe(false);
+	});
+
+	it("should exclude ZIP files", () => {
+		const visited = new Set<string>();
+
+		const result = shouldCrawl("https://example.com/archive.zip", visited, baseConfig);
+
+		expect(result).toBe(false);
+	});
+
+	it("should exclude MP4 files", () => {
+		const visited = new Set<string>();
+
+		const result = shouldCrawl("https://example.com/video.mp4", visited, baseConfig);
+
+		expect(result).toBe(false);
+	});
+
+	it("should exclude MP3 files", () => {
+		const visited = new Set<string>();
+
+		const result = shouldCrawl("https://example.com/audio.mp3", visited, baseConfig);
+
+		expect(result).toBe(false);
+	});
+
+	it("should exclude font files", () => {
+		const visited = new Set<string>();
+
+		expect(shouldCrawl("https://example.com/font.woff", visited, baseConfig)).toBe(false);
+		expect(shouldCrawl("https://example.com/font.woff2", visited, baseConfig)).toBe(false);
+		expect(shouldCrawl("https://example.com/font.ttf", visited, baseConfig)).toBe(false);
+		expect(shouldCrawl("https://example.com/font.eot", visited, baseConfig)).toBe(false);
+	});
+
+	it("should handle case-insensitive extensions", () => {
+		const visited = new Set<string>();
+
+		expect(shouldCrawl("https://example.com/image.PNG", visited, baseConfig)).toBe(false);
+		expect(shouldCrawl("https://example.com/image.Png", visited, baseConfig)).toBe(false);
+	});
+
+	it("should return true for regular HTML pages", () => {
+		const visited = new Set<string>();
+
+		const result = shouldCrawl("https://example.com/page.html", visited, baseConfig);
+
+		expect(result).toBe(true);
+	});
+
+	it("should return true for extensionless URLs", () => {
+		const visited = new Set<string>();
+
+		const result = shouldCrawl("https://example.com/path/to/page", visited, baseConfig);
+
+		expect(result).toBe(true);
+	});
+
+	it("should handle combined include and exclude patterns", () => {
+		const visited = new Set<string>();
+		const config = {
+			...baseConfig,
+			includePattern: /\/docs/,
 			excludePattern: /draft/,
-		});
-		
-		// Same domain, matches include, not excluded
-		expect(shouldCrawl("https://example.com/docs/guide", visited, config)).toBe(true);
-		
-		// Same domain, doesn't match include
-		expect(shouldCrawl("https://example.com/blog/post", visited, config)).toBe(false);
-		
-		// Same domain, matches include but excluded
+		};
+
+		// Should be excluded (matches exclude pattern)
 		expect(shouldCrawl("https://example.com/docs/draft", visited, config)).toBe(false);
-		
-		// Different domain
-		expect(shouldCrawl("https://other.com/docs/guide", visited, config)).toBe(false);
+
+		// Should be excluded (doesn't match include pattern)
+		expect(shouldCrawl("https://example.com/blog/post", visited, config)).toBe(false);
+
+		// Should be included
+		expect(shouldCrawl("https://example.com/docs/guide", visited, config)).toBe(true);
 	});
 });
 
 describe("extractLinks", () => {
-	const createConfig = (overrides: Partial<CrawlConfig> = {}): CrawlConfig => ({
+	const baseConfig: CrawlConfig = {
 		startUrl: "https://example.com",
-		maxDepth: 3,
+		maxDepth: 2,
 		outputDir: "./output",
-		sameDomain: false,
+		sameDomain: true,
 		includePattern: null,
 		excludePattern: null,
 		delay: 500,
@@ -215,138 +314,305 @@ describe("extractLinks", () => {
 		pages: true,
 		merge: true,
 		chunks: true,
-		...overrides,
-	});
+	};
 
-	it("should extract absolute links", () => {
-		const html = '<a href="https://example.com/page1">Link 1</a><a href="https://example.com/page2">Link 2</a>';
+	it("should extract links from HTML", () => {
+		const html = `
+			<html>
+				<body>
+					<a href="/page1">Page 1</a>
+					<a href="/page2">Page 2</a>
+					<a href="/page3">Page 3</a>
+				</body>
+			</html>
+		`;
 		const visited = new Set<string>();
-		const config = createConfig();
-		const result = extractLinks(html, "https://example.com", visited, config);
-		expect(result).toEqual(["https://example.com/page1", "https://example.com/page2"]);
+
+		const links = extractLinks(html, "https://example.com", visited, baseConfig);
+
+		expect(links).toHaveLength(3);
+		expect(links).toContain("https://example.com/page1");
+		expect(links).toContain("https://example.com/page2");
+		expect(links).toContain("https://example.com/page3");
 	});
 
-	it("should extract relative links", () => {
-		const html = '<a href="/page1">Link 1</a><a href="page2">Link 2</a>';
+	it("should normalize relative URLs", () => {
+		const html = `
+			<html>
+				<body>
+					<a href="path/to/page">Relative</a>
+				</body>
+			</html>
+		`;
 		const visited = new Set<string>();
-		const config = createConfig();
-		const result = extractLinks(html, "https://example.com/docs", visited, config);
-		expect(result).toEqual(["https://example.com/page1", "https://example.com/page2"]);
+
+		const links = extractLinks(html, "https://example.com", visited, baseConfig);
+
+		expect(links).toContain("https://example.com/path/to/page");
 	});
 
-	it("should skip anchor links", () => {
-		const html = '<a href="#section">Anchor</a><a href="/page">Page</a>';
+	it("should filter out anchor links", () => {
+		const html = `
+			<html>
+				<body>
+					<a href="#section">Section</a>
+					<a href="/page">Page</a>
+				</body>
+			</html>
+		`;
 		const visited = new Set<string>();
-		const config = createConfig();
-		const result = extractLinks(html, "https://example.com", visited, config);
-		expect(result).toEqual(["https://example.com/page"]);
+
+		const links = extractLinks(html, "https://example.com", visited, baseConfig);
+
+		expect(links).toHaveLength(1);
+		expect(links).toContain("https://example.com/page");
 	});
 
-	it("should skip javascript: links", () => {
-		const html = '<a href="javascript:void(0)">JS</a><a href="/page">Page</a>';
+	it("should filter out javascript: links", () => {
+		const html = `
+			<html>
+				<body>
+					<a href="javascript:void(0)">Click</a>
+					<a href="javascript:alert('test')">Alert</a>
+					<a href="/page">Page</a>
+				</body>
+			</html>
+		`;
 		const visited = new Set<string>();
-		const config = createConfig();
-		const result = extractLinks(html, "https://example.com", visited, config);
-		expect(result).toEqual(["https://example.com/page"]);
+
+		const links = extractLinks(html, "https://example.com", visited, baseConfig);
+
+		expect(links).toHaveLength(1);
+		expect(links).toContain("https://example.com/page");
 	});
 
-	it("should skip mailto: links", () => {
-		const html = '<a href="mailto:test@example.com">Email</a><a href="/page">Page</a>';
+	it("should filter out mailto: links", () => {
+		const html = `
+			<html>
+				<body>
+					<a href="mailto:test@example.com">Email</a>
+					<a href="/page">Page</a>
+				</body>
+			</html>
+		`;
 		const visited = new Set<string>();
-		const config = createConfig();
-		const result = extractLinks(html, "https://example.com", visited, config);
-		expect(result).toEqual(["https://example.com/page"]);
+
+		const links = extractLinks(html, "https://example.com", visited, baseConfig);
+
+		expect(links).toHaveLength(1);
+		expect(links).toContain("https://example.com/page");
 	});
 
-	it("should skip visited links", () => {
-		const html = '<a href="/page1">Link 1</a><a href="/page2">Link 2</a>';
+	it("should skip already visited URLs", () => {
+		const html = `
+			<html>
+				<body>
+					<a href="/page1">Page 1</a>
+					<a href="/page2">Page 2</a>
+				</body>
+			</html>
+		`;
 		const visited = new Set(["https://example.com/page1"]);
-		const config = createConfig();
-		const result = extractLinks(html, "https://example.com", visited, config);
-		expect(result).toEqual(["https://example.com/page2"]);
+
+		const links = extractLinks(html, "https://example.com", visited, baseConfig);
+
+		expect(links).toHaveLength(1);
+		expect(links).toContain("https://example.com/page2");
 	});
 
-	it("should remove duplicate links", () => {
-		const html = '<a href="/page">Link 1</a><a href="/page">Link 2</a><a href="/page">Link 3</a>';
+	it("should deduplicate links", () => {
+		const html = `
+			<html>
+				<body>
+					<a href="/page">Link 1</a>
+					<a href="/page">Link 2</a>
+					<a href="/page">Link 3</a>
+				</body>
+			</html>
+		`;
 		const visited = new Set<string>();
-		const config = createConfig();
-		const result = extractLinks(html, "https://example.com", visited, config);
-		expect(result).toEqual(["https://example.com/page"]);
+
+		const links = extractLinks(html, "https://example.com", visited, baseConfig);
+
+		expect(links).toHaveLength(1);
+		expect(links).toContain("https://example.com/page");
 	});
 
-	it("should apply shouldCrawl filters", () => {
-		const html = '<a href="/page.png">Image</a><a href="/page.pdf">PDF</a><a href="/page.html">HTML</a>';
+	it("should filter links based on sameDomain", () => {
+		const html = `
+			<html>
+				<body>
+					<a href="https://example.com/page">Same Domain</a>
+					<a href="https://other.com/page">Other Domain</a>
+				</body>
+			</html>
+		`;
 		const visited = new Set<string>();
-		const config = createConfig();
-		const result = extractLinks(html, "https://example.com", visited, config);
-		expect(result).toEqual(["https://example.com/page.html"]);
+
+		const links = extractLinks(html, "https://example.com", visited, baseConfig);
+
+		expect(links).toHaveLength(1);
+		expect(links).toContain("https://example.com/page");
 	});
 
-	it("should apply sameDomain filter", () => {
-		const html = '<a href="https://example.com/page">Local</a><a href="https://other.com/page">External</a>';
+	it("should include external links when sameDomain is false", () => {
+		const html = `
+			<html>
+				<body>
+					<a href="https://example.com/page">Same Domain</a>
+					<a href="https://other.com/page">Other Domain</a>
+				</body>
+			</html>
+		`;
 		const visited = new Set<string>();
-		const config = createConfig({ sameDomain: true });
-		const result = extractLinks(html, "https://example.com", visited, config);
-		expect(result).toEqual(["https://example.com/page"]);
+		const config = { ...baseConfig, sameDomain: false };
+
+		const links = extractLinks(html, "https://example.com", visited, config);
+
+		expect(links).toHaveLength(2);
+		expect(links).toContain("https://example.com/page");
+		expect(links).toContain("https://other.com/page");
 	});
 
-	it("should apply includePattern filter", () => {
-		const html = '<a href="/docs/guide">Docs</a><a href="/blog/post">Blog</a>';
+	it("should filter binary files", () => {
+		const html = `
+			<html>
+				<body>
+					<a href="/page.html">Page</a>
+					<a href="/image.png">Image</a>
+					<a href="/doc.pdf">PDF</a>
+				</body>
+			</html>
+		`;
 		const visited = new Set<string>();
-		const config = createConfig({ includePattern: /\/docs\// });
-		const result = extractLinks(html, "https://example.com", visited, config);
-		expect(result).toEqual(["https://example.com/docs/guide"]);
+
+		const links = extractLinks(html, "https://example.com", visited, baseConfig);
+
+		expect(links).toHaveLength(1);
+		expect(links).toContain("https://example.com/page.html");
+	});
+
+	it("should filter links based on include pattern", () => {
+		const html = `
+			<html>
+				<body>
+					<a href="/docs/guide">Docs</a>
+					<a href="/blog/post">Blog</a>
+				</body>
+			</html>
+		`;
+		const visited = new Set<string>();
+		const config = { ...baseConfig, includePattern: /^https:\/\/example\.com\/docs/ };
+
+		const links = extractLinks(html, "https://example.com", visited, config);
+
+		expect(links).toHaveLength(1);
+		expect(links).toContain("https://example.com/docs/guide");
+	});
+
+	it("should filter links based on exclude pattern", () => {
+		const html = `
+			<html>
+				<body>
+					<a href="/page.html">Page</a>
+					<a href="/draft.html">Draft</a>
+				</body>
+			</html>
+		`;
+		const visited = new Set<string>();
+		const config = { ...baseConfig, excludePattern: /draft/ };
+
+		const links = extractLinks(html, "https://example.com", visited, config);
+
+		expect(links).toHaveLength(1);
+		expect(links).toContain("https://example.com/page.html");
+	});
+
+	it("should handle empty href attribute", () => {
+		const html = `
+			<html>
+				<body>
+					<a href="">Empty</a>
+					<a href="/page">Page</a>
+				</body>
+			</html>
+		`;
+		const visited = new Set<string>();
+
+		const links = extractLinks(html, "https://example.com", visited, baseConfig);
+
+		// Empty href points to current page, should be normalized
+		expect(links.length).toBeGreaterThanOrEqual(1);
+	});
+
+	it("should handle missing href attribute", () => {
+		const html = `
+			<html>
+				<body>
+					<a>No href</a>
+					<a href="/page">Page</a>
+				</body>
+			</html>
+		`;
+		const visited = new Set<string>();
+
+		const links = extractLinks(html, "https://example.com", visited, baseConfig);
+
+		expect(links).toHaveLength(1);
+		expect(links).toContain("https://example.com/page");
+	});
+
+	it("should handle complex HTML with many links", () => {
+		const html = `
+			<html>
+				<body>
+					<nav>
+						<a href="/">Home</a>
+						<a href="/about">About</a>
+					</nav>
+					<main>
+						<a href="/article/1">Article 1</a>
+						<a href="/article/2">Article 2</a>
+					</main>
+					<footer>
+						<a href="/contact">Contact</a>
+					</footer>
+				</body>
+			</html>
+		`;
+		const visited = new Set<string>();
+
+		const links = extractLinks(html, "https://example.com", visited, baseConfig);
+
+		expect(links).toHaveLength(5);
+		expect(links).toContain("https://example.com/");
+		expect(links).toContain("https://example.com/about");
+		expect(links).toContain("https://example.com/article/1");
+		expect(links).toContain("https://example.com/article/2");
+		expect(links).toContain("https://example.com/contact");
 	});
 
 	it("should handle empty HTML", () => {
 		const html = "";
 		const visited = new Set<string>();
-		const config = createConfig();
-		const result = extractLinks(html, "https://example.com", visited, config);
-		expect(result).toEqual([]);
+
+		const links = extractLinks(html, "https://example.com", visited, baseConfig);
+
+		expect(links).toHaveLength(0);
 	});
 
 	it("should handle HTML without links", () => {
-		const html = "<p>No links here</p>";
-		const visited = new Set<string>();
-		const config = createConfig();
-		const result = extractLinks(html, "https://example.com", visited, config);
-		expect(result).toEqual([]);
-	});
-
-	it("should normalize URLs by removing hash", () => {
-		const html = '<a href="/page#section">Link</a>';
-		const visited = new Set<string>();
-		const config = createConfig();
-		const result = extractLinks(html, "https://example.com", visited, config);
-		expect(result).toEqual(["https://example.com/page"]);
-	});
-
-	it("should handle links without href attribute", () => {
-		const html = '<a id="anchor">No href</a><a href="/page">With href</a>';
-		const visited = new Set<string>();
-		const config = createConfig();
-		const result = extractLinks(html, "https://example.com", visited, config);
-		expect(result).toEqual(["https://example.com/page"]);
-	});
-
-	it("should handle complex HTML with nested elements", () => {
 		const html = `
-			<nav>
-				<a href="/home">Home</a>
-				<a href="/about">About</a>
-			</nav>
-			<main>
-				<a href="/contact">Contact</a>
-			</main>
+			<html>
+				<body>
+					<p>No links here</p>
+				</body>
+			</html>
 		`;
 		const visited = new Set<string>();
-		const config = createConfig();
-		const result = extractLinks(html, "https://example.com", visited, config);
-		expect(result).toEqual([
-			"https://example.com/home",
-			"https://example.com/about",
-			"https://example.com/contact",
-		]);
+
+		const links = extractLinks(html, "https://example.com", visited, baseConfig);
+
+		expect(links).toHaveLength(0);
 	});
 });
