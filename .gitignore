@@ -11,3 +11,9 @@
 # Playwright cli
 .playwright-cli/
 .context/
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
