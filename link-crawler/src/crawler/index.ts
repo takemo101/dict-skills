@@ -8,7 +8,7 @@ import { OutputWriter } from "../output/writer.js";
 import { htmlToMarkdown } from "../parser/converter.js";
 import { extractContent, extractMetadata } from "../parser/extractor.js";
 import { extractLinks } from "../parser/links.js";
-import type { CrawlConfig, Fetcher, CrawledPage } from "../types.js";
+import type { CrawlConfig, CrawledPage, Fetcher } from "../types.js";
 
 /** クローラーエンジン */
 export class Crawler {
@@ -21,7 +21,10 @@ export class Crawler {
 	private pageContents = new Map<string, string>();
 	private fetcherPromise?: Promise<Fetcher>;
 
-	constructor(private config: CrawlConfig, fetcher?: Fetcher) {
+	constructor(
+		private config: CrawlConfig,
+		fetcher?: Fetcher,
+	) {
 		this.writer = new OutputWriter(config);
 		this.hasher = new Hasher();
 		if (fetcher) {
