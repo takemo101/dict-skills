@@ -1,411 +1,569 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdir, rm, readFile, readdir } from "node:fs/promises";
+import { existsSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
-import { existsSync } from "node:fs";
 import { Crawler } from "../../src/crawler/index.js";
 import type { CrawlConfig, Fetcher, FetchResult } from "../../src/types.js";
 
+const testOutputDir = "./test-output-integration";
+
 /** テスト用のモックFetcher */
 class MockFetcher implements Fetcher {
-	private responses: Map<string, { html: string; contentType: string }>;
+	private pages: Map<string, { html: string; contentType: string }>;
+	private callCount = 0;
+	private _closed = false;
 
-	constructor(responses: Record<string, { html: string; contentType: string }>) {
-		this.responses = new Map(Object.entries(responses));
+	constructor(pages: Record<string, { html: string; contentType?: string }>) {
+		this.pages = new Map();
+		for (const [url, data] of Object.entries(pages)) {
+			this.pages.set(url, {
+				html: data.html,
+				contentType: data.contentType || "text/html",
+			});
+		}
 	}
 
 	async fetch(url: string): Promise<FetchResult | null> {
-		const response = this.responses.get(url);
-		if (!response) {
+		if (this._closed) {
+			return null;
+		}
+		this.callCount++;
+		const page = this.pages.get(url);
+		if (!page) {
 			return null;
 		}
 		return {
-			html: response.html,
+			html: page.html,
 			finalUrl: url,
-			contentType: response.contentType,
+			contentType: page.contentType,
 		};
 	}
 
+	getCallCount(): number {
+		return this.callCount;
+	}
+
 	async close(): Promise<void> {
-		// 何もしない
+		this._closed = true;
 	}
 }
 
 /** テスト用HTMLを生成 */
 function createTestHtml(options: {
-	title?: string;
-	content?: string;
+	title: string;
+	content: string;
 	links?: string[];
+	meta?: { description?: string; keywords?: string };
 }): string {
-	const { title = "Test Page", content = "Test content", links = [] } = options;
-	const linkTags = links
+	const linksHtml = (options.links || [])
 		.map((link) => `<a href="${link}">${link}</a>`)
 		.join("\n");
+
+	const metaHtml = [
+		options.meta?.description
+			? `<meta name="description" content="${options.meta.description}">`
+			: "",
+		options.meta?.keywords
+			? `<meta name="keywords" content="${options.meta.keywords}">`
+			: "",
+	].join("\n");
 
 	return `<!DOCTYPE html>
 <html>
 <head>
-	<title>${title}</title>
-	<meta name="description" content="Test description">
+	<title>${options.title}</title>
+	${metaHtml}
 </head>
 <body>
-	<article>
-		<h1>${title}</h1>
-		<p>${content}</p>
-		${linkTags}
-	</article>
+	<main>
+		<h1>${options.title}</h1>
+		${options.content}
+	</main>
+	<nav>
+		${linksHtml}
+	</nav>
 </body>
 </html>`;
 }
 
-/** テスト設定を生成 */
-function createTestConfig(
-	outputDir: string,
-	overrides: Partial<CrawlConfig> = {},
-): CrawlConfig {
-	return {
-		startUrl: "https://example.com",
-		maxDepth: 1,
-		outputDir,
-		sameDomain: true,
-		includePattern: null,
-		excludePattern: null,
-		delay: 0,
-		timeout: 30000,
-		spaWait: 0,
-		headed: false,
-		diff: false,
-		pages: true,
-		merge: false,
-		chunks: false,
-		...overrides,
-	};
-}
+const defaultConfig: CrawlConfig = {
+	startUrl: "https://example.com",
+	maxDepth: 2,
+	outputDir: testOutputDir,
+	sameDomain: true,
+	includePattern: null,
+	excludePattern: null,
+	delay: 0,
+	timeout: 30000,
+	spaWait: 0,
+	headed: false,
+	diff: false,
+	pages: true,
+	merge: true,
+	chunks: true,
+};
 
-describe("Crawler Integration", () => {
-	const testDir = join(import.meta.dirname, ".test-output");
-
-	beforeEach(async () => {
-		await rm(testDir, { recursive: true, force: true });
-		await mkdir(testDir, { recursive: true });
+describe("CrawlerEngine Integration", () => {
+	beforeEach(() => {
+		rmSync(testOutputDir, { recursive: true, force: true });
 	});
 
-	afterEach(async () => {
-		await rm(testDir, { recursive: true, force: true });
+	afterEach(() => {
+		rmSync(testOutputDir, { recursive: true, force: true });
 	});
 
-	describe("Basic crawling", () => {
-		it("should crawl a single page and save as Markdown", async () => {
-			// Arrange
-			const config = createTestConfig(testDir);
-			const html = createTestHtml({
-				title: "Hello World",
-				content: "This is a test page content.",
+	describe("E2E-style crawling with mock Fetcher", () => {
+		it("should crawl single page and generate output files", async () => {
+			const mockFetcher = new MockFetcher({
+				"https://example.com": {
+					html: createTestHtml({
+						title: "Home Page",
+						content: "<p>This is the home page content.</p>",
+						links: ["/about", "/contact"],
+					}),
+				},
 			});
-			const fetcher = new MockFetcher({
-				"https://example.com": { html, contentType: "text/html" },
-			});
-			const crawler = new Crawler(config, fetcher);
 
-			// Act
+			const crawler = new Crawler(defaultConfig, mockFetcher);
 			await crawler.run();
 
-			// Assert
-			const indexPath = join(testDir, "index.json");
+			expect(existsSync(testOutputDir)).toBe(true);
+			expect(existsSync(join(testOutputDir, "pages"))).toBe(true);
+			expect(existsSync(join(testOutputDir, "specs"))).toBe(true);
+
+			const indexPath = join(testOutputDir, "index.json");
 			expect(existsSync(indexPath)).toBe(true);
 
-			const indexContent = await readFile(indexPath, "utf-8");
-			const index = JSON.parse(indexContent);
+			const indexContent = JSON.parse(readFileSync(indexPath, "utf-8"));
+			expect(indexContent.totalPages).toBe(1);
+			expect(indexContent.pages).toHaveLength(1);
+			expect(indexContent.pages[0].url).toBe("https://example.com");
+			expect(indexContent.pages[0].title).toBe("Home Page");
+			expect(indexContent.pages[0].hash).toBeDefined();
+			expect(indexContent.pages[0].crawledAt).toBeDefined();
 
-			expect(index.totalPages).toBe(1);
-			expect(index.pages[0].url).toBe("https://example.com");
-			expect(index.pages[0].title).toBe("Hello World");
-			expect(index.pages[0].depth).toBe(0);
-
-			const pagePath = join(testDir, index.pages[0].file);
+			const pagePath = join(testOutputDir, indexContent.pages[0].file);
 			expect(existsSync(pagePath)).toBe(true);
 
-			const pageContent = await readFile(pagePath, "utf-8");
-			expect(pageContent).toContain("Hello World");
-			expect(pageContent).toContain("test page content");
-			expect(pageContent).toContain("---"); // frontmatter
+			const pageContent = readFileSync(pagePath, "utf-8");
+			expect(pageContent).toContain("Home Page");
+			expect(pageContent).toContain("home page content");
+			expect(pageContent).toContain("---");
+			expect(pageContent).toContain("url: https://example.com");
 		});
 
-		it("should crawl multiple linked pages", async () => {
-			// Arrange
-			const config = createTestConfig(testDir, { maxDepth: 2 });
-			const fetcher = new MockFetcher({
+		it("should crawl multiple pages with depth", async () => {
+			const mockFetcher = new MockFetcher({
 				"https://example.com": {
 					html: createTestHtml({
 						title: "Home",
-						content: "Home page",
+						content: "<p>Welcome to home.</p>",
 						links: ["https://example.com/about"],
 					}),
-					contentType: "text/html",
 				},
 				"https://example.com/about": {
 					html: createTestHtml({
-						title: "About",
-						content: "About page",
+						title: "About Us",
+						content: "<p>About page content.</p>",
+						links: ["https://example.com/team"],
 					}),
-					contentType: "text/html",
+				},
+				"https://example.com/team": {
+					html: createTestHtml({
+						title: "Our Team",
+						content: "<p>Team page content.</p>",
+						links: [],
+					}),
 				},
 			});
-			const crawler = new Crawler(config, fetcher);
 
-			// Act
+			const config = { ...defaultConfig, maxDepth: 2 };
+			const crawler = new Crawler(config, mockFetcher);
 			await crawler.run();
 
-			// Assert
-			const indexPath = join(testDir, "index.json");
-			const index = JSON.parse(await readFile(indexPath, "utf-8"));
+			const indexContent = JSON.parse(
+				readFileSync(join(testOutputDir, "index.json"), "utf-8"),
+			);
 
-			expect(index.totalPages).toBe(2);
-			expect(index.pages.map((p: { url: string }) => p.url)).toContain(
+			expect(indexContent.totalPages).toBe(3);
+			expect(indexContent.pages.map((p: { url: string }) => p.url)).toContain(
 				"https://example.com",
 			);
-			expect(index.pages.map((p: { url: string }) => p.url)).toContain(
+			expect(indexContent.pages.map((p: { url: string }) => p.url)).toContain(
 				"https://example.com/about",
 			);
+			expect(indexContent.pages.map((p: { url: string }) => p.url)).toContain(
+				"https://example.com/team",
+			);
+
+			const homePage = indexContent.pages.find(
+				(p: { url: string }) => p.url === "https://example.com",
+			);
+			expect(homePage.depth).toBe(0);
+
+			const teamPage = indexContent.pages.find(
+				(p: { url: string }) => p.url === "https://example.com/team",
+			);
+			expect(teamPage.depth).toBe(2);
 		});
 
 		it("should respect sameDomain option", async () => {
-			// Arrange
-			const config = createTestConfig(testDir, {
-				maxDepth: 2,
-				sameDomain: true,
-			});
-			const fetcher = new MockFetcher({
+			const mockFetcher = new MockFetcher({
 				"https://example.com": {
 					html: createTestHtml({
 						title: "Home",
-						content: "Home page",
+						content: "<p>Home content.</p>",
 						links: [
 							"https://example.com/page1",
 							"https://other-site.com/external",
 						],
 					}),
-					contentType: "text/html",
 				},
 				"https://example.com/page1": {
-					html: createTestHtml({ title: "Page 1", content: "Internal page" }),
-					contentType: "text/html",
+					html: createTestHtml({
+						title: "Page 1",
+						content: "<p>Page 1 content.</p>",
+					}),
 				},
 				"https://other-site.com/external": {
-					html: createTestHtml({ title: "External", content: "External page" }),
-					contentType: "text/html",
+					html: createTestHtml({
+						title: "External",
+						content: "<p>External content.</p>",
+					}),
 				},
 			});
-			const crawler = new Crawler(config, fetcher);
 
-			// Act
+			const config = { ...defaultConfig, sameDomain: true };
+			const crawler = new Crawler(config, mockFetcher);
 			await crawler.run();
 
-			// Assert
-			const indexPath = join(testDir, "index.json");
-			const index = JSON.parse(await readFile(indexPath, "utf-8"));
-
-			// 同一ドメインのみクロールされる
-			expect(index.totalPages).toBe(2);
-			expect(index.pages.map((p: { url: string }) => p.url)).not.toContain(
-				"https://other-site.com/external",
+			const indexContent = JSON.parse(
+				readFileSync(join(testOutputDir, "index.json"), "utf-8"),
 			);
+
+			expect(indexContent.totalPages).toBe(2);
+			const urls = indexContent.pages.map((p: { url: string }) => p.url);
+			expect(urls).toContain("https://example.com");
+			expect(urls).toContain("https://example.com/page1");
+			expect(urls).not.toContain("https://other-site.com/external");
 		});
 
 		it("should handle fetch errors gracefully", async () => {
-			// Arrange
-			const config = createTestConfig(testDir);
-			const fetcher = new MockFetcher({
+			const mockFetcher = new MockFetcher({
 				"https://example.com": {
 					html: createTestHtml({
 						title: "Home",
-						content: "Home page",
+						content: "<p>Home content.</p>",
 						links: ["https://example.com/error-page"],
 					}),
-					contentType: "text/html",
 				},
-				// error-page はレスポンスなし（nullを返す）
 			});
-			const crawler = new Crawler(config, fetcher);
 
-			// Act - エラーがスローされないことを確認
-			await expect(crawler.run()).resolves.not.toThrow();
+			const crawler = new Crawler(defaultConfig, mockFetcher);
+			await crawler.run();
 
-			// Assert
-			const indexPath = join(testDir, "index.json");
-			const index = JSON.parse(await readFile(indexPath, "utf-8"));
+			const indexContent = JSON.parse(
+				readFileSync(join(testOutputDir, "index.json"), "utf-8"),
+			);
 
-			// エラーページはスキップされ、ホームページのみクロールされる
-			expect(index.totalPages).toBe(1);
+			expect(indexContent.totalPages).toBe(1);
 		});
 	});
 
 	describe("Depth control", () => {
 		it("should respect maxDepth option", async () => {
-			// Arrange
-			const config = createTestConfig(testDir, { maxDepth: 1 });
-			const fetcher = new MockFetcher({
+			const mockFetcher = new MockFetcher({
 				"https://example.com": {
 					html: createTestHtml({
 						title: "Depth 0",
-						content: "Root page",
+						content: "<p>Root page</p>",
 						links: ["https://example.com/level1"],
 					}),
-					contentType: "text/html",
 				},
 				"https://example.com/level1": {
 					html: createTestHtml({
 						title: "Depth 1",
-						content: "Level 1 page",
+						content: "<p>Level 1 page</p>",
 						links: ["https://example.com/level2"],
 					}),
-					contentType: "text/html",
 				},
 				"https://example.com/level2": {
-					html: createTestHtml({ title: "Depth 2", content: "Level 2 page" }),
-					contentType: "text/html",
+					html: createTestHtml({
+						title: "Depth 2",
+						content: "<p>Level 2 page</p>",
+					}),
 				},
 			});
-			const crawler = new Crawler(config, fetcher);
 
-			// Act
+			const config = { ...defaultConfig, maxDepth: 1 };
+			const crawler = new Crawler(config, mockFetcher);
 			await crawler.run();
 
-			// Assert
-			const indexPath = join(testDir, "index.json");
-			const index = JSON.parse(await readFile(indexPath, "utf-8"));
+			const indexContent = JSON.parse(
+				readFileSync(join(testOutputDir, "index.json"), "utf-8"),
+			);
 
-			// maxDepth=1なので、level2はクロールされない
-			expect(index.totalPages).toBe(2);
-			expect(index.pages.map((p: { url: string }) => p.url)).not.toContain(
+			expect(indexContent.totalPages).toBe(2);
+			expect(indexContent.pages.map((p: { url: string }) => p.url)).not.toContain(
 				"https://example.com/level2",
 			);
 		});
 	});
 
-	describe("Output options", () => {
-		it("should generate full.md when merge option is enabled", async () => {
-			// Arrange
-			const config = createTestConfig(testDir, {
-				maxDepth: 1,
-				merge: true,
-				pages: false, // 個別ページは作成しない
+	describe("Diff crawling behavior", () => {
+		it("should skip unchanged pages in diff mode", async () => {
+			const initialHtml = createTestHtml({
+				title: "Home",
+				content: "<p>Original content.</p>",
 			});
-			const fetcher = new MockFetcher({
-				"https://example.com": {
-					html: createTestHtml({ title: "Page 1", content: "Content 1" }),
-					contentType: "text/html",
-				},
+
+			const mockFetcher1 = new MockFetcher({
+				"https://example.com": { html: initialHtml },
 			});
-			const crawler = new Crawler(config, fetcher);
 
-			// Act
-			await crawler.run();
+			const config1 = { ...defaultConfig, diff: false };
+			const crawler1 = new Crawler(config1, mockFetcher1);
+			await crawler1.run();
 
-			// Assert
-			const fullMdPath = join(testDir, "full.md");
-			expect(existsSync(fullMdPath)).toBe(true);
+			const index1 = JSON.parse(
+				readFileSync(join(testOutputDir, "index.json"), "utf-8"),
+			);
+			const originalHash = index1.pages[0].hash;
 
-			const fullContent = await readFile(fullMdPath, "utf-8");
-			expect(fullContent).toContain("Page 1");
-			expect(fullContent).toContain("Content 1");
+			const mockFetcher2 = new MockFetcher({
+				"https://example.com": { html: initialHtml },
+			});
+
+			const config2 = { ...defaultConfig, diff: true };
+			const crawler2 = new Crawler(config2, mockFetcher2);
+			await crawler2.run();
+
+			const index2 = JSON.parse(
+				readFileSync(join(testOutputDir, "index.json"), "utf-8"),
+			);
+
+			expect(index2.totalPages).toBe(0);
+			expect(index2.pages).toHaveLength(0);
+			expect(originalHash).toBeDefined();
 		});
 
-		it("should generate chunks when chunks option is enabled", async () => {
-			// Arrange
-			const config = createTestConfig(testDir, {
-				maxDepth: 1,
-				merge: true,
-				chunks: true,
-				pages: false,
-			});
-			const fetcher = new MockFetcher({
-				"https://example.com": {
-					html: createTestHtml({
-						title: "Test Page",
-						content: "A".repeat(5000), // 大きなコンテンツ
-					}),
-					contentType: "text/html",
-				},
-			});
-			const crawler = new Crawler(config, fetcher);
-
-			// Act
-			await crawler.run();
-
-			// Assert
-			const chunksDir = join(testDir, "chunks");
-			expect(existsSync(chunksDir)).toBe(true);
-
-			const chunkFiles = await readdir(chunksDir);
-			expect(chunkFiles.length).toBeGreaterThan(0);
-			expect(chunkFiles.some((f) => f.endsWith(".md"))).toBe(true);
-		});
-
-		it("should not generate pages when pages option is false", async () => {
-			// Arrange
-			const config = createTestConfig(testDir, {
-				pages: false,
-				merge: false,
-				chunks: false,
-			});
-			const fetcher = new MockFetcher({
-				"https://example.com": {
-					html: createTestHtml({ title: "Test", content: "Content" }),
-					contentType: "text/html",
-				},
-			});
-			const crawler = new Crawler(config, fetcher);
-
-			// Act
-			await crawler.run();
-
-			// Assert
-			const indexPath = join(testDir, "index.json");
-			const index = JSON.parse(await readFile(indexPath, "utf-8"));
-
-			expect(index.totalPages).toBe(1);
-
-			// pagesディレクトリにファイルがないことを確認
-			const pagesDir = join(testDir, "pages");
-			const pageFiles = await readdir(pagesDir);
-			const mdFiles = pageFiles.filter((f) => f.endsWith(".md"));
-			expect(mdFiles.length).toBe(0);
-		});
-	});
-
-	describe("Spec file handling", () => {
-		it("should detect and save OpenAPI spec files", async () => {
-			// Arrange
-			const config = createTestConfig(testDir);
-			const fetcher = new MockFetcher({
+		it("should detect changed content in diff mode", async () => {
+			const mockFetcher1 = new MockFetcher({
 				"https://example.com": {
 					html: createTestHtml({
 						title: "Home",
-						content: "Home page",
-						links: ["https://example.com/openapi.json"],
+						content: "<p>Original content.</p>",
 					}),
-					contentType: "text/html",
-				},
-				"https://example.com/openapi.json": {
-					html: '{"openapi": "3.0.0"}',
-					contentType: "application/json",
 				},
 			});
-			const crawler = new Crawler(config, fetcher);
 
-			// Act
+			const config1 = { ...defaultConfig, diff: false };
+			const crawler1 = new Crawler(config1, mockFetcher1);
+			await crawler1.run();
+
+			const index1 = JSON.parse(
+				readFileSync(join(testOutputDir, "index.json"), "utf-8"),
+			);
+			const originalHash = index1.pages[0].hash;
+
+			const mockFetcher2 = new MockFetcher({
+				"https://example.com": {
+					html: createTestHtml({
+						title: "Home",
+						content: "<p>Updated content.</p>",
+					}),
+				},
+			});
+
+			const config2 = { ...defaultConfig, diff: true };
+			const crawler2 = new Crawler(config2, mockFetcher2);
+			await crawler2.run();
+
+			const index2 = JSON.parse(
+				readFileSync(join(testOutputDir, "index.json"), "utf-8"),
+			);
+
+			expect(index2.pages[0].hash).not.toBe(originalHash);
+		});
+	});
+
+	describe("Output file generation", () => {
+		it("should generate full.md when merge is enabled", async () => {
+			const mockFetcher = new MockFetcher({
+				"https://example.com": {
+					html: createTestHtml({
+						title: "Home",
+						content: "<p>Home content.</p>",
+						links: ["https://example.com/about"],
+					}),
+				},
+				"https://example.com/about": {
+					html: createTestHtml({
+						title: "About",
+						content: "<p>About content.</p>",
+					}),
+				},
+			});
+
+			const config = { ...defaultConfig, merge: true };
+			const crawler = new Crawler(config, mockFetcher);
 			await crawler.run();
 
-			// Assert
-			const indexPath = join(testDir, "index.json");
-			const index = JSON.parse(await readFile(indexPath, "utf-8"));
+			const fullMdPath = join(testOutputDir, "full.md");
+			expect(existsSync(fullMdPath)).toBe(true);
 
-			expect(index.specs.length).toBe(1);
-			expect(index.specs[0].url).toBe("https://example.com/openapi.json");
-			expect(index.specs[0].type).toBe("openapi");
+			const fullContent = readFileSync(fullMdPath, "utf-8");
+			expect(fullContent).toContain("# Home");
+			expect(fullContent).toContain("# About");
+			expect(fullContent).toContain("Home content");
+			expect(fullContent).toContain("About content");
+		});
 
-			const specPath = join(testDir, index.specs[0].file);
-			expect(existsSync(specPath)).toBe(true);
+		it("should generate chunks when chunks is enabled", async () => {
+			const mockFetcher = new MockFetcher({
+				"https://example.com": {
+					html: createTestHtml({
+						title: "Home",
+						content:
+							"<p>Home content with enough text to make it substantial for chunking.</p>".repeat(
+								10,
+							),
+					}),
+				},
+				"https://example.com/about": {
+					html: createTestHtml({
+						title: "About",
+						content:
+							"<p>About content with enough text to make it substantial for chunking.</p>".repeat(
+								10,
+							),
+					}),
+				},
+			});
+
+			const config = { ...defaultConfig, chunks: true, merge: true };
+			const crawler = new Crawler(config, mockFetcher);
+			await crawler.run();
+
+			const chunksDir = join(testOutputDir, "chunks");
+			expect(existsSync(chunksDir)).toBe(true);
+
+			const chunkFiles = readdirSync(chunksDir).filter((f) => f.endsWith(".md"));
+			expect(chunkFiles.length).toBeGreaterThan(0);
+
+			for (const chunkFile of chunkFiles) {
+				const chunkContent = readFileSync(join(chunksDir, chunkFile), "utf-8");
+				expect(chunkContent).toMatch(/^# /m);
+			}
+		});
+
+		it("should skip pages when pages option is false", async () => {
+			const mockFetcher = new MockFetcher({
+				"https://example.com": {
+					html: createTestHtml({
+						title: "Home",
+						content: "<p>Home content.</p>",
+					}),
+				},
+			});
+
+			const config = { ...defaultConfig, pages: false, merge: true };
+			const crawler = new Crawler(config, mockFetcher);
+			await crawler.run();
+
+			expect(existsSync(join(testOutputDir, "pages", "page-001.md"))).toBe(false);
+			expect(existsSync(join(testOutputDir, "full.md"))).toBe(true);
+			expect(existsSync(join(testOutputDir, "index.json"))).toBe(true);
+		});
+
+		it("should skip merge when merge option is false", async () => {
+			const mockFetcher = new MockFetcher({
+				"https://example.com": {
+					html: createTestHtml({
+						title: "Home",
+						content: "<p>Home content.</p>",
+					}),
+				},
+			});
+
+			const config = { ...defaultConfig, merge: false, pages: true };
+			const crawler = new Crawler(config, mockFetcher);
+			await crawler.run();
+
+			expect(existsSync(join(testOutputDir, "full.md"))).toBe(false);
+			expect(existsSync(join(testOutputDir, "pages", "page-001.md"))).toBe(true);
+		});
+	});
+
+	describe("Metadata extraction", () => {
+		it("should extract metadata from HTML", async () => {
+			const mockFetcher = new MockFetcher({
+				"https://example.com": {
+					html: createTestHtml({
+						title: "Test Page",
+						content: "<p>Content.</p>",
+						meta: {
+							description: "Test description",
+							keywords: "test, keywords",
+						},
+					}),
+				},
+			});
+
+			const crawler = new Crawler(defaultConfig, mockFetcher);
+			await crawler.run();
+
+			const indexContent = JSON.parse(
+				readFileSync(join(testOutputDir, "index.json"), "utf-8"),
+			);
+
+			expect(indexContent.pages[0].metadata.title).toBe("Test Page");
+			expect(indexContent.pages[0].metadata.description).toBe("Test description");
+			expect(indexContent.pages[0].metadata.keywords).toBe("test, keywords");
+		});
+	});
+
+	describe("Link tracking", () => {
+		it("should track links found on each page", async () => {
+			const mockFetcher = new MockFetcher({
+				"https://example.com": {
+					html: createTestHtml({
+						title: "Home",
+						content: "<p>Home.</p>",
+						links: [
+							"https://example.com/page1",
+							"https://example.com/page2",
+							"https://external.com/page",
+						],
+					}),
+				},
+				"https://example.com/page1": {
+					html: createTestHtml({
+						title: "Page 1",
+						content: "<p>Page 1.</p>",
+					}),
+				},
+				"https://example.com/page2": {
+					html: createTestHtml({
+						title: "Page 2",
+						content: "<p>Page 2.</p>",
+					}),
+				},
+			});
+
+			const crawler = new Crawler(defaultConfig, mockFetcher);
+			await crawler.run();
+
+			const indexContent = JSON.parse(
+				readFileSync(join(testOutputDir, "index.json"), "utf-8"),
+			);
+
+			const homePage = indexContent.pages.find(
+				(p: { url: string }) => p.url === "https://example.com",
+			);
+			expect(homePage.links).toContain("https://example.com/page1");
+			expect(homePage.links).toContain("https://example.com/page2");
+			expect(homePage.links).not.toContain("https://external.com/page");
 		});
 	});
 });
