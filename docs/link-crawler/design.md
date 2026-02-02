@@ -80,10 +80,14 @@ link-crawler/
 │   ├── crawl.ts                # エントリーポイント
 │   ├── config.ts               # 設定パース
 │   ├── types.ts                # 型定義
+│   ├── constants.ts            # 定数定義
+│   ├── errors.ts               # エラークラス
 │   │
 │   ├── crawler/
 │   │   ├── index.ts            # CrawlerEngine
-│   │   └── fetcher.ts          # PlaywrightFetcher
+│   │   ├── fetcher.ts          # PlaywrightFetcher
+│   │   ├── logger.ts           # ログ出力
+│   │   └── post-processor.ts   # 後処理
 │   │
 │   ├── parser/
 │   │   ├── extractor.ts        # HTML → 本文抽出
@@ -91,12 +95,20 @@ link-crawler/
 │   │   └── links.ts            # リンク抽出・正規化
 │   │
 │   ├── diff/
+│   │   ├── index.ts            # バレルエクスポート
 │   │   └── hasher.ts           # SHA256ハッシュ・差分検知
 │   │
-│   └── output/
-│       ├── writer.ts           # ページ書き込み + index.json 生成
-│       ├── merger.ts           # full.md 生成
-│       └── chunker.ts          # chunks/*.md 生成
+│   ├── output/
+│   │   ├── writer.ts           # ページ書き込み
+│   │   ├── merger.ts           # full.md 生成
+│   │   ├── chunker.ts          # chunks/*.md 生成
+│   │   └── index-manager.ts    # index.json管理
+│   │
+│   ├── types/
+│   │   └── turndown-plugin-gfm.d.ts  # Turndown型定義
+│   │
+│   └── utils/
+│       └── runtime.ts          # ランタイムアダプター
 │
 ├── package.json
 ├── tsconfig.json
@@ -108,15 +120,21 @@ link-crawler/
 
 | モジュール | 責務 | 入力 | 出力 |
 |-----------|------|------|------|
+| `Constants` | 定数定義（デフォルト値、ファイル名、パターン、終了コード） | - | 定数オブジェクト |
+| `Errors` | エラークラス定義（CrawlError, FetchError, ConfigError等） | Error情報 | Typed Error |
 | `CrawlerEngine` | クロール制御、再帰管理 | URL, Config | CrawledPages |
 | `PlaywrightFetcher` | ページ取得 | URL | HTML |
+| `CrawlLogger` | クロールログ出力（開始、進捗、完了、エラー等） | Config, Events | コンソール出力 |
+| `PostProcessor` | 後処理実行（Merger/Chunker呼び出し、ページ内容読み込み） | CrawledPages | full.md, chunks/ |
 | `Extractor` | 本文抽出 | HTML | ContentHTML |
 | `Converter` | Markdown変換 | ContentHTML | Markdown |
 | `LinksParser` | リンク抽出 | HTML | URLs |
 | `Hasher` | ハッシュ計算・比較 | Content | Hash, Changed |
-| `OutputWriter` | ページ保存、index.json 生成 | Page | File, index.json |
+| `IndexManager` | index.jsonの読み込み・保存・管理 | CrawledPage | index.json |
+| `OutputWriter` | ページファイル保存、フロントマター付与 | Page | .md File |
 | `Merger` | 全ページ結合 | Pages | full.md |
 | `Chunker` | チャンク分割 | full.md | chunks/*.md |
+| `RuntimeAdapter` | ランタイム抽象化（Bun/Node.js互換） | Command | SpawnResult |
 
 ---
 
