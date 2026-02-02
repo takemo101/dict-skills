@@ -13,12 +13,25 @@
 - Bun インストール済み
 - playwright-cli: `npm install -g @playwright/cli`
 
+## セットアップ
+
+```bash
+cd link-crawler
+bun install
+```
+
+## テスト実行
+
+```bash
+npm run test
+```
+
 ---
 
 ## 基本コマンド
 
 ```bash
-bun run <skill-path>/src/crawl.ts <url> [options]
+bun run link-crawler/src/crawl.ts <url> [options]
 ```
 
 ---
@@ -60,27 +73,27 @@ bun run <skill-path>/src/crawl.ts <url> [options]
 
 ```bash
 # 深度2でクロール
-bun run <skill-path>/src/crawl.ts https://docs.example.com -d 2
+bun run link-crawler/src/crawl.ts https://docs.example.com -d 2
 
 # 特定パスのみ
-bun run <skill-path>/src/crawl.ts https://docs.example.com --include "/api/"
+bun run link-crawler/src/crawl.ts https://docs.example.com --include "/api/"
 ```
 
 ### 差分クロール
 
 ```bash
 # 初回
-bun run <skill-path>/src/crawl.ts https://docs.example.com -o ./docs -d 3
+bun run link-crawler/src/crawl.ts https://docs.example.com -o ./docs -d 3
 
 # 2回目以降（変更のみ更新）
-bun run <skill-path>/src/crawl.ts https://docs.example.com -o ./docs -d 3 --diff
+bun run link-crawler/src/crawl.ts https://docs.example.com -o ./docs -d 3 --diff
 ```
 
 ### AIコンテキスト用
 
 ```bash
 # 結合ファイルのみ取得
-bun run <skill-path>/src/crawl.ts https://docs.example.com --no-pages --no-chunks
+bun run link-crawler/src/crawl.ts https://docs.example.com --no-pages --no-chunks
 # → crawled/full.md のみ出力
 ```
 
@@ -126,7 +139,7 @@ h1見出しを境界として分割。長大ドキュメントの分割に利用
 
 ```bash
 # 1. クロール
-bun run <skill-path>/src/crawl.ts https://docs.example.com -d 3
+bun run link-crawler/src/crawl.ts https://docs.example.com -d 3
 
 # 2. LLMに読み込ませる
 cat crawled/full.md | llm "この技術について要約して"
@@ -136,7 +149,7 @@ cat crawled/full.md | llm "この技術について要約して"
 
 ```bash
 # Next.jsドキュメント取得
-bun run <skill-path>/src/crawl.ts https://nextjs.org/docs -d 2 -o ./nextjs-docs
+bun run link-crawler/src/crawl.ts https://nextjs.org/docs -d 2 -o ./nextjs-docs
 
 # 設計相談
 cat ./nextjs-docs/full.md | llm "App Routerのベストプラクティスに従って設計して"
@@ -146,7 +159,7 @@ cat ./nextjs-docs/full.md | llm "App Routerのベストプラクティスに従�
 
 ```bash
 # cron等で定期実行（差分のみ）
-bun run <skill-path>/src/crawl.ts https://docs.example.com -o ./docs --diff
+bun run link-crawler/src/crawl.ts https://docs.example.com -o ./docs --diff
 ```
 
 ---
