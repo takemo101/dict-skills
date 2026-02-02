@@ -22,6 +22,21 @@
 
 ## クイックスタート
 
+### 方法1: install.sh を使用（推奨）
+
+```bash
+cd link-crawler
+./install.sh
+
+# クロール実行
+bun run dev https://docs.example.com -d 2
+
+# 出力確認
+cat .context/full.md
+```
+
+### 方法2: 手動インストール
+
 ```bash
 cd link-crawler
 bun install
