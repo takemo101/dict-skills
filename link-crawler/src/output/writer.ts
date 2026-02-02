@@ -1,9 +1,31 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { computeHash } from "../diff/hasher.js";
+import { createHash } from "node:crypto";
 import type { CrawlConfig, CrawledPage, PageMetadata } from "../types.js";
 import { IndexManager } from "./index-manager.js";
 import { SPEC_PATTERNS, FILENAME } from "../constants.js";
+
+/** コンテンツのSHA256ハッシュを計算 */
+function computeHash(content: string): string {
+	return createHash("sha256").update(content, "utf8").digest("hex");
+}
+
+/** 文字列をslug形式に変換（小文字化、スペース→ハイフン、特殊文字除去） */
+function slugify(text: string | null | undefined, maxLength = 50): string {
+	if (!text || text.trim().length === 0) {
+		return "";
+	}
+
+	return text
+		.toLowerCase()
+		.trim()
+		.replace(/[^\w\s-]/g, "") // 英数字・スペース・ハイフン以外を除去
+		.replace(/[\s_]+/g, "-") // スペースとアンダースコアをハイフンに
+		.replace(/-+/g, "-") // 連続するハイフンを1つに
+		.replace(/^-+|-+$/g, "") // 先頭・末尾のハイフンを除去
+		.slice(0, maxLength) // 長さ制限
+		.replace(/-+$/, ""); // 切り詰め後の末尾ハイフンを除去
+}
 
 /** ファイル書き込みクラス */
 export class OutputWriter {
@@ -75,7 +97,11 @@ export class OutputWriter {
 		hash?: string,
 	): string {
 		const pageNum = String(this.getNextPageNumber()).padStart(FILENAME.PAGE_PAD_LENGTH, "0");
-		const pageFile = `${FILENAME.PAGES_DIR}/${FILENAME.PAGE_PREFIX}${pageNum}.md`;
+		const pageTitle = metadata.title || title;
+		const titleSlug = slugify(pageTitle);
+		const pageFile = titleSlug
+			? `${FILENAME.PAGES_DIR}/${FILENAME.PAGE_PREFIX}${pageNum}-${titleSlug}.md`
+			: `${FILENAME.PAGES_DIR}/${FILENAME.PAGE_PREFIX}${pageNum}.md`;
 		const pagePath = join(this.config.outputDir, pageFile);
 		const computedHash = hash ?? computeHash(markdown);
 
@@ -105,8 +131,9 @@ export class OutputWriter {
 			`depth: ${depth}`,
 			"---",
 			"",
+			"",
 		];
-		return lines.filter(Boolean).join("\n");
+		return lines.filter((line): line is string => line !== null).join("\n");
 	}
 
 	/** インデックスを保存 */

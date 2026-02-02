@@ -1,3 +1,5 @@
+import { existsSync, rmSync } from "node:fs";
+import { join } from "node:path";
 import { DependencyError, FetchError, TimeoutError } from "../errors.js";
 import { PATHS, PATTERNS } from "../constants.js";
 import type { RuntimeAdapter } from "../utils/runtime.js";
@@ -48,7 +50,9 @@ export class PlaywrightFetcher implements Fetcher {
 	}
 
 	/** CLIコマンドを実行 */
-	private async runCli(args: string[]): Promise<{ success: boolean; stdout: string; stderr: string }> {
+	private async runCli(
+		args: string[],
+	): Promise<{ success: boolean; stdout: string; stderr: string }> {
 		return this.runtime.spawn(this.nodePath, [this.playwrightPath, ...args]);
 	}
 
@@ -69,7 +73,12 @@ export class PlaywrightFetcher implements Fetcher {
 		await this.runtime.sleep(this.config.spaWait);
 
 		// コンテンツ取得
-		const result = await this.runCli(["eval", "document.documentElement.outerHTML", "--session", this.sessionId]);
+		const result = await this.runCli([
+			"eval",
+			"document.documentElement.outerHTML",
+			"--session",
+			this.sessionId,
+		]);
 		if (!result.success) {
 			throw new FetchError(`Failed to get content: ${result.stderr}`, url);
 		}
@@ -119,6 +128,18 @@ export class PlaywrightFetcher implements Fetcher {
 			await this.runCli(["close", "--session", this.sessionId]);
 		} catch {
 			// セッションが既に閉じている場合は無視
+		}
+
+		// .playwright-cli ディレクトリをクリーンアップ
+		if (!this.config.keepSession) {
+			try {
+				const cliDir = join(process.cwd(), ".playwright-cli");
+				if (existsSync(cliDir)) {
+					rmSync(cliDir, { recursive: true, force: true });
+				}
+			} catch {
+				// クリーンアップ失敗は無視
+			}
 		}
 	}
 }

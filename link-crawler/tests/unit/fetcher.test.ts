@@ -26,6 +26,7 @@ const createMockConfig = (overrides: Partial<CrawlConfig> = {}): CrawlConfig => 
 	pages: true,
 	merge: true,
 	chunks: true,
+	keepSession: false,
 	...overrides,
 });
 
@@ -118,6 +119,23 @@ describe("PlaywrightFetcher timeout functionality", () => {
 			const timeoutSeconds = Number(undefined) || 30;
 			const timeoutMs = timeoutSeconds * 1000;
 			expect(timeoutMs).toBe(30000);
+		});
+	});
+
+	describe("keepSession configuration", () => {
+		it("should have keepSession default to false", () => {
+			const config = createMockConfig();
+			expect(config.keepSession).toBe(false);
+		});
+
+		it("should accept keepSession true value", () => {
+			const config = createMockConfig({ keepSession: true });
+			expect(config.keepSession).toBe(true);
+		});
+
+		it("should accept keepSession false value", () => {
+			const config = createMockConfig({ keepSession: false });
+			expect(config.keepSession).toBe(false);
 		});
 	});
 });

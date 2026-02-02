@@ -54,7 +54,7 @@ describe("OutputWriter", () => {
 			"Test Page",
 		);
 
-		expect(pageFile).toBe("pages/page-001.md");
+		expect(pageFile).toBe("pages/page-001-test-page.md");
 
 		const result = writer.getResult();
 		expect(result.pages).toHaveLength(1);
@@ -128,5 +128,215 @@ describe("OutputWriter", () => {
 
 		expect(result.pages[0].hash).toBeDefined();
 		expect(result.pages[0].crawledAt).toBeDefined();
+	});
+
+	it("should add blank line after frontmatter closing ---", () => {
+		const writer = new OutputWriter(defaultConfig);
+		const markdown = "## Introduction\n\nThis is content.";
+
+		writer.savePage(
+			"https://example.com/page1",
+			markdown,
+			1,
+			[],
+			defaultMetadata,
+			"Test Page",
+		);
+
+		const pagePath = join(testOutputDir, "pages/page-001-test-page.md");
+		const content = readFileSync(pagePath, "utf-8");
+
+		// Verify that there's a blank line between frontmatter and content
+		// The frontmatter should end with "---\n\n" followed by content
+		expect(content).toMatch(/---\n\n## Introduction/);
+	});
+
+	describe("filename with title", () => {
+		it("should include slugified title in filename", () => {
+			const writer = new OutputWriter(defaultConfig);
+			const pageFile = writer.savePage(
+				"https://example.com",
+				"# Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "Getting Started Guide" },
+				null,
+			);
+			expect(pageFile).toBe("pages/page-001-getting-started-guide.md");
+		});
+
+		it("should use sequential numbers only when title is null", () => {
+			const writer = new OutputWriter(defaultConfig);
+			const pageFile = writer.savePage(
+				"https://example.com",
+				"# Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: null },
+				null,
+			);
+			expect(pageFile).toBe("pages/page-001.md");
+		});
+
+		it("should use sequential numbers only when title is empty", () => {
+			const writer = new OutputWriter(defaultConfig);
+			const pageFile = writer.savePage(
+				"https://example.com",
+				"# Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "" },
+				null,
+			);
+			expect(pageFile).toBe("pages/page-001.md");
+		});
+
+		it("should use sequential numbers only when title is whitespace only", () => {
+			const writer = new OutputWriter(defaultConfig);
+			const pageFile = writer.savePage(
+				"https://example.com",
+				"# Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "   " },
+				null,
+			);
+			expect(pageFile).toBe("pages/page-001.md");
+		});
+
+		it("should fallback to title parameter when metadata.title is null", () => {
+			const writer = new OutputWriter(defaultConfig);
+			const pageFile = writer.savePage(
+				"https://example.com",
+				"# Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: null },
+				"Fallback Title",
+			);
+			expect(pageFile).toBe("pages/page-001-fallback-title.md");
+		});
+
+		it("should convert title to lowercase", () => {
+			const writer = new OutputWriter(defaultConfig);
+			const pageFile = writer.savePage(
+				"https://example.com",
+				"# Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "UPPERCASE TITLE" },
+				null,
+			);
+			expect(pageFile).toBe("pages/page-001-uppercase-title.md");
+		});
+
+		it("should remove special characters from title", () => {
+			const writer = new OutputWriter(defaultConfig);
+			const pageFile = writer.savePage(
+				"https://example.com",
+				"# Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "Title with @#$%^&*() special chars!" },
+				null,
+			);
+			expect(pageFile).toBe("pages/page-001-title-with-special-chars.md");
+		});
+
+		it("should replace underscores with hyphens", () => {
+			const writer = new OutputWriter(defaultConfig);
+			const pageFile = writer.savePage(
+				"https://example.com",
+				"# Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "snake_case_title" },
+				null,
+			);
+			expect(pageFile).toBe("pages/page-001-snake-case-title.md");
+		});
+
+		it("should collapse multiple hyphens into one", () => {
+			const writer = new OutputWriter(defaultConfig);
+			const pageFile = writer.savePage(
+				"https://example.com",
+				"# Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "Title---with---hyphens" },
+				null,
+			);
+			expect(pageFile).toBe("pages/page-001-title-with-hyphens.md");
+		});
+
+		it("should trim leading and trailing hyphens", () => {
+			const writer = new OutputWriter(defaultConfig);
+			const pageFile = writer.savePage(
+				"https://example.com",
+				"# Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "-Leading and trailing hyphens-" },
+				null,
+			);
+			expect(pageFile).toBe("pages/page-001-leading-and-trailing-hyphens.md");
+		});
+
+		it("should truncate long titles to 50 characters", () => {
+			const writer = new OutputWriter(defaultConfig);
+			const longTitle = "This is a very long title that exceeds the fifty character limit";
+			const pageFile = writer.savePage(
+				"https://example.com",
+				"# Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: longTitle },
+				null,
+			);
+			// The slug should be truncated without trailing hyphen
+			expect(pageFile.length).toBeLessThanOrEqual("pages/page-001-".length + 50 + ".md".length);
+			expect(pageFile).toMatch(/^pages\/page-\d{3}-[a-z0-9-]+\.md$/);
+		});
+
+		it("should handle titles with multiple spaces", () => {
+			const writer = new OutputWriter(defaultConfig);
+			const pageFile = writer.savePage(
+				"https://example.com",
+				"# Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "Title   with   multiple   spaces" },
+				null,
+			);
+			expect(pageFile).toBe("pages/page-001-title-with-multiple-spaces.md");
+		});
+
+		it("should handle Japanese titles", () => {
+			const writer = new OutputWriter(defaultConfig);
+			const pageFile = writer.savePage(
+				"https://example.com",
+				"# Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "日本語タイトル" },
+				null,
+			);
+			// Japanese characters are removed by slugify (non-ascii), so only the sequential number remains
+			expect(pageFile).toBe("pages/page-001.md");
+		});
+
+		it("should handle mixed alphanumeric and Japanese", () => {
+			const writer = new OutputWriter(defaultConfig);
+			const pageFile = writer.savePage(
+				"https://example.com",
+				"# Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "日本語Englishタイトル123" },
+				null,
+			);
+			// Only ascii alphanumeric characters remain (Japanese chars removed, no hyphen added between English and numbers)
+			expect(pageFile).toBe("pages/page-001-english123.md");
+		});
 	});
 });

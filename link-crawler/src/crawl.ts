@@ -10,7 +10,7 @@ program
 	.description("Crawl technical documentation sites recursively")
 	.argument("<url>", "Starting URL to crawl")
 	.option("-d, --depth <num>", "Maximum crawl depth", "1")
-	.option("-o, --output <dir>", "Output directory", "./crawled")
+	.option("-o, --output <dir>", "Output directory", "./.context")
 	.option("--same-domain", "Only follow same-domain links", true)
 	.option("--no-same-domain", "Follow cross-domain links")
 	.option("--include <pattern>", "Include URL pattern (regex)")
@@ -22,7 +22,8 @@ program
 	.option("--diff", "Show diff from previous crawl", false)
 	.option("--no-pages", "Skip individual page output")
 	.option("--no-merge", "Skip merged output file")
-	.option("--no-chunks", "Skip chunked output files")
+	.option("--chunks", "Enable chunked output files", false)
+	.option("--keep-session", "Keep .playwright-cli directory after crawl (for debugging)", false)
 	.parse();
 
 const options = program.opts();

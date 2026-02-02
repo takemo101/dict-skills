@@ -33,11 +33,33 @@ cd link-crawler
 bun install
 ```
 
-### piスキルとして登録（オプション）
+---
+
+## piスキルとして利用
+
+### インストール
 
 ```bash
 ln -s /path/to/dict-skills/link-crawler ~/.pi/agent/skills/link-crawler
 ```
+
+### 利用方法
+
+piで以下のように呼び出せます:
+
+```
+/skill:link-crawler
+```
+
+または自然言語で依頼:
+
+```
+Next.jsのドキュメントをクロールして
+```
+
+**注意**: SKILL.mdのフロントマターには `name` と `description` が必須です。
+
+---
 
 ## 使用方法
 
@@ -68,9 +90,13 @@ bun run link-crawler/src/crawl.ts https://docs.example.com -o ./docs -d 3 --diff
 ### AIコンテキスト用（結合ファイルのみ）
 
 ```bash
-# full.mdのみ出力（ページ・チャンク出力無効）
-bun run link-crawler/src/crawl.ts https://docs.example.com --no-pages --no-chunks
-# → crawled/full.md に全ページが結合されて出力
+# デフォルトでは full.md のみ出力
+bun run link-crawler/src/crawl.ts https://docs.example.com
+# → .context/full.md に全ページが結合されて出力
+
+# 必要な時だけ chunks を有効化
+bun run link-crawler/src/crawl.ts https://docs.example.com --chunks
+# → .context/full.md + .context/chunks/*.md
 ```
 
 ### 特定パスのみクロール
@@ -88,7 +114,7 @@ bun run link-crawler/src/crawl.ts https://docs.example.com --include "/api/"
 | `--delay <ms>` | | `500` | リクエスト間隔 |
 | `--wait <ms>` | | `2000` | レンダリング待機時間 |
 | `--headed` | | `false` | ブラウザ表示 |
-| `--output <dir>` | `-o` | `./crawled` | 出力先 |
+| `--output <dir>` | `-o` | `./.context` | 出力先 |
 | `--diff` | | `false` | 差分クロール |
 | `--include <pattern>` | | | 含めるURL（正規表現） |
 | `--exclude <pattern>` | | | 除外するURL（正規表現） |
@@ -96,7 +122,7 @@ bun run link-crawler/src/crawl.ts https://docs.example.com --include "/api/"
 ### 出力形式
 
 ```
-crawled/
+.context/
 ├── index.json    # メタデータ・ハッシュ
 ├── full.md       # 全ページ結合 ★ AIコンテキスト用
 ├── chunks/       # 見出しベース分割
@@ -105,7 +131,7 @@ crawled/
 
 ## 詳細ドキュメント
 
-- [SKILL.md](link-crawler/SKILL.md) - 詳細な使用方法と設定
+- [SKILL.md](link-crawler/SKILL.md) - 詳細な使用方法と設定、技術仕様
 - [docs/link-crawler/](docs/link-crawler/) - 設計ドキュメント
 
 ## ライセンス
