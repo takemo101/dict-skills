@@ -210,12 +210,13 @@ interface CrawlConfig {
   excludePattern: RegExp | null;
   delay: number;
   timeout: number;
-  wait: number;
+  spaWait: number;
   headed: boolean;
   diff: boolean;
   pages: boolean;
   merge: boolean;
   chunks: boolean;
+  keepSession: boolean;
 }
 
 /** クロール済みページ */
@@ -366,7 +367,7 @@ class PlaywrightFetcher {
     await $`playwright-cli open ${url} --session ${this.sessionId} ${headedFlag}`;
 
     // レンダリング待機
-    await Bun.sleep(this.config.wait);
+    await Bun.sleep(this.config.spaWait);
 
     // コンテンツ取得
     const html = await $`playwright-cli eval "document.documentElement.outerHTML" --session ${this.sessionId}`;
