@@ -33,11 +33,33 @@ cd link-crawler
 bun install
 ```
 
-### piスキルとして登録（オプション）
+---
+
+## piスキルとして利用
+
+### インストール
 
 ```bash
 ln -s /path/to/dict-skills/link-crawler ~/.pi/agent/skills/link-crawler
 ```
+
+### 利用方法
+
+piで以下のように呼び出せます:
+
+```
+/skill:link-crawler
+```
+
+または自然言語で依頼:
+
+```
+Next.jsのドキュメントをクロールして
+```
+
+**注意**: SKILL.mdのフロントマターには `name` と `description` が必須です。
+
+---
 
 ## 使用方法
 
@@ -105,7 +127,7 @@ crawled/
 
 ## 詳細ドキュメント
 
-- [SKILL.md](link-crawler/SKILL.md) - 詳細な使用方法と設定
+- [SKILL.md](link-crawler/SKILL.md) - 詳細な使用方法と設定、技術仕様
 - [docs/link-crawler/](docs/link-crawler/) - 設計ドキュメント
 
 ## ライセンス
