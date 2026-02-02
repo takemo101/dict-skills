@@ -46,7 +46,7 @@ crawl <url> [options]
 | `--output <dir>` | `-o` | `./.context` | 出力ディレクトリ |
 | `--no-pages` | | | ページ単位ファイル出力を無効化 |
 | `--no-merge` | | | 結合ファイル(full.md)出力を無効化 |
-| `--no-chunks` | | | チャンク分割出力を無効化 |
+| `--chunks` | | `false` | チャンク分割出力を有効化 |
 
 ### 3.5 ヘルプ
 
@@ -96,13 +96,13 @@ crawl https://docs.example.com --include "/guide/" --exclude "/internal/"
 
 ```bash
 # AIコンテキスト用: 結合ファイルのみ
-crawl https://docs.example.com --no-pages --no-chunks
+crawl https://docs.example.com --no-pages
 
 # ページ単位のみ
-crawl https://docs.example.com --no-merge --no-chunks
+crawl https://docs.example.com --no-merge
 
 # チャンクのみ
-crawl https://docs.example.com --no-pages --no-merge
+crawl https://docs.example.com --no-pages --no-merge --chunks
 ```
 
 ### 4.5 デバッグ・調整
