@@ -1,13 +1,14 @@
-import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import type {
-	CrawlConfig,
-	CrawledPage,
-	CrawlResult,
-	DetectedSpec,
-	PageMetadata,
-} from "../types.js";
+import { createHash } from "node:crypto";
+import type { CrawlConfig, CrawledPage, PageMetadata } from "../types.js";
+import { IndexManager } from "./index-manager.js";
+import { SPEC_PATTERNS, FILENAME } from "../constants.js";
+
+/** コンテンツのSHA256ハッシュを計算 */
+function computeHash(content: string): string {
+	return createHash("sha256").update(content, "utf8").digest("hex");
+}
 
 /** 文字列をslug形式に変換（小文字化、スペース→ハイフン、特殊文字除去） */
 function slugify(text: string | null | undefined, maxLength = 50): string {
@@ -26,87 +27,50 @@ function slugify(text: string | null | undefined, maxLength = 50): string {
 		.replace(/-+$/, ""); // 切り詰め後の末尾ハイフンを除去
 }
 
-/** API仕様ファイルのパターン */
-const specPatterns: Record<string, RegExp> = {
-	openapi: /\/(openapi|swagger)\.(ya?ml|json)$/i,
-	jsonSchema: /\.schema\.json$|\/schema\.json$/i,
-	graphql: /\/schema\.graphql$/i,
-};
-
 /** ファイル書き込みクラス */
 export class OutputWriter {
-	private pageCount = 0;
-	private result: CrawlResult;
-	/** 既存のページ情報（URL→CrawledPage） */
-	private existingPages: Map<string, CrawledPage> = new Map();
+	private indexManager: IndexManager;
 
 	constructor(private config: CrawlConfig) {
-		// 既存のindex.jsonを読み込み
-		const indexPath = join(config.outputDir, "index.json");
-		if (existsSync(indexPath)) {
-			try {
-				const existingResult = JSON.parse(readFileSync(indexPath, "utf-8")) as CrawlResult;
-				for (const page of existingResult.pages) {
-					this.existingPages.set(page.url, page);
-				}
-				console.log(`  📂 既存index.json読み込み: ${existingResult.pages.length}ページ`);
-			} catch {
-				console.log("  ⚠️ 既存index.jsonの読み込みに失敗（新規作成）");
-			}
-		}
-
-		this.result = {
-			crawledAt: new Date().toISOString(),
-			baseUrl: config.startUrl,
-			config: {
+		this.indexManager = new IndexManager(
+			config.outputDir,
+			config.startUrl,
+			{
 				maxDepth: config.maxDepth,
 				sameDomain: config.sameDomain,
 			},
-			totalPages: 0,
-			pages: [],
-			specs: [],
-		};
+		);
 
 		// ディレクトリ作成
-		mkdirSync(join(config.outputDir, "pages"), { recursive: true });
-		mkdirSync(join(config.outputDir, "specs"), { recursive: true });
-	}
-
-	/** コンテンツのハッシュを計算 */
-	computeHash(content: string): string {
-		return createHash("sha256").update(content, "utf-8").digest("hex");
+		mkdirSync(join(config.outputDir, FILENAME.PAGES_DIR), { recursive: true });
+		mkdirSync(join(config.outputDir, FILENAME.SPECS_DIR), { recursive: true });
 	}
 
 	/** 既存ページのハッシュを取得 */
 	getExistingHash(url: string): string | undefined {
-		return this.existingPages.get(url)?.hash;
+		return this.indexManager.getExistingHash(url);
 	}
 
 	/** API仕様ファイルを検出・保存 */
-	handleSpec(url: string, content: string): boolean {
-		for (const [type, pattern] of Object.entries(specPatterns)) {
+	handleSpec(url: string, content: string): { type: string; filename: string } | null {
+		for (const [type, pattern] of Object.entries(SPEC_PATTERNS)) {
 			if (pattern.test(url)) {
 				const filename = url.split("/").pop() || "spec";
-				const specPath = join(this.config.outputDir, "specs", filename);
+				const specPath = join(this.config.outputDir, FILENAME.SPECS_DIR, filename);
 				mkdirSync(dirname(specPath), { recursive: true });
 				writeFileSync(specPath, content);
 
-				const spec: DetectedSpec = {
-					url,
-					type,
-					file: `specs/${filename}`,
-				};
-				this.result.specs.push(spec);
-				console.log(`  📋 Spec: ${type} - ${filename}`);
-				return true;
+				const file = `${FILENAME.SPECS_DIR}/${filename}`;
+				this.indexManager.addSpec(url, type, file);
+				return { type, filename };
 			}
 		}
-		return false;
+		return null;
 	}
 
 	/** 次のページ番号を取得 */
 	getNextPageNumber(): number {
-		return this.pageCount + 1;
+		return this.indexManager.getNextPageNumber();
 	}
 
 	/** ページを登録（インデックスに追加） */
@@ -117,23 +81,9 @@ export class OutputWriter {
 		links: string[],
 		metadata: PageMetadata,
 		title: string | null,
-		hash?: string,
+		hash: string,
 	): CrawledPage {
-		this.pageCount++;
-		const pageCrawledAt = new Date().toISOString();
-		const page: CrawledPage = {
-			url,
-			title: metadata.title || title,
-			file,
-			depth,
-			links,
-			metadata,
-			hash: hash ?? this.computeHash(""),
-			crawledAt: pageCrawledAt,
-		};
-		this.result.pages.push(page);
-		this.result.totalPages++;
-		return page;
+		return this.indexManager.registerPage(url, file, depth, links, metadata, title, hash);
 	}
 
 	/** ページを保存 */
@@ -146,17 +96,32 @@ export class OutputWriter {
 		title: string | null,
 		hash?: string,
 	): string {
-		const pageNum = String(this.getNextPageNumber()).padStart(3, "0");
+		const pageNum = String(this.getNextPageNumber()).padStart(FILENAME.PAGE_PAD_LENGTH, "0");
 		const pageTitle = metadata.title || title;
 		const titleSlug = slugify(pageTitle);
 		const pageFile = titleSlug
-			? `pages/page-${pageNum}-${titleSlug}.md`
-			: `pages/page-${pageNum}.md`;
+			? `${FILENAME.PAGES_DIR}/${FILENAME.PAGE_PREFIX}${pageNum}-${titleSlug}.md`
+			: `${FILENAME.PAGES_DIR}/${FILENAME.PAGE_PREFIX}${pageNum}.md`;
 		const pagePath = join(this.config.outputDir, pageFile);
-		const pageCrawledAt = new Date().toISOString();
-		const computedHash = hash ?? this.computeHash(markdown);
+		const computedHash = hash ?? computeHash(markdown);
 
-		const frontmatter = [
+		const frontmatter = this.buildFrontmatter(url, metadata, title, depth);
+		writeFileSync(pagePath, frontmatter + markdown);
+
+		this.registerPage(url, pageFile, depth, links, metadata, title, computedHash);
+
+		return pageFile;
+	}
+
+	/** frontmatterを構築 */
+	private buildFrontmatter(
+		url: string,
+		metadata: PageMetadata,
+		title: string | null,
+		depth: number,
+	): string {
+		const pageCrawledAt = new Date().toISOString();
+		const lines: (string | null)[] = [
 			"---",
 			`url: ${url}`,
 			`title: "${(metadata.title || title || "").replace(/"/g, '\\"')}"`,
@@ -167,26 +132,22 @@ export class OutputWriter {
 			"---",
 			"",
 			"",
-		]
-			.filter((line) => line !== null)
-			.join("\n");
-
-		writeFileSync(pagePath, frontmatter + markdown);
-
-		this.registerPage(url, pageFile, depth, links, metadata, title, computedHash);
-
-		return pageFile;
+		];
+		return lines.filter((line): line is string => line !== null).join("\n");
 	}
 
 	/** インデックスを保存 */
 	saveIndex(): string {
-		const indexPath = join(this.config.outputDir, "index.json");
-		writeFileSync(indexPath, JSON.stringify(this.result, null, 2));
-		return indexPath;
+		return this.indexManager.saveIndex();
 	}
 
 	/** 結果を取得 */
-	getResult(): CrawlResult {
-		return this.result;
+	getResult() {
+		return this.indexManager.getResult();
+	}
+
+	/** 既存のインデックスマネージャーを取得 */
+	getIndexManager(): IndexManager {
+		return this.indexManager;
 	}
 }

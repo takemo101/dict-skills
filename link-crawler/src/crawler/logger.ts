@@ -1,0 +1,129 @@
+import type { CrawlConfig, CrawledPage } from "../types.js";
+
+/**
+ * クロールログ出力クラス
+ * ログ出力の責務を分離
+ */
+export class CrawlLogger {
+	private skippedCount = 0;
+
+	constructor(private config: CrawlConfig) {}
+
+	/** クロール開始ログ */
+	logStart(): void {
+		console.log(`\n🕷️  Link Crawler v2.0`);
+		console.log(`   URL: ${this.config.startUrl}`);
+		console.log(`   Depth: ${this.config.maxDepth}`);
+		console.log(`   Output: ${this.config.outputDir}`);
+		console.log(`   Mode: playwright-cli`);
+		console.log(`   Same domain only: ${this.config.sameDomain}`);
+		console.log(`   Diff mode: ${this.config.diff}`);
+		console.log(`   Pages: ${this.config.pages ? "yes" : "no"}`);
+		console.log(`   Merge: ${this.config.merge ? "yes" : "no"}`);
+		console.log(`   Chunks: ${this.config.chunks ? "yes" : "no"}`);
+		console.log("");
+	}
+
+	/** 既存ハッシュ読み込みログ */
+	logLoadedHashes(count: number): void {
+		if (count > 0) {
+			console.log(`📊 Loaded ${count} existing page hashes\n`);
+		}
+	}
+
+	/** 既存index.json読み込みログ */
+	logLoadedIndex(count: number): void {
+		console.log(`  📂 Loaded existing index.json: ${count} pages`);
+	}
+
+	/** index.json読み込み失敗ログ */
+	logIndexLoadFailed(): void {
+		console.log("  ⚠️ Failed to load existing index.json (will create new)");
+	}
+
+	/** ページクロール開始ログ */
+	logCrawlStart(url: string, depth: number): void {
+		const indent = "  ".repeat(depth);
+		console.log(`${indent}→ [${depth}] ${url}`);
+	}
+
+	/** ページ保存ログ */
+	logPageSaved(
+		file: string,
+		depth: number,
+		linkCount: number,
+		cached = false,
+	): void {
+		const indent = "  ".repeat(depth);
+		const action = cached ? "Cached" : "Saved";
+		console.log(`${indent}  ✓ ${action}: ${file} (${linkCount} links found)`);
+	}
+
+	/** スキップログ（差分検出時） */
+	logSkipped(depth: number): void {
+		const indent = "  ".repeat(depth);
+		console.log(`${indent}  ⏭️  Skipped (unchanged)`);
+		this.skippedCount++;
+	}
+
+	/** 仕様ファイル検出ログ */
+	logSpecDetected(type: string, filename: string): void {
+		console.log(`  📋 Spec: ${type} - ${filename}`);
+	}
+
+	/** フェッチエラーログ */
+	logFetchError(url: string, error: string, depth: number): void {
+		const indent = "  ".repeat(depth);
+		console.error(`${indent}  ✗ Fetch Error: ${error} - ${url}`);
+	}
+
+	/** 後処理開始ログ */
+	logPostProcessingStart(): void {
+		console.log("\n🔄 Running Post-processing...");
+	}
+
+	/** 後処理スキップログ */
+	logPostProcessingSkipped(): void {
+		console.log("\n⚠️  No pages to process");
+	}
+
+	/** Merger開始ログ */
+	logMergerStart(): void {
+		console.log("\n🔄 Running Merger...");
+	}
+
+	/** Merger完了ログ */
+	logMergerComplete(path: string): void {
+		console.log(`   ✓ full.md: ${path}`);
+	}
+
+	/** Chunker開始ログ */
+	logChunkerStart(): void {
+		console.log("\n🔄 Running Chunker...");
+	}
+
+	/** Chunker完了ログ */
+	logChunkerComplete(count: number): void {
+		if (count > 0) {
+			console.log(`   ✓ chunks: ${count} files in chunks/`);
+		} else {
+			console.log("   ℹ️  No chunks created (content too small)");
+		}
+	}
+
+	/** クロール完了ログ */
+	logComplete(totalPages: number, specsCount: number, indexPath: string): void {
+		console.log(`\n✅ Crawl complete!`);
+		console.log(`   Pages: ${totalPages}`);
+		if (this.config.diff && this.skippedCount > 0) {
+			console.log(`   Skipped (unchanged): ${this.skippedCount}`);
+		}
+		console.log(`   Specs: ${specsCount}`);
+		console.log(`   Index: ${indexPath}`);
+	}
+
+	/** スキップカウントを取得 */
+	getSkippedCount(): number {
+		return this.skippedCount;
+	}
+}

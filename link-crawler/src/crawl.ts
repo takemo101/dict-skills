@@ -2,6 +2,8 @@
 import { program } from "commander";
 import { parseConfig } from "./config.js";
 import { Crawler } from "./crawler/index.js";
+import { CrawlError, DependencyError, FetchError, TimeoutError, ConfigError } from "./errors.js";
+import { EXIT_CODES } from "./constants.js";
 
 program
 	.name("crawl")
@@ -29,13 +31,41 @@ const startUrl = program.args[0];
 
 if (!startUrl) {
 	program.help();
-	process.exit(2);
+	process.exit(EXIT_CODES.INVALID_ARGUMENTS);
 }
 
-const config = parseConfig(options, startUrl);
-const crawler = new Crawler(config);
+async function main(): Promise<void> {
+	try {
+		const config = parseConfig(options, startUrl);
+		const crawler = new Crawler(config);
+		await crawler.run();
+		process.exit(EXIT_CODES.SUCCESS);
+	} catch (error) {
+		if (error instanceof DependencyError) {
+			console.error(`✗ ${error.message}`);
+			process.exit(EXIT_CODES.DEPENDENCY_ERROR);
+		}
+		if (error instanceof ConfigError) {
+			console.error(`✗ Configuration error: ${error.message}`);
+			process.exit(EXIT_CODES.INVALID_ARGUMENTS);
+		}
+		if (error instanceof FetchError) {
+			console.error(`✗ Fetch error at ${error.url}: ${error.message}`);
+			process.exit(EXIT_CODES.CRAWL_ERROR);
+		}
+		if (error instanceof TimeoutError) {
+			console.error(`✗ Request timeout after ${error.timeoutMs}ms`);
+			process.exit(EXIT_CODES.CRAWL_ERROR);
+		}
+		if (error instanceof CrawlError) {
+			console.error(`✗ ${error.toString()}`);
+			process.exit(EXIT_CODES.CRAWL_ERROR);
+		}
+		// 未知のエラー
+		const message = error instanceof Error ? error.message : String(error);
+		console.error(`✗ Fatal error: ${message}`);
+		process.exit(EXIT_CODES.GENERAL_ERROR);
+	}
+}
 
-crawler.run().catch((error: Error) => {
-	console.error(`Fatal error: ${error.message}`);
-	process.exit(1);
-});
+main();

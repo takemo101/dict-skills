@@ -1,44 +1,15 @@
 import { existsSync, rmSync } from "node:fs";
 import { join } from "node:path";
+import { DependencyError, FetchError, TimeoutError } from "../errors.js";
+import { PATHS, PATTERNS } from "../constants.js";
+import type { RuntimeAdapter } from "../utils/runtime.js";
 import type { CrawlConfig, Fetcher, FetchResult } from "../types.js";
+import { createRuntimeAdapter } from "../utils/runtime.js";
 
-/** コマンドを実行してstdoutを返す */
-async function exec(
-	cmd: string,
-	args: string[],
-): Promise<{ success: boolean; stdout: string; stderr: string }> {
-	try {
-		const proc = Bun.spawn([cmd, ...args], {
-			stdout: "pipe",
-			stderr: "pipe",
-		});
-		const stdout = await new Response(proc.stdout).text();
-		const stderr = await new Response(proc.stderr).text();
-		const exitCode = await proc.exited;
-		return { success: exitCode === 0, stdout, stderr };
-	} catch {
-		return { success: false, stdout: "", stderr: "command not found" };
-	}
-}
-
-/** playwright-cli のパスを取得（node経由で実行） */
-async function findPlaywrightCli(): Promise<{ node: string; cli: string } | null> {
-	const nodePaths = ["/opt/homebrew/bin/node", "/usr/local/bin/node", "node"];
-	const cliPaths = [
-		"/opt/homebrew/bin/playwright-cli",
-		"/usr/local/bin/playwright-cli",
-		`${process.env.HOME}/.npm-global/bin/playwright-cli`,
-	];
-
-	for (const node of nodePaths) {
-		for (const cli of cliPaths) {
-			const result = await exec(node, [cli, "--version"]);
-			if (result.success) {
-				return { node, cli };
-			}
-		}
-	}
-	return null;
+/** Playwright CLIのパスを検索する設定 */
+export interface PlaywrightPathConfig {
+	nodePaths: readonly string[];
+	cliPaths: readonly string[];
 }
 
 /** Playwright-CLI Fetcher (全サイト対応) */
@@ -47,27 +18,45 @@ export class PlaywrightFetcher implements Fetcher {
 	private initialized = false;
 	private nodePath: string = "node";
 	private playwrightPath: string = "playwright-cli";
+	private runtime: RuntimeAdapter;
+	private pathConfig: PlaywrightPathConfig;
 
-	constructor(private config: CrawlConfig) {
+	constructor(
+		private config: CrawlConfig,
+		runtime?: RuntimeAdapter,
+		pathConfig?: PlaywrightPathConfig,
+	) {
 		this.sessionId = `crawl-${Date.now()}`;
+		this.runtime = runtime ?? createRuntimeAdapter();
+		this.pathConfig = pathConfig ?? {
+			nodePaths: PATHS.NODE_PATHS,
+			cliPaths: PATHS.PLAYWRIGHT_PATHS,
+		};
 	}
 
+	/** Playwright CLIが利用可能かチェック */
 	private async checkPlaywrightCli(): Promise<boolean> {
-		const result = await findPlaywrightCli();
-		if (result) {
-			this.nodePath = result.node;
-			this.playwrightPath = result.cli;
-			return true;
+		for (const node of this.pathConfig.nodePaths) {
+			for (const cli of this.pathConfig.cliPaths) {
+				const result = await this.runtime.spawn(node, [cli, "--version"]);
+				if (result.success) {
+					this.nodePath = node;
+					this.playwrightPath = cli;
+					return true;
+				}
+			}
 		}
 		return false;
 	}
 
+	/** CLIコマンドを実行 */
 	private async runCli(
 		args: string[],
 	): Promise<{ success: boolean; stdout: string; stderr: string }> {
-		return exec(this.nodePath, [this.playwrightPath, ...args]);
+		return this.runtime.spawn(this.nodePath, [this.playwrightPath, ...args]);
 	}
 
+	/** フェッチを実行 */
 	private async executeFetch(url: string): Promise<FetchResult> {
 		const openArgs = ["open", url, "--session", this.sessionId];
 		if (this.config.headed) {
@@ -75,10 +64,13 @@ export class PlaywrightFetcher implements Fetcher {
 		}
 
 		// ページを開く
-		await this.runCli(openArgs);
+		const openResult = await this.runCli(openArgs);
+		if (!openResult.success) {
+			throw new FetchError(`Failed to open page: ${openResult.stderr}`, url);
+		}
 
 		// レンダリング待機
-		await Bun.sleep(this.config.spaWait);
+		await this.runtime.sleep(this.config.spaWait);
 
 		// コンテンツ取得
 		const result = await this.runCli([
@@ -87,7 +79,11 @@ export class PlaywrightFetcher implements Fetcher {
 			"--session",
 			this.sessionId,
 		]);
-		const html = this.parseCliOutput(result.stdout);
+		if (!result.success) {
+			throw new FetchError(`Failed to get content: ${result.stderr}`, url);
+		}
+
+		const html = parseCliOutput(result.stdout);
 
 		return {
 			html,
@@ -96,29 +92,14 @@ export class PlaywrightFetcher implements Fetcher {
 		};
 	}
 
-	/** playwright-cli の出力からHTMLを抽出 */
-	private parseCliOutput(output: string): string {
-		// 出力形式: ### Result\n"<html>..."\n### Ran Playwright code...
-		const resultMatch = output.match(/^### Result\n"([\s\S]*)"\n### Ran Playwright code/);
-		if (resultMatch) {
-			// JSON文字列としてパース（エスケープを解除）
-			try {
-				return JSON.parse(`"${resultMatch[1]}"`);
-			} catch {
-				// パース失敗時はエスケープを手動で解除
-				return resultMatch[1].replace(/\\n/g, "\n").replace(/\\"/g, '"').replace(/\\\\/g, "\\");
-			}
-		}
-		// フォールバック: そのまま返す
-		return output;
-	}
-
 	async fetch(url: string): Promise<FetchResult | null> {
 		if (!this.initialized) {
 			const hasPlaywright = await this.checkPlaywrightCli();
 			if (!hasPlaywright) {
-				console.error("✗ playwright-cli not found. Install with: npm install -g @playwright/cli");
-				process.exit(3);
+				throw new DependencyError(
+					"playwright-cli not found. Install with: npm install -g @playwright/cli",
+					"playwright-cli",
+				);
 			}
 			this.initialized = true;
 		}
@@ -127,16 +108,18 @@ export class PlaywrightFetcher implements Fetcher {
 			// タイムアウト用のPromiseを作成
 			const timeoutPromise = new Promise<never>((_, reject) => {
 				setTimeout(() => {
-					reject(new Error(`Request timeout after ${this.config.timeout}ms`));
+					reject(new TimeoutError(`Request timeout after ${this.config.timeout}ms`, this.config.timeout));
 				}, this.config.timeout);
 			});
 
 			// fetchとタイムアウトを競争させる
 			return await Promise.race([this.executeFetch(url), timeoutPromise]);
 		} catch (error) {
+			if (error instanceof FetchError || error instanceof TimeoutError) {
+				throw error;
+			}
 			const message = error instanceof Error ? error.message : String(error);
-			console.error(`  ✗ Fetch Error: ${message} - ${url}`);
-			return null;
+			throw new FetchError(message, url, error instanceof Error ? error : undefined);
 		}
 	}
 
@@ -159,4 +142,28 @@ export class PlaywrightFetcher implements Fetcher {
 			}
 		}
 	}
+}
+
+/**
+ * playwright-cli の出力からHTMLを抽出
+ * @param output CLI出力文字列
+ * @returns 抽出されたHTML
+ */
+export function parseCliOutput(output: string): string {
+	// 出力形式: ### Result\n"<html>..."\n### Ran Playwright code...
+	const resultMatch = output.match(PATTERNS.CLI_RESULT);
+	if (resultMatch) {
+		// JSON文字列としてパース（エスケープを解除）
+		try {
+			return JSON.parse(`"${resultMatch[1]}"`);
+		} catch {
+			// パース失敗時はエスケープを手動で解除
+			return resultMatch[1]
+				.replace(/\\n/g, "\n")
+				.replace(/\\"/g, '"')
+				.replace(/\\\\/g, "\\");
+		}
+	}
+	// フォールバック: そのまま返す
+	return output;
 }
