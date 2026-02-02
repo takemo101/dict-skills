@@ -11,11 +11,11 @@
 **概要**: テストフレームワークVitestをセットアップ
 
 **タスク**:
-- [ ] `vitest` を devDependencies に追加
-- [ ] `vitest.config.ts` を作成
-- [ ] `tests/unit/`, `tests/integration/` ディレクトリ作成
-- [ ] package.json に `test`, `test:watch`, `test:coverage` スクリプト追加
-- [ ] サンプルテスト作成で動作確認
+- [x] `vitest` を devDependencies に追加
+- [x] `vitest.config.ts` を作成
+- [x] `tests/unit/`, `tests/integration/` ディレクトリ作成
+- [x] package.json に `test`, `test:watch`, `test:coverage` スクリプト追加
+- [x] サンプルテスト作成で動作確認
 
 **影響ファイル**: 3ファイル（`package.json`, `vitest.config.ts`, サンプルテスト）
 **見積もり**: 40行程度
@@ -47,10 +47,10 @@
 **概要**: 新設計に合わせて型定義を更新
 
 **タスク**:
-- [ ] `CrawlConfig` に `diff`, `pages`, `merge`, `chunks` 追加
-- [ ] `CrawledPage` に `hash` フィールド追加
-- [ ] `PageIndex` 型を追加（index.json用）
-- [ ] 不要な `spa` フィールドを削除
+- [x] `CrawlConfig` に `diff`, `pages`, `merge`, `chunks` 追加
+- [x] `CrawledPage` に `hash` フィールド追加
+- [x] `PageIndex` 型を追加（index.json用）
+- [x] 不要な `spa` フィールドを削除
 
 **影響ファイル**: 1ファイル (`src/types.ts`)
 **見積もり**: 30行程度の変更
@@ -62,12 +62,12 @@
 **概要**: 新しいCLIオプションを追加
 
 **タスク**:
-- [ ] `--diff` オプション追加
-- [ ] `--no-pages` オプション追加
-- [ ] `--no-merge` オプション追加
-- [ ] `--no-chunks` オプション追加
-- [ ] `--spa` オプション削除
-- [ ] `src/config.ts` のパース処理更新
+- [x] `--diff` オプション追加
+- [x] `--no-pages` オプション追加
+- [x] `--no-merge` オプション追加
+- [x] `--no-chunks` オプション追加
+- [x] `--spa` オプション削除
+- [x] `src/config.ts` のパース処理更新
 
 **依存**: Issue #2
 
@@ -83,9 +83,9 @@
 **概要**: SHA256ハッシュ計算・差分検知モジュールを新規作成
 
 **タスク**:
-- [ ] `src/diff/hasher.ts` を新規作成
-- [ ] `computeHash(content: string): string` 関数実装
-- [ ] `Hasher` クラス実装
+- [x] `src/diff/hasher.ts` を新規作成
+- [x] `computeHash(content: string): string` 関数実装
+- [x] `Hasher` クラス実装
   - `loadHashes(indexPath: string)`: 既存index.jsonからハッシュ読み込み
   - `isChanged(url: string, newHash: string): boolean`: 差分判定
   - `getHash(url: string): string | undefined`: 既存ハッシュ取得
@@ -100,9 +100,9 @@
 **概要**: Hasherモジュールのユニットテスト
 
 **タスク**:
-- [ ] `tests/unit/hasher.test.ts` を作成
-- [ ] `computeHash` のテスト（同一性、一意性）
-- [ ] `Hasher.isChanged` のテスト（新規URL、同一ハッシュ、異なるハッシュ）
+- [x] `tests/unit/hasher.test.ts` を作成
+- [x] `computeHash` のテスト（同一性、一意性）
+- [x] `Hasher.isChanged` のテスト（新規URL、同一ハッシュ、異なるハッシュ）
 
 **依存**: Issue #4
 
@@ -152,12 +152,12 @@
 **概要**: 全ページを結合してfull.mdを生成
 
 **タスク**:
-- [ ] `src/output/merger.ts` を新規作成
-- [ ] `Merger` クラス実装
+- [x] `src/output/merger.ts` を新規作成
+- [x] `Merger` クラス実装
   - `merge(pages: CrawledPage[]): string`: ページ結合
   - `stripTitle(markdown: string): string`: 重複タイトル除去
-- [ ] ページを `# タイトル` 形式で結合
-- [ ] `full.md` として出力
+- [x] ページを `# タイトル` 形式で結合
+- [x] `full.md` として出力
 
 **影響ファイル**: 1ファイル（新規）
 **見積もり**: 50行程度
@@ -169,10 +169,10 @@
 **概要**: Mergerモジュールのユニットテスト
 
 **タスク**:
-- [ ] `tests/unit/merger.test.ts` を作成
-- [ ] 複数ページの結合テスト
-- [ ] タイトル重複除去テスト
-- [ ] 空ページ処理テスト
+- [x] `tests/unit/merger.test.ts` を作成
+- [x] 複数ページの結合テスト
+- [x] タイトル重複除去テスト
+- [x] 空ページ処理テスト
 
 **依存**: Issue #7
 
@@ -186,11 +186,11 @@
 **概要**: full.mdを見出しベースでチャンク分割
 
 **タスク**:
-- [ ] `src/output/chunker.ts` を新規作成
-- [ ] `Chunker` クラス実装
+- [x] `src/output/chunker.ts` を新規作成
+- [x] `Chunker` クラス実装
   - `chunk(fullMarkdown: string): string[]`: h1境界で分割
-- [ ] `chunks/chunk-001.md` 形式で出力
-- [ ] 番号は3桁ゼロパディング
+- [x] `chunks/chunk-001.md` 形式で出力
+- [x] 番号は3桁ゼロパディング
 
 **依存**: Issue #7
 
@@ -204,10 +204,10 @@
 **概要**: Chunkerモジュールのユニットテスト
 
 **タスク**:
-- [ ] `tests/unit/chunker.test.ts` を作成
-- [ ] h1境界での分割テスト
-- [ ] h1がない場合のテスト
-- [ ] 複数h1のテスト
+- [x] `tests/unit/chunker.test.ts` を作成
+- [x] h1境界での分割テスト
+- [x] h1がない場合のテスト
+- [x] 複数h1のテスト
 
 **依存**: Issue #8
 
