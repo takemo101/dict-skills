@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { rmSync, existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import { Crawler } from "../../src/crawler/index.js";
 import type { CrawlConfig, Fetcher, FetchResult } from "../../src/types.js";
 
 const testOutputDir = "./test-output-integration";
@@ -9,6 +10,7 @@ const testOutputDir = "./test-output-integration";
 class MockFetcher implements Fetcher {
 	private pages: Map<string, { html: string; contentType: string }>;
 	private callCount = 0;
+	private _closed = false;
 
 	constructor(pages: Record<string, { html: string; contentType?: string }>) {
 		this.pages = new Map();
@@ -21,6 +23,9 @@ class MockFetcher implements Fetcher {
 	}
 
 	async fetch(url: string): Promise<FetchResult | null> {
+		if (this._closed) {
+			return null;
+		}
 		this.callCount++;
 		const page = this.pages.get(url);
 		if (!page) {
@@ -37,8 +42,8 @@ class MockFetcher implements Fetcher {
 		return this.callCount;
 	}
 
-	close?(): Promise<void> {
-		return Promise.resolve();
+	async close(): Promise<void> {
+		this._closed = true;
 	}
 }
 
@@ -93,18 +98,7 @@ const defaultConfig: CrawlConfig = {
 	chunks: true,
 };
 
-// Crawlerクラスの動的インポートとモックFetcher注入
-async function createCrawler(config: CrawlConfig, mockFetcher: MockFetcher) {
-	const mod = await import("../../src/crawler/index.js");
-	const Crawler = mod.Crawler;
-	
-	// モックFetcherを注入したCrawlerインスタンスを作成
-	const crawler = new Crawler(config);
-	// @ts-expect-error - テスト用にprivateフィールドを上書き
-	crawler.fetcher = mockFetcher;
-	
-	return crawler;
-}
+
 
 describe("CrawlerEngine Integration", () => {
 	beforeEach(() => {
@@ -127,7 +121,7 @@ describe("CrawlerEngine Integration", () => {
 				},
 			});
 
-			const crawler = await createCrawler(defaultConfig, mockFetcher);
+			const crawler = new Crawler(defaultConfig, mockFetcher);
 			await crawler.run();
 
 			// 出力ディレクトリの確認
@@ -184,7 +178,7 @@ describe("CrawlerEngine Integration", () => {
 			});
 
 			const config = { ...defaultConfig, maxDepth: 2 };
-			const crawler = await createCrawler(config, mockFetcher);
+			const crawler = new Crawler(config, mockFetcher);
 			await crawler.run();
 
 			const indexContent = JSON.parse(
@@ -242,7 +236,7 @@ describe("CrawlerEngine Integration", () => {
 
 			// sameDomain: true (default)
 			const config = { ...defaultConfig, sameDomain: true };
-			const crawler = await createCrawler(config, mockFetcher);
+			const crawler = new Crawler(config, mockFetcher);
 			await crawler.run();
 
 			const indexContent = JSON.parse(
@@ -269,7 +263,7 @@ describe("CrawlerEngine Integration", () => {
 				// error-page is not defined, so it will return null
 			});
 
-			const crawler = await createCrawler(defaultConfig, mockFetcher);
+			const crawler = new Crawler(defaultConfig, mockFetcher);
 			await crawler.run();
 
 			const indexContent = JSON.parse(
@@ -294,7 +288,7 @@ describe("CrawlerEngine Integration", () => {
 			});
 
 			const config1 = { ...defaultConfig, diff: false };
-			const crawler1 = await createCrawler(config1, mockFetcher1);
+			const crawler1 = new Crawler(config1, mockFetcher1);
 			await crawler1.run();
 
 			// Get the hash from first crawl
@@ -310,7 +304,7 @@ describe("CrawlerEngine Integration", () => {
 			});
 
 			const config2 = { ...defaultConfig, diff: true };
-			const crawler2 = await createCrawler(config2, mockFetcher2);
+			const crawler2 = new Crawler(config2, mockFetcher2);
 			await crawler2.run();
 
 			// When pages are skipped in diff mode, they are not included in the new index
@@ -342,7 +336,7 @@ describe("CrawlerEngine Integration", () => {
 			});
 
 			const config1 = { ...defaultConfig, diff: false };
-			const crawler1 = await createCrawler(config1, mockFetcher1);
+			const crawler1 = new Crawler(config1, mockFetcher1);
 			await crawler1.run();
 
 			const index1 = JSON.parse(
@@ -361,7 +355,7 @@ describe("CrawlerEngine Integration", () => {
 			});
 
 			const config2 = { ...defaultConfig, diff: true };
-			const crawler2 = await createCrawler(config2, mockFetcher2);
+			const crawler2 = new Crawler(config2, mockFetcher2);
 			await crawler2.run();
 
 			const index2 = JSON.parse(
@@ -384,7 +378,7 @@ describe("CrawlerEngine Integration", () => {
 			});
 
 			const config1 = { ...defaultConfig, diff: false };
-			const crawler1 = await createCrawler(config1, mockFetcher1);
+			const crawler1 = new Crawler(config1, mockFetcher1);
 			await crawler1.run();
 
 			// Second crawl with new page
@@ -405,7 +399,7 @@ describe("CrawlerEngine Integration", () => {
 			});
 
 			const config2 = { ...defaultConfig, diff: true };
-			const crawler2 = await createCrawler(config2, mockFetcher2);
+			const crawler2 = new Crawler(config2, mockFetcher2);
 			await crawler2.run();
 
 			const index2 = JSON.parse(
@@ -428,7 +422,7 @@ describe("CrawlerEngine Integration", () => {
 			});
 
 			const config = { ...defaultConfig, pages: true };
-			const crawler = await createCrawler(config, mockFetcher);
+			const crawler = new Crawler(config, mockFetcher);
 			await crawler.run();
 
 			const indexContent = JSON.parse(
@@ -462,7 +456,7 @@ describe("CrawlerEngine Integration", () => {
 			});
 
 			const config = { ...defaultConfig, merge: true };
-			const crawler = await createCrawler(config, mockFetcher);
+			const crawler = new Crawler(config, mockFetcher);
 			await crawler.run();
 
 			const fullMdPath = join(testOutputDir, "full.md");
@@ -493,7 +487,7 @@ describe("CrawlerEngine Integration", () => {
 			});
 
 			const config = { ...defaultConfig, chunks: true, merge: true };
-			const crawler = await createCrawler(config, mockFetcher);
+			const crawler = new Crawler(config, mockFetcher);
 			await crawler.run();
 
 			const chunksDir = join(testOutputDir, "chunks");
@@ -520,7 +514,7 @@ describe("CrawlerEngine Integration", () => {
 			});
 
 			const config = { ...defaultConfig, pages: false, merge: true };
-			const crawler = await createCrawler(config, mockFetcher);
+			const crawler = new Crawler(config, mockFetcher);
 			await crawler.run();
 
 			// pages/page-001.md should not exist
@@ -544,7 +538,7 @@ describe("CrawlerEngine Integration", () => {
 			});
 
 			const config = { ...defaultConfig, merge: false, pages: true };
-			const crawler = await createCrawler(config, mockFetcher);
+			const crawler = new Crawler(config, mockFetcher);
 			await crawler.run();
 
 			// full.md should not exist
@@ -570,7 +564,7 @@ describe("CrawlerEngine Integration", () => {
 				},
 			});
 
-			const crawler = await createCrawler(defaultConfig, mockFetcher);
+			const crawler = new Crawler(defaultConfig, mockFetcher);
 			await crawler.run();
 
 			const indexContent = JSON.parse(
@@ -611,7 +605,7 @@ describe("CrawlerEngine Integration", () => {
 				},
 			});
 
-			const crawler = await createCrawler(defaultConfig, mockFetcher);
+			const crawler = new Crawler(defaultConfig, mockFetcher);
 			await crawler.run();
 
 			const indexContent = JSON.parse(

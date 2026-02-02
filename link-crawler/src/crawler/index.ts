@@ -9,7 +9,6 @@ import { htmlToMarkdown } from "../parser/converter.js";
 import { extractContent, extractMetadata } from "../parser/extractor.js";
 import { extractLinks } from "../parser/links.js";
 import type { CrawlConfig, Fetcher, CrawledPage } from "../types.js";
-import { PlaywrightFetcher } from "./fetcher.js";
 
 /** クローラーエンジン */
 export class Crawler {
@@ -21,8 +20,8 @@ export class Crawler {
 	/** メモリ内のページ内容 (--no-pages時に使用) */
 	private pageContents = new Map<string, string>();
 
-	constructor(private config: CrawlConfig) {
-		this.fetcher = new PlaywrightFetcher(config);
+	constructor(private config: CrawlConfig, fetcher?: Fetcher) {
+		this.fetcher = fetcher ?? createPlaywrightFetcher(config);
 		this.writer = new OutputWriter(config);
 		this.hasher = new Hasher();
 	}
@@ -240,4 +239,11 @@ export class Crawler {
 			}
 		}
 	}
+}
+
+/** PlaywrightFetcherのファクトリ関数（動的インポート） */
+function createPlaywrightFetcher(config: CrawlConfig): Fetcher {
+	// 動的インポートを使用してBun依存のモジュールを遅延ロード
+	const { PlaywrightFetcher } = require("./fetcher.js");
+	return new PlaywrightFetcher(config);
 }
