@@ -1,34 +1,53 @@
-import { join } from "node:path";
 import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { JSDOM } from "jsdom";
 import { computeHash, Hasher } from "../diff/hasher.js";
-import { OutputWriter } from "../output/writer.js";
-import { Merger } from "../output/merger.js";
 import { Chunker } from "../output/chunker.js";
+import { Merger } from "../output/merger.js";
+import { OutputWriter } from "../output/writer.js";
 import { htmlToMarkdown } from "../parser/converter.js";
 import { extractContent, extractMetadata } from "../parser/extractor.js";
 import { extractLinks } from "../parser/links.js";
-import type { CrawlConfig, Fetcher, CrawledPage } from "../types.js";
-import { PlaywrightFetcher } from "./fetcher.js";
+import type { CrawlConfig, CrawledPage, Fetcher } from "../types.js";
 
 /** クローラーエンジン */
 export class Crawler {
-	private fetcher: Fetcher;
+	private fetcher!: Fetcher;
 	private writer: OutputWriter;
 	private hasher: Hasher;
 	private visited = new Set<string>();
 	private skippedCount = 0;
 	/** メモリ内のページ内容 (--no-pages時に使用) */
 	private pageContents = new Map<string, string>();
+	private fetcherPromise?: Promise<Fetcher>;
 
-	constructor(private config: CrawlConfig) {
-		this.fetcher = new PlaywrightFetcher(config);
+	constructor(
+		private config: CrawlConfig,
+		fetcher?: Fetcher,
+	) {
 		this.writer = new OutputWriter(config);
 		this.hasher = new Hasher();
+		if (fetcher) {
+			this.fetcher = fetcher;
+		} else {
+			this.fetcherPromise = createPlaywrightFetcher(config);
+		}
+	}
+
+	/** Fetcherの初期化 */
+	private async initFetcher(): Promise<Fetcher> {
+		if (!this.fetcher && this.fetcherPromise) {
+			this.fetcher = await this.fetcherPromise;
+			this.fetcherPromise = undefined;
+		}
+		return this.fetcher;
 	}
 
 	/** クロール開始 */
 	async run(): Promise<void> {
+		// Fetcherの初期化
+		await this.initFetcher();
+
 		console.log(`\n🕷️  Link Crawler v2.0`);
 		console.log(`   URL: ${this.config.startUrl}`);
 		console.log(`   Depth: ${this.config.maxDepth}`);
@@ -53,7 +72,7 @@ export class Crawler {
 		try {
 			await this.crawl(this.config.startUrl, 0);
 		} finally {
-			await this.fetcher.close?.();
+			await this.fetcher?.close?.();
 		}
 
 		const indexPath = this.writer.saveIndex();
@@ -99,7 +118,7 @@ export class Crawler {
 			}
 		} else if (this.config.chunks) {
 			// mergeなしでchunksのみの場合は、メモリから結合内容を生成
-			const merger = new Merger(this.config.outputDir);
+			const _merger = new Merger(this.config.outputDir);
 			fullMdContent = this.buildFullMarkdown(pages, pageContents);
 		}
 
@@ -117,10 +136,7 @@ export class Crawler {
 	}
 
 	/** Markdownを結合してfull.md内容を生成 */
-	private buildFullMarkdown(
-		pages: CrawledPage[],
-		pageContents: Map<string, string>,
-	): string {
+	private buildFullMarkdown(pages: CrawledPage[], pageContents: Map<string, string>): string {
 		const sections: string[] = [];
 
 		for (const page of pages) {
@@ -234,10 +250,22 @@ export class Crawler {
 		if (depth < this.config.maxDepth) {
 			for (const link of links) {
 				if (!this.visited.has(link)) {
-					await Bun.sleep(this.config.delay);
+					await sleep(this.config.delay);
 					await this.crawl(link, depth + 1);
 				}
 			}
 		}
 	}
+}
+
+/** PlaywrightFetcherのファクトリ関数（動的インポート） */
+async function createPlaywrightFetcher(config: CrawlConfig): Promise<Fetcher> {
+	// 動的インポートを使用してBun依存のモジュールを遅延ロード
+	const mod = await import("./fetcher.js");
+	return new mod.PlaywrightFetcher(config);
+}
+
+/** スリープ関数 */
+function sleep(ms: number): Promise<void> {
+	return new Promise((resolve) => setTimeout(resolve, ms));
 }

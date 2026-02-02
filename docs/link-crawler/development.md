@@ -188,7 +188,7 @@ try {
 
 | 対象 | 規則 | 例 |
 |------|------|-----|
-| ファイル | kebab-case | `output-writer.ts` |
+| ファイル | kebab-case | `writer.ts` |
 | クラス | PascalCase | `CrawlerEngine` |
 | 関数・変数 | camelCase | `fetchPage` |
 | 定数 | UPPER_SNAKE_CASE | `MAX_DEPTH` |

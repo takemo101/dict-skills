@@ -114,7 +114,7 @@ link-crawler/
 | `Converter` | Markdown変換 | ContentHTML | Markdown |
 | `LinksParser` | リンク抽出 | HTML | URLs |
 | `Hasher` | ハッシュ計算・比較 | Content | Hash, Changed |
-| `OutputWriter` | ページ保存 + インデックス生成 | Page | File + index.json |
+| `OutputWriter` | ページ保存、index.json 生成 | Page | File, index.json |
 | `Merger` | 全ページ結合 | Pages | full.md |
 | `Chunker` | チャンク分割 | full.md | chunks/*.md |
 
@@ -318,7 +318,7 @@ crawled/
       "url": "https://docs.example.com/getting-started",
       "title": "Getting Started",
       "file": "pages/page-001.md",
-      "hash": "sha256:a1b2c3d4e5f6...",
+      "hash": "a1b2c3d4e5f6...",
       "depth": 1,
       "crawledAt": "2026-02-01T14:00:01.000Z"
     }
