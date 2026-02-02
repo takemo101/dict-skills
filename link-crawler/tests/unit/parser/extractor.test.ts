@@ -471,3 +471,277 @@ describe("extractContent", () => {
 		}
 	});
 });
+
+describe("extractContent - code block preservation", () => {
+	it("should preserve standard pre/code blocks", () => {
+		const html = `
+			<!DOCTYPE html>
+			<html>
+				<head>
+					<title>Code Example</title>
+				</head>
+				<body>
+					<article>
+						<h1>Installation Guide</h1>
+						<p>To install the package, run:</p>
+						<pre><code>npm install example-package</code></pre>
+						<p>More text here to make content substantial.</p>
+						<p>Additional paragraph for Readability to detect this as main content.</p>
+					</article>
+				</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com/code");
+
+		expect(result.content).not.toBeNull();
+		expect(result.content).toContain("<pre>");
+		expect(result.content).toContain("<code>");
+		expect(result.content).toContain("npm install example-package");
+	});
+
+	it("should preserve code blocks with language class", () => {
+		const html = `
+			<!DOCTYPE html>
+			<html>
+				<head>
+					<title>TypeScript Example</title>
+				</head>
+				<body>
+					<article>
+						<h1>TypeScript Guide</h1>
+						<p>Here is a TypeScript example:</p>
+						<pre><code class="language-typescript">const x: number = 42;</code></pre>
+						<p>More content here.</p>
+						<p>Another paragraph to ensure Readability detects this as main content.</p>
+					</article>
+				</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com/ts");
+
+		expect(result.content).not.toBeNull();
+		expect(result.content).toContain("typescript");
+		expect(result.content).toContain("const x: number = 42");
+	});
+
+	it("should preserve data-rehype-pretty-code-fragment blocks (Next.js docs style)", () => {
+		const html = `
+			<!DOCTYPE html>
+			<html>
+				<head>
+					<title>Next.js Docs</title>
+				</head>
+				<body>
+					<article>
+						<h1>Getting Started</h1>
+						<p>Create a new app:</p>
+						<div data-rehype-pretty-code-fragment="">
+							<pre data-language="bash"><code>npx create-next-app@latest</code></pre>
+						</div>
+						<p>More content here to make the article substantial.</p>
+						<p>Additional paragraph for better content detection.</p>
+					</article>
+				</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://nextjs.org/docs");
+
+		expect(result.content).not.toBeNull();
+		expect(result.content).toContain("data-rehype-pretty-code-fragment");
+		expect(result.content).toContain("npx create-next-app@latest");
+	});
+
+	it("should preserve hljs (Highlight.js) code blocks", () => {
+		const html = `
+			<!DOCTYPE html>
+			<html>
+				<head>
+					<title>Highlight.js Example</title>
+				</head>
+				<body>
+					<article>
+						<h1>Code with Highlight.js</h1>
+						<p>Example code:</p>
+						<div class="hljs">
+							<pre><code>function hello() {
+  return "world";
+}</code></pre>
+						</div>
+						<p>More text here.</p>
+						<p>Another paragraph for content.</p>
+					</article>
+				</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com/hljs");
+
+		expect(result.content).not.toBeNull();
+		expect(result.content).toContain("hljs");
+		expect(result.content).toContain('function hello()');
+	});
+
+	it("should preserve prism-code blocks", () => {
+		const html = `
+			<!DOCTYPE html>
+			<html>
+				<head>
+					<title>Prism Example</title>
+				</head>
+				<body>
+					<article>
+						<h1>Prism.js Code</h1>
+						<p>Example:</p>
+						<div class="prism-code">
+							<pre><code class="language-javascript">console.log("hello");</code></pre>
+						</div>
+						<p>More content.</p>
+						<p>Additional paragraph.</p>
+					</article>
+				</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com/prism");
+
+		expect(result.content).not.toBeNull();
+		expect(result.content).toContain("prism-code");
+		expect(result.content).toContain('console.log("hello")');
+	});
+
+	it("should preserve shiki code blocks", () => {
+		const html = `
+			<!DOCTYPE html>
+			<html>
+				<head>
+					<title>Shiki Example</title>
+				</head>
+				<body>
+					<article>
+						<h1>Shiki Highlighted Code</h1>
+						<p>Example:</p>
+						<div class="shiki" data-language="rust">
+							<pre><code>fn main() {
+    println!("Hello, world!");
+}</code></pre>
+						</div>
+						<p>More content here.</p>
+						<p>Another paragraph.</p>
+					</article>
+				</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com/shiki");
+
+		expect(result.content).not.toBeNull();
+		expect(result.content).toContain("shiki");
+		expect(result.content).toContain("fn main()");
+	});
+
+	it("should preserve multiple code blocks in one article", () => {
+		const html = `
+			<!DOCTYPE html>
+			<html>
+				<head>
+					<title>Multiple Code Blocks</title>
+				</head>
+				<body>
+					<article>
+						<h1>Setup Guide</h1>
+						<p>First, install:</p>
+						<pre><code>npm install</code></pre>
+						<p>Then configure:</p>
+						<pre><code class="language-json">{
+  "name": "example"
+}</code></pre>
+						<p>Finally, run:</p>
+						<pre><code>npm start</code></pre>
+						<p>More text here to ensure the article is substantial.</p>
+						<p>Additional paragraph for better detection.</p>
+					</article>
+				</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com/multi");
+
+		expect(result.content).not.toBeNull();
+		// Count occurrences of code blocks
+		const codeMatches = result.content?.match(/<code/g);
+		expect(codeMatches?.length).toBeGreaterThanOrEqual(3);
+	});
+
+	it("should preserve data-language attribute code blocks", () => {
+		const html = `
+			<!DOCTYPE html>
+			<html>
+				<head>
+					<title>Data Language Example</title>
+				</head>
+				<body>
+					<article>
+						<h1>Code with Data Attribute</h1>
+						<p>Example:</p>
+						<pre data-language="python"><code>print("hello")</code></pre>
+						<p>More content.</p>
+						<p>Another paragraph.</p>
+					</article>
+				</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com/data-lang");
+
+		expect(result.content).not.toBeNull();
+		expect(result.content).toContain("data-language");
+		expect(result.content).toContain("python");
+	});
+
+	it("should preserve .highlight class code blocks", () => {
+		const html = `
+			<!DOCTYPE html>
+			<html>
+				<head>
+					<title>Highlight Class Example</title>
+				</head>
+				<body>
+					<article>
+						<h1>Highlighted Code</h1>
+						<p>Example:</p>
+						<div class="highlight">
+							<pre><code>gem install rails</code></pre>
+						</div>
+						<p>More content here.</p>
+						<p>Another paragraph.</p>
+					</article>
+				</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com/highlight");
+
+		expect(result.content).not.toBeNull();
+		expect(result.content).toContain("highlight");
+	});
+
+	it("should preserve .code-block class elements", () => {
+		const html = `
+			<!DOCTYPE html>
+			<html>
+				<head>
+					<title>Code Block Class Example</title>
+				</head>
+				<body>
+					<article>
+						<h1>Code Block</h1>
+						<p>Example:</p>
+						<div class="code-block">
+							<pre><code>docker run hello-world</code></pre>
+						</div>
+						<p>More content.</p>
+						<p>Another paragraph.</p>
+					</article>
+				</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com/code-block");
+
+		expect(result.content).not.toBeNull();
+		expect(result.content).toContain("code-block");
+	});
+});
