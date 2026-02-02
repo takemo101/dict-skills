@@ -28,10 +28,7 @@ export class PostProcessor {
 	 * @param pages クロール済みページ一覧
 	 * @param pageContents ページ内容のMap (--no-pages時に使用)
 	 */
-	async process(
-		pages: CrawledPage[],
-		pageContents?: Map<string, string>,
-	): Promise<void> {
+	async process(pages: CrawledPage[], pageContents?: Map<string, string>): Promise<void> {
 		if (pages.length === 0) {
 			this.logger.logPostProcessingSkipped();
 			return;
@@ -42,7 +39,7 @@ export class PostProcessor {
 		// ページ内容を読み込む (--no-pages時はメモリから取得)
 		const contents = this.config.pages
 			? this.loadPageContentsFromDisk(pages)
-			: pageContents ?? new Map<string, string>();
+			: (pageContents ?? new Map<string, string>());
 
 		let fullMdContent = "";
 
@@ -77,10 +74,7 @@ export class PostProcessor {
 	 * @param pageContents ページ内容のMap
 	 * @returns 結合されたMarkdown文字列
 	 */
-	private buildFullMarkdown(
-		pages: CrawledPage[],
-		pageContents: Map<string, string>,
-	): string {
+	private buildFullMarkdown(pages: CrawledPage[], pageContents: Map<string, string>): string {
 		const sections: string[] = [];
 
 		for (const page of pages) {
@@ -113,9 +107,7 @@ export class PostProcessor {
 	 * @param pages クロール済みページ一覧
 	 * @returns ページ内容のMap
 	 */
-	private loadPageContentsFromDisk(
-		pages: CrawledPage[],
-	): Map<string, string> {
+	private loadPageContentsFromDisk(pages: CrawledPage[]): Map<string, string> {
 		const contents = new Map<string, string>();
 
 		for (const page of pages) {
