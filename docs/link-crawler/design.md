@@ -236,23 +236,25 @@ interface CrawlConfig {
   chunks: boolean;
 }
 
-/** クロール済みページ */
-interface CrawledPage {
-  url: string;
-  title: string;
-  markdown: string;
-  hash: string;
-  depth: number;
-  links: string[];
+/** ページメタデータ */
+interface PageMetadata {
+  title: string | null;
+  description: string | null;
+  keywords: string | null;
+  author: string | null;
+  ogTitle: string | null;
+  ogType: string | null;
 }
 
 /** 保存済みページ情報 (index.json用) */
 interface PageIndex {
   url: string;
-  title: string;
+  title: string | null;
   file: string;
-  hash: string;
   depth: number;
+  links: string[];
+  metadata: PageMetadata;
+  hash: string;
   crawledAt: string;
 }
 
@@ -263,7 +265,14 @@ interface CrawlResult {
   config: Partial<CrawlConfig>;
   totalPages: number;
   pages: PageIndex[];
-  specs: SpecIndex[];
+  specs: DetectedSpec[];
+}
+
+/** 検出されたAPI仕様 */
+interface DetectedSpec {
+  url: string;
+  type: string;
+  file: string;
 }
 ```
 
@@ -336,8 +345,20 @@ interface CrawlResult {
       "url": "https://docs.example.com/getting-started",
       "title": "Getting Started",
       "file": "pages/page-001.md",
-      "hash": "a1b2c3d4e5f6...",
       "depth": 1,
+      "links": [
+        "https://docs.example.com/installation",
+        "https://docs.example.com/configuration"
+      ],
+      "metadata": {
+        "title": "Getting Started",
+        "description": "Quick start guide for beginners",
+        "keywords": "guide, tutorial, quickstart",
+        "author": null,
+        "ogTitle": "Getting Started - Example Docs",
+        "ogType": "article"
+      },
+      "hash": "a1b2c3d4e5f6...",
       "crawledAt": "2026-02-01T14:00:01.000Z"
     }
   ],
