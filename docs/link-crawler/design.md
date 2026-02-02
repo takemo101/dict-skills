@@ -94,10 +94,9 @@ link-crawler/
 │   │   └── hasher.ts           # SHA256ハッシュ・差分検知
 │   │
 │   └── output/
-│       ├── writer.ts           # ページ書き込み
+│       ├── writer.ts           # ページ書き込み・index.json生成
 │       ├── merger.ts           # full.md 生成
-│       ├── chunker.ts          # chunks/*.md 生成
-│       └── index-writer.ts     # index.json 生成
+│       └── chunker.ts          # chunks/*.md 生成
 │
 ├── package.json
 ├── tsconfig.json
