@@ -60,6 +60,20 @@ export class IndexManager {
 	}
 
 	/**
+	 * 既存の全ハッシュを取得
+	 * @returns URL → ハッシュのMap
+	 */
+	getExistingHashes(): Map<string, string> {
+		const hashes = new Map<string, string>();
+		for (const [url, page] of this.existingPages) {
+			if (page.hash) {
+				hashes.set(url, page.hash);
+			}
+		}
+		return hashes;
+	}
+
+	/**
 	 * 既存ページ数を取得
 	 */
 	getExistingPageCount(): number {

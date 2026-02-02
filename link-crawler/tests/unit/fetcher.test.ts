@@ -1,14 +1,17 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type { CrawlConfig } from "../../src/types.js";
+import { PlaywrightFetcher, parseCliOutput } from "../../src/crawler/fetcher.js";
+import { DependencyError, FetchError, TimeoutError } from "../../src/errors.js";
+import type { RuntimeAdapter } from "../../src/utils/runtime.js";
+import type { SpawnResult } from "../../src/utils/runtime.js";
 
-// Simple mock for testing timeout behavior
-const mockSleep = vi.fn();
-const mockShell = vi.fn();
+// Mock node:fs
+const mockExistsSync = vi.fn();
+const mockRmSync = vi.fn();
 
-// Mock bun module
-vi.mock("bun", () => ({
-	$: (...args: unknown[]) => mockShell(...args),
-	sleep: (ms: number) => mockSleep(ms),
+vi.mock("node:fs", () => ({
+	existsSync: (...args: unknown[]) => mockExistsSync(...args),
+	rmSync: (...args: unknown[]) => mockRmSync(...args),
 }));
 
 const createMockConfig = (overrides: Partial<CrawlConfig> = {}): CrawlConfig => ({
@@ -30,19 +33,485 @@ const createMockConfig = (overrides: Partial<CrawlConfig> = {}): CrawlConfig => 
 	...overrides,
 });
 
-describe("PlaywrightFetcher timeout functionality", () => {
-	let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+const createMockRuntime = (): RuntimeAdapter => ({
+	spawn: vi.fn(),
+	sleep: vi.fn(),
+});
 
-	beforeEach(() => {
-		vi.clearAllMocks();
-		consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-		// Default mock behavior
-		mockShell.mockReturnValue({ quiet: () => Promise.resolve({ text: () => "<html>test</html>" }) });
-		mockSleep.mockResolvedValue(undefined);
+beforeEach(() => {
+	vi.clearAllMocks();
+	mockExistsSync.mockReset();
+	mockRmSync.mockReset();
+});
+
+describe("PlaywrightFetcher", () => {
+	describe("constructor", () => {
+		it("should initialize with provided config", () => {
+			const config = createMockConfig();
+			const mockRuntime = createMockRuntime();
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+
+			expect(fetcher).toBeDefined();
+		});
+
+		it("should use default runtime when not provided", () => {
+			const config = createMockConfig();
+			const fetcher = new PlaywrightFetcher(config);
+
+			expect(fetcher).toBeDefined();
+		});
+
+		it("should use custom path config when provided", () => {
+			const config = createMockConfig();
+			const mockRuntime = createMockRuntime();
+			const pathConfig = {
+				nodePaths: ["/custom/node"],
+				cliPaths: ["/custom/playwright-cli"],
+			};
+			const fetcher = new PlaywrightFetcher(config, mockRuntime, pathConfig);
+
+			expect(fetcher).toBeDefined();
+		});
 	});
 
-	afterEach(() => {
-		consoleErrorSpy.mockRestore();
+	describe("checkPlaywrightCli", () => {
+		it("should return true when playwright-cli is found", async () => {
+			const config = createMockConfig();
+			const mockRuntime = createMockRuntime();
+			mockRuntime.spawn = vi.fn().mockResolvedValue({
+				success: true,
+				stdout: "1.0.0",
+				stderr: "",
+				exitCode: 0,
+			} as SpawnResult);
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			// Access private method through prototype
+			const result = await (fetcher as unknown as { checkPlaywrightCli(): Promise<boolean> }).checkPlaywrightCli();
+
+			expect(result).toBe(true);
+		});
+
+		it("should try multiple paths until finding playwright-cli", async () => {
+			const config = createMockConfig();
+			const mockRuntime = createMockRuntime();
+			let callCount = 0;
+			mockRuntime.spawn = vi.fn().mockImplementation(() => {
+				callCount++;
+				if (callCount < 3) {
+					return Promise.resolve({
+						success: false,
+						stdout: "",
+						stderr: "command not found",
+						exitCode: 1,
+					} as SpawnResult);
+				}
+				return Promise.resolve({
+					success: true,
+					stdout: "1.0.0",
+					stderr: "",
+					exitCode: 0,
+				} as SpawnResult);
+			});
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			const result = await (fetcher as unknown as { checkPlaywrightCli(): Promise<boolean> }).checkPlaywrightCli();
+
+			expect(result).toBe(true);
+			expect(mockRuntime.spawn).toHaveBeenCalledTimes(3);
+		});
+
+		it("should return false when playwright-cli is not found in any path", async () => {
+			const config = createMockConfig();
+			const mockRuntime = createMockRuntime();
+			mockRuntime.spawn = vi.fn().mockResolvedValue({
+				success: false,
+				stdout: "",
+				stderr: "command not found",
+				exitCode: 1,
+			} as SpawnResult);
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			const result = await (fetcher as unknown as { checkPlaywrightCli(): Promise<boolean> }).checkPlaywrightCli();
+
+			expect(result).toBe(false);
+		});
+	});
+
+	describe("executeFetch", () => {
+		it("should successfully fetch page content", async () => {
+			const config = createMockConfig();
+			const mockRuntime = createMockRuntime();
+			let callCount = 0;
+			mockRuntime.spawn = vi.fn().mockImplementation(() => {
+				callCount++;
+				if (callCount === 1) {
+					// open command
+					return Promise.resolve({
+						success: true,
+						stdout: "",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				// eval command
+				return Promise.resolve({
+					success: true,
+					stdout: '### Result\n"<html>Test Content</html>"\n### Ran Playwright code',
+					stderr: "",
+					exitCode: 0,
+				} as SpawnResult);
+			});
+			mockRuntime.sleep = vi.fn().mockResolvedValue(undefined);
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			const result = await (fetcher as unknown as { executeFetch(url: string): Promise<{ html: string; finalUrl: string; contentType: string }> }).executeFetch("https://example.com");
+
+			expect(result.html).toBe("<html>Test Content</html>");
+			expect(result.finalUrl).toBe("https://example.com");
+			expect(result.contentType).toBe("text/html");
+		});
+
+		it("should use headed mode when configured", async () => {
+			const config = createMockConfig({ headed: true });
+			const mockRuntime = createMockRuntime();
+			let callCount = 0;
+			mockRuntime.spawn = vi.fn().mockImplementation((cmd, args) => {
+				callCount++;
+				if (callCount === 1) {
+					// Verify headed flag is passed
+					expect(args).toContain("--headed");
+				}
+				return Promise.resolve({
+					success: true,
+					stdout: callCount === 2 ? '"<html></html>"' : "",
+					stderr: "",
+					exitCode: 0,
+				} as SpawnResult);
+			});
+			mockRuntime.sleep = vi.fn().mockResolvedValue(undefined);
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			await (fetcher as unknown as { executeFetch(url: string): Promise<unknown> }).executeFetch("https://example.com");
+		});
+
+		it("should throw FetchError when page open fails", async () => {
+			const config = createMockConfig();
+			const mockRuntime = createMockRuntime();
+			mockRuntime.spawn = vi.fn().mockResolvedValue({
+				success: false,
+				stdout: "",
+				stderr: "Navigation failed",
+				exitCode: 1,
+			} as SpawnResult);
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			await expect(
+				(fetcher as unknown as { executeFetch(url: string): Promise<unknown> }).executeFetch("https://example.com"),
+			).rejects.toThrow(FetchError);
+		});
+
+		it("should throw FetchError when content retrieval fails", async () => {
+			const config = createMockConfig();
+			const mockRuntime = createMockRuntime();
+			let callCount = 0;
+			mockRuntime.spawn = vi.fn().mockImplementation(() => {
+				callCount++;
+				if (callCount === 1) {
+					return Promise.resolve({
+						success: true,
+						stdout: "",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				return Promise.resolve({
+					success: false,
+					stdout: "",
+					stderr: "Eval failed",
+					exitCode: 1,
+				} as SpawnResult);
+			});
+			mockRuntime.sleep = vi.fn().mockResolvedValue(undefined);
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			await expect(
+				(fetcher as unknown as { executeFetch(url: string): Promise<unknown> }).executeFetch("https://example.com"),
+			).rejects.toThrow(FetchError);
+		});
+
+		it("should wait for spaWait duration", async () => {
+			const config = createMockConfig({ spaWait: 5000 });
+			const mockRuntime = createMockRuntime();
+			mockRuntime.spawn = vi.fn().mockResolvedValue({
+				success: true,
+				stdout: '"<html></html>"',
+				stderr: "",
+				exitCode: 0,
+			} as SpawnResult);
+			mockRuntime.sleep = vi.fn().mockResolvedValue(undefined);
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			await (fetcher as unknown as { executeFetch(url: string): Promise<unknown> }).executeFetch("https://example.com");
+
+			expect(mockRuntime.sleep).toHaveBeenCalledWith(5000);
+		});
+	});
+
+	describe("fetch", () => {
+		it("should initialize and fetch successfully", async () => {
+			const config = createMockConfig();
+			const mockRuntime = createMockRuntime();
+			let callCount = 0;
+			mockRuntime.spawn = vi.fn().mockImplementation(() => {
+				callCount++;
+				if (callCount === 1) {
+					// checkPlaywrightCli - version check
+					return Promise.resolve({
+						success: true,
+						stdout: "1.0.0",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				if (callCount === 2) {
+					// open command
+					return Promise.resolve({
+						success: true,
+						stdout: "",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				// eval command
+				return Promise.resolve({
+					success: true,
+					stdout: '### Result\n"<html>Content</html>"\n### Ran Playwright code',
+					stderr: "",
+					exitCode: 0,
+				} as SpawnResult);
+			});
+			mockRuntime.sleep = vi.fn().mockResolvedValue(undefined);
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			const result = await fetcher.fetch("https://example.com");
+
+			expect(result).not.toBeNull();
+			expect(result?.html).toBe("<html>Content</html>");
+		});
+
+		it("should throw DependencyError when playwright-cli is not found", async () => {
+			const config = createMockConfig();
+			const mockRuntime = createMockRuntime();
+			mockRuntime.spawn = vi.fn().mockResolvedValue({
+				success: false,
+				stdout: "",
+				stderr: "command not found",
+				exitCode: 1,
+			} as SpawnResult);
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			await expect(fetcher.fetch("https://example.com")).rejects.toThrow(DependencyError);
+		});
+
+		it("should throw TimeoutError when request times out", async () => {
+			const config = createMockConfig({ timeout: 100 });
+			const mockRuntime = createMockRuntime();
+			mockRuntime.spawn = vi.fn().mockImplementation(() => {
+				return new Promise((resolve) => {
+					setTimeout(() => {
+						resolve({
+							success: true,
+							stdout: "1.0.0",
+							stderr: "",
+							exitCode: 0,
+						} as SpawnResult);
+					}, 1000);
+				});
+			});
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			await expect(fetcher.fetch("https://example.com")).rejects.toThrow(TimeoutError);
+		});
+
+		it("should only initialize once on multiple fetches", async () => {
+			const config = createMockConfig();
+			const mockRuntime = createMockRuntime();
+			let callCount = 0;
+			mockRuntime.spawn = vi.fn().mockImplementation(() => {
+				callCount++;
+				if (callCount === 1) {
+					// First call is checkPlaywrightCli
+					return Promise.resolve({
+						success: true,
+						stdout: "1.0.0",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				return Promise.resolve({
+					success: true,
+					stdout: '"<html></html>"',
+					stderr: "",
+					exitCode: 0,
+				} as SpawnResult);
+			});
+			mockRuntime.sleep = vi.fn().mockResolvedValue(undefined);
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			await fetcher.fetch("https://example.com");
+			await fetcher.fetch("https://example.com/page2");
+
+			// Should only check playwright cli once
+			expect(mockRuntime.spawn).toHaveBeenCalledTimes(5); // 1 version check + 2*(open+eval)
+		});
+
+		it("should wrap unknown errors in FetchError", async () => {
+			const config = createMockConfig();
+			const mockRuntime = createMockRuntime();
+			mockRuntime.spawn = vi.fn()
+				.mockResolvedValueOnce({
+					success: true,
+					stdout: "1.0.0",
+					stderr: "",
+					exitCode: 0,
+				} as SpawnResult)
+				.mockRejectedValue(new Error("Unexpected error"));
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			await expect(fetcher.fetch("https://example.com")).rejects.toThrow(FetchError);
+		});
+
+		it("should re-throw FetchError as-is", async () => {
+			const config = createMockConfig();
+			const mockRuntime = createMockRuntime();
+			mockRuntime.spawn = vi.fn()
+				.mockResolvedValueOnce({
+					success: true,
+					stdout: "1.0.0",
+					stderr: "",
+					exitCode: 0,
+				} as SpawnResult)
+				.mockResolvedValueOnce({
+					success: false,
+					stdout: "",
+					stderr: "Navigation failed",
+					exitCode: 1,
+				} as SpawnResult);
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			await expect(fetcher.fetch("https://example.com")).rejects.toThrow(FetchError);
+		});
+
+		it("should re-throw TimeoutError as-is", async () => {
+			const config = createMockConfig({ timeout: 50 });
+			const mockRuntime = createMockRuntime();
+			mockRuntime.spawn = vi.fn()
+				.mockResolvedValueOnce({
+					success: true,
+					stdout: "1.0.0",
+					stderr: "",
+					exitCode: 0,
+				} as SpawnResult)
+				.mockImplementation(() => new Promise((resolve) => setTimeout(() => resolve({
+					success: true,
+					stdout: "",
+					stderr: "",
+					exitCode: 0,
+				} as SpawnResult), 1000)));
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			await expect(fetcher.fetch("https://example.com")).rejects.toThrow(TimeoutError);
+		});
+	});
+
+	describe("close", () => {
+		it("should close session successfully", async () => {
+			const config = createMockConfig();
+			const mockRuntime = createMockRuntime();
+			mockRuntime.spawn = vi.fn().mockResolvedValue({
+				success: true,
+				stdout: "",
+				stderr: "",
+				exitCode: 0,
+			} as SpawnResult);
+			mockExistsSync.mockReturnValue(true);
+			mockRmSync.mockReturnValue(undefined);
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			await fetcher.close();
+
+			expect(mockRuntime.spawn).toHaveBeenCalledWith(
+				expect.any(String),
+				["playwright-cli", "close", "--session", expect.any(String)],
+			);
+		});
+
+		it("should remove .playwright-cli directory when keepSession is false", async () => {
+			const config = createMockConfig({ keepSession: false });
+			const mockRuntime = createMockRuntime();
+			mockRuntime.spawn = vi.fn().mockResolvedValue({
+				success: true,
+				stdout: "",
+				stderr: "",
+				exitCode: 0,
+			} as SpawnResult);
+			mockExistsSync.mockReturnValue(true);
+			mockRmSync.mockReturnValue(undefined);
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			await fetcher.close();
+
+			expect(mockExistsSync).toHaveBeenCalled();
+			expect(mockRmSync).toHaveBeenCalled();
+		});
+
+		it("should not remove .playwright-cli directory when keepSession is true", async () => {
+			const config = createMockConfig({ keepSession: true });
+			const mockRuntime = createMockRuntime();
+			mockRuntime.spawn = vi.fn().mockResolvedValue({
+				success: true,
+				stdout: "",
+				stderr: "",
+				exitCode: 0,
+			} as SpawnResult);
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			await fetcher.close();
+
+			expect(mockExistsSync).not.toHaveBeenCalled();
+			expect(mockRmSync).not.toHaveBeenCalled();
+		});
+
+		it("should handle close session errors gracefully", async () => {
+			const config = createMockConfig();
+			const mockRuntime = createMockRuntime();
+			mockRuntime.spawn = vi.fn().mockRejectedValue(new Error("Session not found"));
+			mockExistsSync.mockReturnValue(false);
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			// Should not throw
+			await expect(fetcher.close()).resolves.toBeUndefined();
+		});
+
+		it("should handle cleanup errors gracefully", async () => {
+			const config = createMockConfig({ keepSession: false });
+			const mockRuntime = createMockRuntime();
+			mockRuntime.spawn = vi.fn().mockResolvedValue({
+				success: true,
+				stdout: "",
+				stderr: "",
+				exitCode: 0,
+			} as SpawnResult);
+			mockExistsSync.mockReturnValue(true);
+			mockRmSync.mockImplementation(() => {
+				throw new Error("Permission denied");
+			});
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			// Should not throw
+			await expect(fetcher.close()).resolves.toBeUndefined();
+		});
 	});
 
 	describe("timeout configuration", () => {
@@ -62,66 +531,6 @@ describe("PlaywrightFetcher timeout functionality", () => {
 		});
 	});
 
-	describe("Promise.race timeout pattern", () => {
-		it("should implement timeout using Promise.race pattern", async () => {
-			// Test the Promise.race pattern directly
-			const timeout = 100;
-			let timeoutFired = false;
-
-			const timeoutPromise = new Promise<never>((_, reject) => {
-				setTimeout(() => {
-					timeoutFired = true;
-					reject(new Error(`Request timeout after ${timeout}ms`));
-				}, timeout);
-			});
-
-			const slowPromise = new Promise((resolve) => {
-				setTimeout(() => resolve("completed"), 500);
-			});
-
-			try {
-				await Promise.race([slowPromise, timeoutPromise]);
-				expect.fail("Should have thrown timeout error");
-			} catch (error) {
-				expect(timeoutFired).toBe(true);
-				expect(error instanceof Error).toBe(true);
-				expect((error as Error).message).toBe("Request timeout after 100ms");
-			}
-		});
-
-		it("should complete when operation finishes before timeout", async () => {
-			const timeout = 500;
-
-			const timeoutPromise = new Promise<never>((_, reject) => {
-				setTimeout(() => {
-					reject(new Error(`Request timeout after ${timeout}ms`));
-				}, timeout);
-			});
-
-			const fastPromise = new Promise<string>((resolve) => {
-				setTimeout(() => resolve("completed"), 50);
-			});
-
-			const result = await Promise.race([fastPromise, timeoutPromise]);
-			expect(result).toBe("completed");
-		});
-	});
-
-	describe("config.timeout integration", () => {
-		it("should convert timeout seconds to milliseconds in config", () => {
-			// Simulate config parsing: (Number(options.timeout) || 30) * 1000
-			const timeoutSeconds = 5;
-			const timeoutMs = (Number(timeoutSeconds) || 30) * 1000;
-			expect(timeoutMs).toBe(5000);
-		});
-
-		it("should use default 30s when timeout not specified", () => {
-			const timeoutSeconds = Number(undefined) || 30;
-			const timeoutMs = timeoutSeconds * 1000;
-			expect(timeoutMs).toBe(30000);
-		});
-	});
-
 	describe("keepSession configuration", () => {
 		it("should have keepSession default to false", () => {
 			const config = createMockConfig();
@@ -137,5 +546,55 @@ describe("PlaywrightFetcher timeout functionality", () => {
 			const config = createMockConfig({ keepSession: false });
 			expect(config.keepSession).toBe(false);
 		});
+	});
+});
+
+describe("parseCliOutput", () => {
+	it("should extract HTML from CLI output", () => {
+		const output = '### Result\n"<html><body>Test</body></html>"\n### Ran Playwright code';
+		const result = parseCliOutput(output);
+		expect(result).toBe("<html><body>Test</body></html>");
+	});
+
+	it("should parse JSON escaped content", () => {
+		const output = '### Result\n"<html>Line 1\\nLine 2</html>"\n### Ran Playwright code';
+		const result = parseCliOutput(output);
+		expect(result).toBe("<html>Line 1\nLine 2</html>");
+	});
+
+	it("should handle quotes in content", () => {
+		const output = '### Result\n"<html>He said \\"hello\\"</html>"\n### Ran Playwright code';
+		const result = parseCliOutput(output);
+		expect(result).toBe('<html>He said "hello"</html>');
+	});
+
+	it("should handle backslashes in content", () => {
+		const output = '### Result\n"<html>Path: C:\\\\Users\\\\test</html>"\n### Ran Playwright code';
+		const result = parseCliOutput(output);
+		expect(result).toBe("<html>Path: C:\\Users\\test</html>");
+	});
+
+	it("should use manual escape handling when JSON.parse fails", () => {
+		const output = '### Result\n"<html>Invalid JSON \\x here</html>"\n### Ran Playwright code';
+		const result = parseCliOutput(output);
+		expect(result).toBe("<html>Invalid JSON \\x here</html>");
+	});
+
+	it("should return original output when no result pattern matches", () => {
+		const output = "Some random output without result pattern";
+		const result = parseCliOutput(output);
+		expect(result).toBe(output);
+	});
+
+	it("should handle empty HTML content", () => {
+		const output = '### Result\n""\n### Ran Playwright code';
+		const result = parseCliOutput(output);
+		expect(result).toBe("");
+	});
+
+	it("should handle multiline HTML content", () => {
+		const output = '### Result\n"<html>\\n  <body>\\n    <h1>Title</h1>\\n  </body>\\n</html>"\n### Ran Playwright code';
+		const result = parseCliOutput(output);
+		expect(result).toBe("<html>\n  <body>\n    <h1>Title</h1>\n  </body>\n</html>");
 	});
 });

@@ -159,8 +159,20 @@ crawl https://docs.example.com --delay 2000
       "url": "https://docs.example.com/getting-started",
       "title": "Getting Started",
       "file": "pages/page-001.md",
-      "hash": "a1b2c3d4e5f6...",
       "depth": 1,
+      "links": [
+        "https://docs.example.com/installation",
+        "https://docs.example.com/configuration"
+      ],
+      "metadata": {
+        "title": "Getting Started",
+        "description": "Quick start guide for beginners",
+        "keywords": "guide, tutorial, quickstart",
+        "author": null,
+        "ogTitle": "Getting Started - Example Docs",
+        "ogType": "article"
+      },
+      "hash": "a1b2c3d4e5f6...",
       "crawledAt": "2026-02-01T14:00:01.000Z"
     }
   ],
@@ -173,6 +185,25 @@ crawl https://docs.example.com --delay 2000
   ]
 }
 ```
+
+#### ページフィールド
+
+| フィールド | 型 | 説明 |
+|-----------|------|------|
+| `url` | string | ページURL |
+| `title` | string \| null | ページタイトル |
+| `file` | string | 出力ファイルパス（pages/以下） |
+| `depth` | number | クロール深度（開始URL=1） |
+| `links` | string[] | ページから抽出されたリンク一覧 |
+| `metadata` | object | ページメタデータ |
+| `metadata.title` | string \| null | メタタグから抽出したタイトル |
+| `metadata.description` | string \| null | メタディスクリプション |
+| `metadata.keywords` | string \| null | メタキーワード |
+| `metadata.author` | string \| null | 著者情報 |
+| `metadata.ogTitle` | string \| null | Open Graphタイトル |
+| `metadata.ogType` | string \| null | Open Graphタイプ |
+| `hash` | string | コンテンツのSHA-256ハッシュ |
+| `crawledAt` | string | クロール日時（ISO 8601） |
 
 ### 5.3 full.md
 

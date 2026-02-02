@@ -178,6 +178,107 @@ describe("IndexManager", () => {
 		});
 	});
 
+	describe("getExistingHashes", () => {
+		it("should return map of all existing hashes", async () => {
+			const indexData = {
+				crawledAt: "2025-01-01T00:00:00.000Z",
+				baseUrl: "https://example.com",
+				config: {},
+				totalPages: 2,
+				pages: [
+					{
+						url: "https://example.com/page1",
+						title: "Page 1",
+						file: "pages/page-001.md",
+						depth: 0,
+						links: [],
+						metadata: { title: "Page 1", description: null, keywords: null, author: null, ogTitle: null, ogType: null },
+						hash: "hash1",
+						crawledAt: "2025-01-01T00:00:00.000Z",
+					},
+					{
+						url: "https://example.com/page2",
+						title: "Page 2",
+						file: "pages/page-002.md",
+						depth: 1,
+						links: [],
+						metadata: { title: "Page 2", description: null, keywords: null, author: null, ogTitle: null, ogType: null },
+						hash: "hash2",
+						crawledAt: "2025-01-01T00:00:00.000Z",
+					},
+				],
+				specs: [],
+			};
+			await writeFile(join(testDir, "index.json"), JSON.stringify(indexData));
+
+			const manager = new IndexManager(testDir, "https://example.com", {
+				maxDepth: 2,
+				sameDomain: true,
+			});
+
+			const hashes = manager.getExistingHashes();
+
+			expect(hashes.size).toBe(2);
+			expect(hashes.get("https://example.com/page1")).toBe("hash1");
+			expect(hashes.get("https://example.com/page2")).toBe("hash2");
+		});
+
+		it("should skip pages without hash", async () => {
+			const indexData = {
+				crawledAt: "2025-01-01T00:00:00.000Z",
+				baseUrl: "https://example.com",
+				config: {},
+				totalPages: 2,
+				pages: [
+					{
+						url: "https://example.com/page1",
+						title: "Page 1",
+						file: "pages/page-001.md",
+						depth: 0,
+						links: [],
+						metadata: { title: "Page 1", description: null, keywords: null, author: null, ogTitle: null, ogType: null },
+						hash: "hash1",
+						crawledAt: "2025-01-01T00:00:00.000Z",
+					},
+					{
+						url: "https://example.com/page2",
+						title: "Page 2",
+						file: "pages/page-002.md",
+						depth: 1,
+						links: [],
+						metadata: { title: "Page 2", description: null, keywords: null, author: null, ogTitle: null, ogType: null },
+						// no hash
+						crawledAt: "2025-01-01T00:00:00.000Z",
+					},
+				],
+				specs: [],
+			};
+			await writeFile(join(testDir, "index.json"), JSON.stringify(indexData));
+
+			const manager = new IndexManager(testDir, "https://example.com", {
+				maxDepth: 2,
+				sameDomain: true,
+			});
+
+			const hashes = manager.getExistingHashes();
+
+			expect(hashes.size).toBe(1);
+			expect(hashes.get("https://example.com/page1")).toBe("hash1");
+			expect(hashes.has("https://example.com/page2")).toBe(false);
+		});
+
+		it("should return empty map when no existing index", () => {
+			const manager = new IndexManager(testDir, "https://example.com", {
+				maxDepth: 2,
+				sameDomain: true,
+			});
+
+			const hashes = manager.getExistingHashes();
+
+			expect(hashes.size).toBe(0);
+		});
+	});
+
 	describe("getExistingPageCount", () => {
 		it("should return count of existing pages", async () => {
 			const indexData = {

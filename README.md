@@ -121,7 +121,7 @@ bun run link-crawler/src/crawl.ts https://docs.example.com --include "/api/"
 | `--no-merge` | | | 結合ファイル無効 |
 | `--include <pattern>` | | | 含めるURL（正規表現） |
 | `--exclude <pattern>` | | | 除外するURL（正規表現） |
-| `--keep-session` | | | デバッグ用に.playwright-cliディレクトリを保持 |
+| `--keep-session` | | `false` | デバッグ用: .playwright-cliディレクトリを保持 |
 
 ### 出力形式
 

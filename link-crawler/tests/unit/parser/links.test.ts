@@ -98,6 +98,7 @@ describe("shouldCrawl", () => {
 		pages: true,
 		merge: true,
 		chunks: true,
+		keepSession: false,
 	};
 
 	it("should return true for unvisited URL", () => {
@@ -197,6 +198,7 @@ describe("extractLinks", () => {
 		pages: true,
 		merge: true,
 		chunks: true,
+		keepSession: false,
 	};
 
 	it("should extract links from HTML", () => {

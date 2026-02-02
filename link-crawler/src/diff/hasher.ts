@@ -1,18 +1,9 @@
 import { createHash } from "node:crypto";
-import { readFile } from "node:fs/promises";
 
 /** ページハッシュマップ型 */
 export interface PageHash {
 	url: string;
 	hash: string;
-}
-
-/** index.json構造（ハッシュ読み込み用） */
-interface IndexJson {
-	pages?: Array<{
-		url: string;
-		hash?: string;
-	}>;
 }
 
 /**
@@ -26,31 +17,16 @@ export function computeHash(content: string): string {
 
 /**
  * ハッシュ管理クラス
- * 既存のindex.jsonからハッシュを読み込み、差分検知を行う
+ * 差分検知を行う
  */
 export class Hasher {
-	private hashes = new Map<string, string>();
+	private hashes: Map<string, string>;
 
 	/**
-	 * index.jsonからハッシュを読み込む
-	 * @param indexPath index.jsonのパス
+	 * @param existingHashes 既存のハッシュMap（URL → hash）
 	 */
-	async loadHashes(indexPath: string): Promise<void> {
-		try {
-			const content = await readFile(indexPath, "utf8");
-			const data: IndexJson = JSON.parse(content);
-
-			if (data.pages) {
-				for (const page of data.pages) {
-					if (page.hash) {
-						this.hashes.set(page.url, page.hash);
-					}
-				}
-			}
-		} catch {
-			// ファイルが存在しない場合は空のまま
-			this.hashes.clear();
-		}
+	constructor(existingHashes: Map<string, string> = new Map()) {
+		this.hashes = new Map(existingHashes);
 	}
 
 	/**
