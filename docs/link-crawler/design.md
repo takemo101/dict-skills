@@ -369,7 +369,7 @@ class PlaywrightFetcher {
     await Bun.sleep(this.config.wait);
 
     // コンテンツ取得
-    const html = await $`playwright-cli content --session ${this.sessionId}`;
+    const html = await $`playwright-cli eval "document.documentElement.outerHTML" --session ${this.sessionId}`;
 
     return { html: html.text(), finalUrl: url };
   }
