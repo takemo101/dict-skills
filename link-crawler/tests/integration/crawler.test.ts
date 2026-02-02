@@ -101,6 +101,7 @@ const defaultConfig: CrawlConfig = {
 	pages: true,
 	merge: true,
 	chunks: true,
+	keepSession: false,
 };
 
 describe("CrawlerEngine Integration", () => {
