@@ -215,9 +215,9 @@ interface CrawlConfig {
   wait: number;
   headed: boolean;
   diff: boolean;
-  outputPages: boolean;
-  outputMerge: boolean;
-  outputChunks: boolean;
+  pages: boolean;
+  merge: boolean;
+  chunks: boolean;
 }
 
 /** クロール済みページ */
