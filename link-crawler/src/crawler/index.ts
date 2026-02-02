@@ -9,7 +9,9 @@ import { htmlToMarkdown } from "../parser/converter.js";
 import { extractContent, extractMetadata } from "../parser/extractor.js";
 import { extractLinks } from "../parser/links.js";
 import type { CrawlConfig, Fetcher, CrawledPage } from "../types.js";
-import { PlaywrightFetcher } from "./fetcher.js";
+
+/** スリープ関数 */
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /** クローラーエンジン */
 export class Crawler {
@@ -21,10 +23,23 @@ export class Crawler {
 	/** メモリ内のページ内容 (--no-pages時に使用) */
 	private pageContents = new Map<string, string>();
 
-	constructor(private config: CrawlConfig) {
-		this.fetcher = new PlaywrightFetcher(config);
+	constructor(private config: CrawlConfig, fetcher?: Fetcher) {
+		this.fetcher = fetcher ?? this.createDefaultFetcher();
 		this.writer = new OutputWriter(config);
 		this.hasher = new Hasher();
+	}
+
+	/** デフォルトのFetcherを作成（動的インポート） */
+	private createDefaultFetcher(): Fetcher {
+		// bun環境でのみPlaywrightFetcherを使用
+		if (typeof Bun !== "undefined") {
+			const { PlaywrightFetcher } = require("./fetcher.js");
+			return new PlaywrightFetcher(this.config);
+		}
+		// Node.js環境ではエラーを投げる（fetcherは必須）
+		throw new Error(
+			"Fetcher is required in non-Bun environments. Please provide a fetcher instance.",
+		);
 	}
 
 	/** クロール開始 */
@@ -234,7 +249,7 @@ export class Crawler {
 		if (depth < this.config.maxDepth) {
 			for (const link of links) {
 				if (!this.visited.has(link)) {
-					await Bun.sleep(this.config.delay);
+					await sleep(this.config.delay);
 					await this.crawl(link, depth + 1);
 				}
 			}
