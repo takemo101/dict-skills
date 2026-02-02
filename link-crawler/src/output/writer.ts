@@ -9,6 +9,23 @@ import type {
 	PageMetadata,
 } from "../types.js";
 
+/** 文字列をslug形式に変換（小文字化、スペース→ハイフン、特殊文字除去） */
+function slugify(text: string | null | undefined, maxLength = 50): string {
+	if (!text || text.trim().length === 0) {
+		return "";
+	}
+
+	return text
+		.toLowerCase()
+		.trim()
+		.replace(/[^\w\s-]/g, "") // 英数字・スペース・ハイフン以外を除去
+		.replace(/[\s_]+/g, "-") // スペースとアンダースコアをハイフンに
+		.replace(/-+/g, "-") // 連続するハイフンを1つに
+		.replace(/^-+|-+$/g, "") // 先頭・末尾のハイフンを除去
+		.slice(0, maxLength) // 長さ制限
+		.replace(/-+$/, ""); // 切り詰め後の末尾ハイフンを除去
+}
+
 /** API仕様ファイルのパターン */
 const specPatterns: Record<string, RegExp> = {
 	openapi: /\/(openapi|swagger)\.(ya?ml|json)$/i,
@@ -130,7 +147,11 @@ export class OutputWriter {
 		hash?: string,
 	): string {
 		const pageNum = String(this.getNextPageNumber()).padStart(3, "0");
-		const pageFile = `pages/page-${pageNum}.md`;
+		const pageTitle = metadata.title || title;
+		const titleSlug = slugify(pageTitle);
+		const pageFile = titleSlug
+			? `pages/page-${pageNum}-${titleSlug}.md`
+			: `pages/page-${pageNum}.md`;
 		const pagePath = join(this.config.outputDir, pageFile);
 		const pageCrawledAt = new Date().toISOString();
 		const computedHash = hash ?? this.computeHash(markdown);

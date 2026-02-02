@@ -1,7 +1,10 @@
 import type { CrawlConfig, Fetcher, FetchResult } from "../types.js";
 
 /** コマンドを実行してstdoutを返す */
-async function exec(cmd: string, args: string[]): Promise<{ success: boolean; stdout: string; stderr: string }> {
+async function exec(
+	cmd: string,
+	args: string[],
+): Promise<{ success: boolean; stdout: string; stderr: string }> {
 	try {
 		const proc = Bun.spawn([cmd, ...args], {
 			stdout: "pipe",
@@ -24,7 +27,7 @@ async function findPlaywrightCli(): Promise<{ node: string; cli: string } | null
 		"/usr/local/bin/playwright-cli",
 		`${process.env.HOME}/.npm-global/bin/playwright-cli`,
 	];
-	
+
 	for (const node of nodePaths) {
 		for (const cli of cliPaths) {
 			const result = await exec(node, [cli, "--version"]);
@@ -57,7 +60,9 @@ export class PlaywrightFetcher implements Fetcher {
 		return false;
 	}
 
-	private async runCli(args: string[]): Promise<{ success: boolean; stdout: string; stderr: string }> {
+	private async runCli(
+		args: string[],
+	): Promise<{ success: boolean; stdout: string; stderr: string }> {
 		return exec(this.nodePath, [this.playwrightPath, ...args]);
 	}
 
@@ -74,7 +79,12 @@ export class PlaywrightFetcher implements Fetcher {
 		await Bun.sleep(this.config.spaWait);
 
 		// コンテンツ取得
-		const result = await this.runCli(["eval", "document.documentElement.outerHTML", "--session", this.sessionId]);
+		const result = await this.runCli([
+			"eval",
+			"document.documentElement.outerHTML",
+			"--session",
+			this.sessionId,
+		]);
 		const html = this.parseCliOutput(result.stdout);
 
 		return {
@@ -94,10 +104,7 @@ export class PlaywrightFetcher implements Fetcher {
 				return JSON.parse(`"${resultMatch[1]}"`);
 			} catch {
 				// パース失敗時はエスケープを手動で解除
-				return resultMatch[1]
-					.replace(/\\n/g, "\n")
-					.replace(/\\"/g, '"')
-					.replace(/\\\\/g, "\\");
+				return resultMatch[1].replace(/\\n/g, "\n").replace(/\\"/g, '"').replace(/\\\\/g, "\\");
 			}
 		}
 		// フォールバック: そのまま返す
