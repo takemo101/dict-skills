@@ -57,8 +57,8 @@ link-crawler/
 │   │   ├── chunker.test.ts
 │   │   ├── converter.test.ts
 │   │   └── links.test.ts
-│   └── integration/             # 統合テスト
-│       └── crawler.test.ts
+│   └── integration/             # 統合テスト（未実装）
+│       └── .gitkeep
 │
 ├── vitest.config.ts             # Vitest設定
 ├── package.json
