@@ -10,4 +10,4 @@
 
 # Playwright cli
 .playwright-cli/
-crawled/
+.context/
