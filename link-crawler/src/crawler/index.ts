@@ -1,14 +1,14 @@
-import { join } from "node:path";
 import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { JSDOM } from "jsdom";
 import { computeHash, Hasher } from "../diff/hasher.js";
-import { OutputWriter } from "../output/writer.js";
-import { Merger } from "../output/merger.js";
 import { Chunker } from "../output/chunker.js";
+import { Merger } from "../output/merger.js";
+import { OutputWriter } from "../output/writer.js";
 import { htmlToMarkdown } from "../parser/converter.js";
 import { extractContent, extractMetadata } from "../parser/extractor.js";
 import { extractLinks } from "../parser/links.js";
-import type { CrawlConfig, Fetcher, CrawledPage } from "../types.js";
+import type { CrawlConfig, CrawledPage, Fetcher } from "../types.js";
 import { PlaywrightFetcher } from "./fetcher.js";
 
 /** クローラーエンジン */
@@ -99,7 +99,6 @@ export class Crawler {
 			}
 		} else if (this.config.chunks) {
 			// mergeなしでchunksのみの場合は、メモリから結合内容を生成
-			const merger = new Merger(this.config.outputDir);
 			fullMdContent = this.buildFullMarkdown(pages, pageContents);
 		}
 
@@ -117,10 +116,7 @@ export class Crawler {
 	}
 
 	/** Markdownを結合してfull.md内容を生成 */
-	private buildFullMarkdown(
-		pages: CrawledPage[],
-		pageContents: Map<string, string>,
-	): string {
+	private buildFullMarkdown(pages: CrawledPage[], pageContents: Map<string, string>): string {
 		const sections: string[] = [];
 
 		for (const page of pages) {
