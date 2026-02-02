@@ -4,7 +4,7 @@ export function parseConfig(options: Record<string, unknown>, startUrl: string):
 	return {
 		startUrl,
 		maxDepth: Math.min(Number(options.depth) || 1, 10),
-		outputDir: String(options.output || "./crawled"),
+		outputDir: String(options.output || "./.context"),
 		sameDomain: options.sameDomain !== false,
 		includePattern: options.include ? new RegExp(String(options.include)) : null,
 		excludePattern: options.exclude ? new RegExp(String(options.exclude)) : null,

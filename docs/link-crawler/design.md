@@ -252,7 +252,7 @@ interface CrawlResult {
 ### 5.2 出力構造
 
 ```
-crawled/
+.context/
 ├── index.json       # メタデータ・ハッシュ
 ├── full.md          # 結合ファイル（AIコンテキスト用）
 ├── chunks/          # 見出しベース分割

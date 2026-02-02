@@ -92,11 +92,11 @@ bun run link-crawler/src/crawl.ts https://docs.example.com -o ./docs -d 3 --diff
 ```bash
 # デフォルトでは full.md のみ出力
 bun run link-crawler/src/crawl.ts https://docs.example.com
-# → crawled/full.md に全ページが結合されて出力
+# → .context/full.md に全ページが結合されて出力
 
 # 必要な時だけ chunks を有効化
 bun run link-crawler/src/crawl.ts https://docs.example.com --chunks
-# → crawled/full.md + crawled/chunks/*.md
+# → .context/full.md + .context/chunks/*.md
 ```
 
 ### 特定パスのみクロール
@@ -114,7 +114,7 @@ bun run link-crawler/src/crawl.ts https://docs.example.com --include "/api/"
 | `--delay <ms>` | | `500` | リクエスト間隔 |
 | `--wait <ms>` | | `2000` | レンダリング待機時間 |
 | `--headed` | | `false` | ブラウザ表示 |
-| `--output <dir>` | `-o` | `./crawled` | 出力先 |
+| `--output <dir>` | `-o` | `./.context` | 出力先 |
 | `--diff` | | `false` | 差分クロール |
 | `--include <pattern>` | | | 含めるURL（正規表現） |
 | `--exclude <pattern>` | | | 除外するURL（正規表現） |
@@ -122,7 +122,7 @@ bun run link-crawler/src/crawl.ts https://docs.example.com --include "/api/"
 ### 出力形式
 
 ```
-crawled/
+.context/
 ├── index.json    # メタデータ・ハッシュ
 ├── full.md       # 全ページ結合 ★ AIコンテキスト用
 ├── chunks/       # 見出しベース分割

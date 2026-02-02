@@ -65,7 +65,7 @@ bun run link-crawler/src/crawl.ts <url> [options]
 
 | オプション | 短縮 | デフォルト | 説明 |
 |-----------|------|-----------|------|
-| `--output <dir>` | `-o` | `./crawled` | 出力先 |
+| `--output <dir>` | `-o` | `./.context` | 出力先 |
 | `--diff` | | `false` | 差分クロール |
 | `--no-pages` | | | ページ単位出力無効 |
 | `--no-merge` | | | 結合ファイル無効 |
@@ -100,11 +100,11 @@ bun run link-crawler/src/crawl.ts https://docs.example.com -o ./docs -d 3 --diff
 ```bash
 # デフォルトでは full.md のみ出力
 bun run link-crawler/src/crawl.ts https://docs.example.com
-# → crawled/full.md のみ出力
+# → .context/full.md のみ出力
 
 # 必要な時だけ chunks を有効化
 bun run link-crawler/src/crawl.ts https://docs.example.com --chunks
-# → crawled/full.md + crawled/chunks/*.md
+# → .context/full.md + .context/chunks/*.md
 ```
 
 ---
@@ -156,7 +156,7 @@ Bun.spawn([nodePath, cliPath, "open", url, "--session", sessionId])
 #### ディレクトリ構造
 
 ```
-crawled/
+.context/
 ├── index.json    # メタデータ・ハッシュ
 ├── full.md       # 全ページ結合 ★ AIコンテキスト用
 ├── chunks/       # 見出しベース分割 (--chunks 有効時のみ)
@@ -321,7 +321,7 @@ h1見出しを境界として分割。長大ドキュメントの分割に利用
 bun run link-crawler/src/crawl.ts https://docs.example.com -d 3
 
 # 2. LLMに読み込ませる
-cat crawled/full.md | llm "この技術について要約して"
+cat .context/full.md | llm "この技術について要約して"
 ```
 
 ### 設計相談

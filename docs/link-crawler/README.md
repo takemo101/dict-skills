@@ -30,7 +30,7 @@ bun install
 bun run dev https://docs.example.com -d 2
 
 # 出力確認
-cat crawled/full.md
+cat .context/full.md
 ```
 
 ## piスキル統合
