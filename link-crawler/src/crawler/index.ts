@@ -1,14 +1,14 @@
 import { join } from "node:path";
 import { JSDOM } from "jsdom";
+import { FILENAME } from "../constants.js";
 import { computeHash, Hasher } from "../diff/hasher.js";
+import { OutputWriter } from "../output/writer.js";
 import { htmlToMarkdown } from "../parser/converter.js";
 import { extractContent, extractMetadata } from "../parser/extractor.js";
 import { extractLinks } from "../parser/links.js";
-import { OutputWriter } from "../output/writer.js";
+import type { CrawlConfig, Fetcher } from "../types.js";
 import { CrawlLogger } from "./logger.js";
 import { PostProcessor } from "./post-processor.js";
-import { FILENAME } from "../constants.js";
-import type { CrawlConfig, CrawledPage, Fetcher } from "../types.js";
 
 /** クローラーエンジン */
 export class Crawler {
@@ -73,11 +73,7 @@ export class Crawler {
 		await this.postProcessor.process(result.pages, this.pageContents);
 
 		// 完了ログ
-		this.logger.logComplete(
-			result.totalPages,
-			result.specs.length,
-			indexPath,
-		);
+		this.logger.logComplete(result.totalPages, result.specs.length, indexPath);
 	}
 
 	/** 再帰クロール */

@@ -40,9 +40,7 @@ export class IndexManager {
 		const indexPath = join(this.outputDir, "index.json");
 		if (existsSync(indexPath)) {
 			try {
-				const existingResult = JSON.parse(
-					readFileSync(indexPath, "utf-8"),
-				) as CrawlResult;
+				const existingResult = JSON.parse(readFileSync(indexPath, "utf-8")) as CrawlResult;
 				for (const page of existingResult.pages) {
 					this.existingPages.set(page.url, page);
 				}
