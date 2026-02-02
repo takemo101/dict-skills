@@ -1,9 +1,9 @@
 import { existsSync, rmSync } from "node:fs";
 import { join } from "node:path";
-import { DependencyError, FetchError, TimeoutError } from "../errors.js";
 import { PATHS, PATTERNS } from "../constants.js";
-import type { RuntimeAdapter } from "../utils/runtime.js";
+import { DependencyError, FetchError, TimeoutError } from "../errors.js";
 import type { CrawlConfig, Fetcher, FetchResult } from "../types.js";
+import type { RuntimeAdapter } from "../utils/runtime.js";
 import { createRuntimeAdapter } from "../utils/runtime.js";
 
 /** Playwright CLIのパスを検索する設定 */
@@ -108,7 +108,9 @@ export class PlaywrightFetcher implements Fetcher {
 			// タイムアウト用のPromiseを作成
 			const timeoutPromise = new Promise<never>((_, reject) => {
 				setTimeout(() => {
-					reject(new TimeoutError(`Request timeout after ${this.config.timeout}ms`, this.config.timeout));
+					reject(
+						new TimeoutError(`Request timeout after ${this.config.timeout}ms`, this.config.timeout),
+					);
 				}, this.config.timeout);
 			});
 
@@ -158,10 +160,7 @@ export function parseCliOutput(output: string): string {
 			return JSON.parse(`"${resultMatch[1]}"`);
 		} catch {
 			// パース失敗時はエスケープを手動で解除
-			return resultMatch[1]
-				.replace(/\\n/g, "\n")
-				.replace(/\\"/g, '"')
-				.replace(/\\\\/g, "\\");
+			return resultMatch[1].replace(/\\n/g, "\n").replace(/\\"/g, '"').replace(/\\\\/g, "\\");
 		}
 	}
 	// フォールバック: そのまま返す

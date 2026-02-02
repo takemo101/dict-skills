@@ -1,9 +1,9 @@
+import { createHash } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { createHash } from "node:crypto";
+import { FILENAME, SPEC_PATTERNS } from "../constants.js";
 import type { CrawlConfig, CrawledPage, PageMetadata } from "../types.js";
 import { IndexManager } from "./index-manager.js";
-import { SPEC_PATTERNS, FILENAME } from "../constants.js";
 
 /** コンテンツのSHA256ハッシュを計算 */
 function computeHash(content: string): string {
@@ -32,14 +32,10 @@ export class OutputWriter {
 	private indexManager: IndexManager;
 
 	constructor(private config: CrawlConfig) {
-		this.indexManager = new IndexManager(
-			config.outputDir,
-			config.startUrl,
-			{
-				maxDepth: config.maxDepth,
-				sameDomain: config.sameDomain,
-			},
-		);
+		this.indexManager = new IndexManager(config.outputDir, config.startUrl, {
+			maxDepth: config.maxDepth,
+			sameDomain: config.sameDomain,
+		});
 
 		// ディレクトリ作成
 		mkdirSync(join(config.outputDir, FILENAME.PAGES_DIR), { recursive: true });
