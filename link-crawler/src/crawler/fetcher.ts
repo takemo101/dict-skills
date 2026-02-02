@@ -58,10 +58,7 @@ export class PlaywrightFetcher implements Fetcher {
 			});
 
 			// fetchとタイムアウトを競争させる
-			return await Promise.race([
-				this.executeFetch(url),
-				timeoutPromise,
-			]);
+			return await Promise.race([this.executeFetch(url), timeoutPromise]);
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
 			console.error(`  ✗ Fetch Error: ${message} - ${url}`);
