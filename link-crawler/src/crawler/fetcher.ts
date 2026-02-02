@@ -39,7 +39,7 @@ export class PlaywrightFetcher implements Fetcher {
 			await Bun.sleep(this.config.spaWait);
 
 			// コンテンツ取得
-			const result = await $`playwright-cli content --session ${this.sessionId}`.quiet();
+			const result = await $`playwright-cli eval "document.documentElement.outerHTML" --session ${this.sessionId}`.quiet();
 			const html = result.text();
 
 			return {
