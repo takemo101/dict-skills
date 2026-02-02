@@ -78,6 +78,7 @@ bun run link-crawler/src/crawl.ts <url> [options]
 | `--no-pages` | | | ページ単位出力無効 |
 | `--no-merge` | | | 結合ファイル無効 |
 | `--chunks` | | `false` | チャンク出力を有効化 |
+| `--keep-session` | | `false` | デバッグ用に.playwright-cliディレクトリを保持 |
 
 ---
 
