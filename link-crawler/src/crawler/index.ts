@@ -1,6 +1,4 @@
-import { join } from "node:path";
 import { JSDOM } from "jsdom";
-import { FILENAME } from "../constants.js";
 import { computeHash, Hasher } from "../diff/hasher.js";
 import { OutputWriter } from "../output/writer.js";
 import { htmlToMarkdown } from "../parser/converter.js";
@@ -14,7 +12,7 @@ import { PostProcessor } from "./post-processor.js";
 export class Crawler {
 	private fetcher!: Fetcher;
 	private writer: OutputWriter;
-	private hasher: Hasher;
+	private hasher: Hasher | null = null;
 	private logger: CrawlLogger;
 	private postProcessor: PostProcessor;
 	private visited = new Set<string>();
@@ -27,7 +25,6 @@ export class Crawler {
 		fetcher?: Fetcher,
 	) {
 		this.writer = new OutputWriter(config);
-		this.hasher = new Hasher();
 		this.logger = new CrawlLogger(config);
 		this.postProcessor = new PostProcessor(config, this.logger);
 		if (fetcher) {
@@ -55,8 +52,8 @@ export class Crawler {
 
 		// 差分モード時は既存ハッシュを読み込む
 		if (this.config.diff) {
-			const indexPath = join(this.config.outputDir, FILENAME.INDEX_JSON);
-			await this.hasher.loadHashes(indexPath);
+			const existingHashes = this.writer.getIndexManager().getExistingHashes();
+			this.hasher = new Hasher(existingHashes);
 			this.logger.logLoadedHashes(this.hasher.size);
 		}
 
@@ -116,7 +113,7 @@ export class Crawler {
 		const hash = computeHash(markdown);
 
 		// 差分モード時：変更がなければスキップ
-		if (this.config.diff && !this.hasher.isChanged(url, hash)) {
+		if (this.config.diff && this.hasher && !this.hasher.isChanged(url, hash)) {
 			this.logger.logSkipped(depth);
 		} else {
 			// ページ出力 (--no-pages時はスキップ)
