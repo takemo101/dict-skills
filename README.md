@@ -113,11 +113,15 @@ bun run link-crawler/src/crawl.ts https://docs.example.com --include "/api/"
 | `--depth <num>` | `-d` | `1` | 最大クロール深度 |
 | `--delay <ms>` | | `500` | リクエスト間隔 |
 | `--wait <ms>` | | `2000` | レンダリング待機時間 |
+| `--timeout <sec>` | | `30` | リクエストタイムアウト（秒） |
 | `--headed` | | `false` | ブラウザ表示 |
 | `--output <dir>` | `-o` | `./.context` | 出力先 |
 | `--diff` | | `false` | 差分クロール |
+| `--no-pages` | | | ページ単位出力無効 |
+| `--no-merge` | | | 結合ファイル無効 |
 | `--include <pattern>` | | | 含めるURL（正規表現） |
 | `--exclude <pattern>` | | | 除外するURL（正規表現） |
+| `--keep-session` | | | デバッグ用に.playwright-cliディレクトリを保持 |
 
 ### 出力形式
 
