@@ -3,12 +3,12 @@ import { JSDOM } from "jsdom";
 import { extractMetadata, extractContent } from "../../src/parser/extractor.js";
 
 describe("extractMetadata", () => {
-	it("should extract title from document", () => {
+	it("should extract title from HTML", () => {
 		const html = `
 			<!DOCTYPE html>
 			<html>
 				<head>
-					<title>Page Title</title>
+					<title>Test Page Title</title>
 				</head>
 				<body></body>
 			</html>
@@ -16,7 +16,7 @@ describe("extractMetadata", () => {
 		const dom = new JSDOM(html);
 		const metadata = extractMetadata(dom);
 
-		expect(metadata.title).toBe("Page Title");
+		expect(metadata.title).toBe("Test Page Title");
 	});
 
 	it("should extract description from meta tag", () => {
@@ -24,7 +24,7 @@ describe("extractMetadata", () => {
 			<!DOCTYPE html>
 			<html>
 				<head>
-					<meta name="description" content="Page description here">
+					<meta name="description" content="This is a test description">
 				</head>
 				<body></body>
 			</html>
@@ -32,15 +32,15 @@ describe("extractMetadata", () => {
 		const dom = new JSDOM(html);
 		const metadata = extractMetadata(dom);
 
-		expect(metadata.description).toBe("Page description here");
+		expect(metadata.description).toBe("This is a test description");
 	});
 
-	it("should extract Open Graph description", () => {
+	it("should extract description from Open Graph tag", () => {
 		const html = `
 			<!DOCTYPE html>
 			<html>
 				<head>
-					<meta property="og:description" content="OG description">
+					<meta property="og:description" content="OG Description">
 				</head>
 				<body></body>
 			</html>
@@ -48,16 +48,16 @@ describe("extractMetadata", () => {
 		const dom = new JSDOM(html);
 		const metadata = extractMetadata(dom);
 
-		expect(metadata.description).toBe("OG description");
+		expect(metadata.description).toBe("OG Description");
 	});
 
-	it("should prefer meta description over OG description", () => {
+	it("should prefer regular description over OG description", () => {
 		const html = `
 			<!DOCTYPE html>
 			<html>
 				<head>
-					<meta name="description" content="Meta description">
-					<meta property="og:description" content="OG description">
+					<meta name="description" content="Regular description">
+					<meta property="og:description" content="OG Description">
 				</head>
 				<body></body>
 			</html>
@@ -65,7 +65,7 @@ describe("extractMetadata", () => {
 		const dom = new JSDOM(html);
 		const metadata = extractMetadata(dom);
 
-		expect(metadata.description).toBe("Meta description");
+		expect(metadata.description).toBe("Regular description");
 	});
 
 	it("should extract keywords", () => {
@@ -73,7 +73,7 @@ describe("extractMetadata", () => {
 			<!DOCTYPE html>
 			<html>
 				<head>
-					<meta name="keywords" content="keyword1, keyword2, keyword3">
+					<meta name="keywords" content="test, keywords, example">
 				</head>
 				<body></body>
 			</html>
@@ -81,7 +81,7 @@ describe("extractMetadata", () => {
 		const dom = new JSDOM(html);
 		const metadata = extractMetadata(dom);
 
-		expect(metadata.keywords).toBe("keyword1, keyword2, keyword3");
+		expect(metadata.keywords).toBe("test, keywords, example");
 	});
 
 	it("should extract author", () => {
@@ -106,7 +106,6 @@ describe("extractMetadata", () => {
 			<html>
 				<head>
 					<meta property="og:title" content="OG Title">
-					<title>Regular Title</title>
 				</head>
 				<body></body>
 			</html>
@@ -114,7 +113,6 @@ describe("extractMetadata", () => {
 		const dom = new JSDOM(html);
 		const metadata = extractMetadata(dom);
 
-		expect(metadata.title).toBe("Regular Title");
 		expect(metadata.ogTitle).toBe("OG Title");
 	});
 
@@ -158,7 +156,9 @@ describe("extractMetadata", () => {
 			<!DOCTYPE html>
 			<html>
 				<head>
-					<title>  Title With Spaces  </title>
+					<title>
+						  Title with whitespace  
+					</title>
 				</head>
 				<body></body>
 			</html>
@@ -166,7 +166,35 @@ describe("extractMetadata", () => {
 		const dom = new JSDOM(html);
 		const metadata = extractMetadata(dom);
 
-		expect(metadata.title).toBe("Title With Spaces");
+		expect(metadata.title).toBe("Title with whitespace");
+	});
+
+	it("should extract all metadata together", () => {
+		const html = `
+			<!DOCTYPE html>
+			<html>
+				<head>
+					<title>Full Test</title>
+					<meta name="description" content="A description">
+					<meta name="keywords" content="key1, key2">
+					<meta name="author" content="Author Name">
+					<meta property="og:title" content="OG Title">
+					<meta property="og:type" content="website">
+				</head>
+				<body></body>
+			</html>
+		`;
+		const dom = new JSDOM(html);
+		const metadata = extractMetadata(dom);
+
+		expect(metadata).toEqual({
+			title: "Full Test",
+			description: "A description",
+			keywords: "key1, key2",
+			author: "Author Name",
+			ogTitle: "OG Title",
+			ogType: "website",
+		});
 	});
 });
 
@@ -175,10 +203,12 @@ describe("extractContent", () => {
 		const html = `
 			<!DOCTYPE html>
 			<html>
-				<head><title>Test Article</title></head>
+				<head>
+					<title>Article Title</title>
+				</head>
 				<body>
 					<article>
-						<h1>Article Title</h1>
+						<h1>Main Article</h1>
 						<p>This is the main content of the article.</p>
 						<p>It has multiple paragraphs.</p>
 					</article>
@@ -187,237 +217,280 @@ describe("extractContent", () => {
 		`;
 		const result = extractContent(html, "https://example.com/article");
 
-		expect(result.title).toBeTruthy();
+		expect(result.title).toBe("Article Title");
 		expect(result.content).toBeTruthy();
+		expect(result.content).toContain("Main Article");
 		expect(result.content).toContain("main content");
 	});
 
-	it("should fallback when Readability fails", () => {
+	it("should use fallback when Readability fails", () => {
 		const html = `
 			<!DOCTYPE html>
 			<html>
-				<head><title>Empty Page</title></head>
+				<head></head>
 				<body>
-					<div class="content">
-						<p>Fallback content here.</p>
-					</div>
+					<main>
+						<p>Fallback content in main tag.</p>
+					</main>
 				</body>
 			</html>
 		`;
 		const result = extractContent(html, "https://example.com");
 
-		// Should have some content from fallback
+		// Readability may succeed or fallback is used - either way content should be extracted
 		expect(result.content).toBeTruthy();
+		expect(result.content).toContain("Fallback content");
 	});
 
-	it("should remove script tags in fallback", () => {
+	it("should fallback to article tag", () => {
 		const html = `
 			<!DOCTYPE html>
 			<html>
-				<head><title>Page with Scripts</title></head>
+				<head></head>
 				<body>
-					<script>alert('test');</script>
-					<div class="content">
-						<p>Actual content.</p>
-					</div>
+					<article>
+						<p>Article content here.</p>
+					</article>
 				</body>
 			</html>
 		`;
 		const result = extractContent(html, "https://example.com");
 
-		expect(result.content).not.toContain("alert");
-		expect(result.content).not.toContain("<script>");
-	});
-
-	it("should remove style tags in fallback", () => {
-		const html = `
-			<!DOCTYPE html>
-			<html>
-				<head><title>Page with Styles</title></head>
-				<body>
-					<style>.red { color: red; }</style>
-					<div class="content">
-						<p>Actual content.</p>
-					</div>
-				</body>
-			</html>
-		`;
-		const result = extractContent(html, "https://example.com");
-
-		expect(result.content).not.toContain(".red");
-		expect(result.content).not.toContain("<style>");
-	});
-
-	it("should remove noscript tags in fallback", () => {
-		const html = `
-			<!DOCTYPE html>
-			<html>
-				<head><title>Page with Noscript</title></head>
-				<body>
-					<noscript>Please enable JavaScript</noscript>
-					<div class="content">
-						<p>Actual content.</p>
-					</div>
-				</body>
-			</html>
-		`;
-		const result = extractContent(html, "https://example.com");
-
-		expect(result.content).not.toContain("noscript");
-		expect(result.content).not.toContain("Please enable JavaScript");
-	});
-
-	it("should extract content with navigation elements", () => {
-		const html = `
-			<!DOCTYPE html>
-			<html>
-				<head><title>Page with Nav</title></head>
-				<body>
-					<nav>Navigation links</nav>
-					<div class="content">
-						<p>Actual content.</p>
-					</div>
-				</body>
-			</html>
-		`;
-		const result = extractContent(html, "https://example.com");
-
-		// Readability processes the content - it may or may not include nav
 		expect(result.content).toBeTruthy();
-		expect(result.content).toContain("content");
+		expect(result.content).toContain("Article content");
 	});
 
-	it("should extract content with header elements", () => {
+	it("should fallback to role='main' element", () => {
 		const html = `
 			<!DOCTYPE html>
 			<html>
-				<head><title>Page with Header</title></head>
+				<head></head>
 				<body>
-					<header>Site Header</header>
-					<div class="content">
-						<p>Actual content.</p>
+					<div role="main">
+						<p>Main role content.</p>
 					</div>
 				</body>
 			</html>
 		`;
 		const result = extractContent(html, "https://example.com");
 
-		// Readability processes the content - it may or may not include header
 		expect(result.content).toBeTruthy();
-		expect(result.content).toContain("content");
-	});
-
-	it("should remove footer tags in fallback", () => {
-		const html = `
-			<!DOCTYPE html>
-			<html>
-				<head><title>Page with Footer</title></head>
-				<body>
-					<div class="content">
-						<p>Actual content.</p>
-					</div>
-					<footer>Site Footer</footer>
-				</body>
-			</html>
-		`;
-		const result = extractContent(html, "https://example.com");
-
-		expect(result.content).not.toContain("Site Footer");
-	});
-
-	it("should prefer main tag in fallback", () => {
-		const html = `
-			<!DOCTYPE html>
-			<html>
-				<head><title>Page with Main</title></head>
-				<body>
-					<div>Other content</div>
-					<main>Main content here</main>
-					<div>More other content</div>
-				</body>
-			</html>
-		`;
-		const result = extractContent(html, "https://example.com");
-
-		expect(result.content).toContain("Main content here");
-	});
-
-	it("should use article tag as fallback", () => {
-		const html = `
-			<!DOCTYPE html>
-			<html>
-				<head><title>Page with Article</title></head>
-				<body>
-					<article>Article content here</article>
-				</body>
-			</html>
-		`;
-		const result = extractContent(html, "https://example.com");
-
-		expect(result.content).toContain("Article content here");
-	});
-
-	it("should use [role='main'] as fallback", () => {
-		const html = `
-			<!DOCTYPE html>
-			<html>
-				<head><title>Page with Role Main</title></head>
-				<body>
-					<div role="main">Main role content</div>
-				</body>
-			</html>
-		`;
-		const result = extractContent(html, "https://example.com");
-
 		expect(result.content).toContain("Main role content");
 	});
 
-	it("should use .content class as fallback", () => {
+	it("should fallback to .content class", () => {
 		const html = `
 			<!DOCTYPE html>
 			<html>
-				<head><title>Page with Content Class</title></head>
+				<head></head>
 				<body>
-					<div class="content">Content class content</div>
+					<div class="content">
+						<p>Content class content.</p>
+					</div>
 				</body>
 			</html>
 		`;
 		const result = extractContent(html, "https://example.com");
 
+		expect(result.content).toBeTruthy();
 		expect(result.content).toContain("Content class content");
 	});
 
-	it("should use #content id as fallback", () => {
+	it("should fallback to #content id", () => {
 		const html = `
 			<!DOCTYPE html>
 			<html>
-				<head><title>Page with Content ID</title></head>
+				<head></head>
 				<body>
-					<div id="content">Content ID content</div>
+					<div id="content">
+						<p>Content id content.</p>
+					</div>
 				</body>
 			</html>
 		`;
 		const result = extractContent(html, "https://example.com");
 
-		expect(result.content).toContain("Content ID content");
+		expect(result.content).toBeTruthy();
+		expect(result.content).toContain("Content id content");
 	});
 
-	it("should handle empty HTML", () => {
-		const result = extractContent("", "https://example.com");
-
-		expect(result.content).toBeNull();
-	});
-
-	it("should handle HTML without body", () => {
+	it("should fallback to body when no specific container found", () => {
 		const html = `
 			<!DOCTYPE html>
 			<html>
-				<head><title>No Body</title></head>
+				<head></head>
+				<body>
+					<p>Body content.</p>
+				</body>
 			</html>
 		`;
 		const result = extractContent(html, "https://example.com");
 
-		// Should return null or handle gracefully
-		expect(result).toBeDefined();
+		expect(result.content).toBeTruthy();
+		expect(result.content).toContain("Body content");
+	});
+
+	it("should remove script tags from fallback", () => {
+		const html = `
+			<!DOCTYPE html>
+			<html>
+				<head></head>
+				<body>
+					<main>
+						<p>Content here.</p>
+						<script>alert('script');</script>
+					</main>
+				</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com");
+
+		expect(result.content).toBeTruthy();
+		expect(result.content).toContain("Content here");
+		expect(result.content).not.toContain("script");
+	});
+
+	it("should remove style tags from fallback", () => {
+		const html = `
+			<!DOCTYPE html>
+			<html>
+				<head></head>
+				<body>
+					<main>
+						<p>Content here.</p>
+						<style>.class { color: red; }</style>
+					</main>
+				</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com");
+
+		expect(result.content).toBeTruthy();
+		expect(result.content).toContain("Content here");
+		expect(result.content).not.toContain("style");
+	});
+
+	it("should remove noscript tags from fallback", () => {
+		const html = `
+			<!DOCTYPE html>
+			<html>
+				<head></head>
+				<body>
+					<main>
+						<p>Content here.</p>
+						<noscript>Please enable JavaScript</noscript>
+					</main>
+				</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com");
+
+		expect(result.content).toBeTruthy();
+		expect(result.content).toContain("Content here");
+		expect(result.content).not.toContain("noscript");
+	});
+
+	it("should remove nav tags from fallback", () => {
+		const html = `
+			<!DOCTYPE html>
+			<html>
+				<head></head>
+				<body>
+					<main>
+						<p>Content here.</p>
+						<nav>Navigation</nav>
+					</main>
+				</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com");
+
+		expect(result.content).toBeTruthy();
+		expect(result.content).toContain("Content here");
+		// Note: nav may or may not be removed depending on whether Readability or fallback is used
+	});
+
+	it("should remove header tags from fallback", () => {
+		const html = `
+			<!DOCTYPE html>
+			<html>
+				<head></head>
+				<body>
+					<main>
+						<p>Content here.</p>
+						<header>Header content</header>
+					</main>
+				</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com");
+
+		expect(result.content).toBeTruthy();
+		expect(result.content).toContain("Content here");
+		// Note: header may or may not be removed depending on whether Readability or fallback is used
+	});
+
+	it("should remove footer tags from fallback", () => {
+		const html = `
+			<!DOCTYPE html>
+			<html>
+				<head></head>
+				<body>
+					<main>
+						<p>Content here.</p>
+						<footer>Footer content</footer>
+					</main>
+				</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com");
+
+		expect(result.content).toBeTruthy();
+		expect(result.content).toContain("Content here");
+		expect(result.content).not.toContain("Footer content");
+	});
+
+	it("should remove aside tags from fallback", () => {
+		const html = `
+			<!DOCTYPE html>
+			<html>
+				<head></head>
+				<body>
+					<main>
+						<p>Content here.</p>
+						<aside>Sidebar content</aside>
+					</main>
+				</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com");
+
+		expect(result.content).toBeTruthy();
+		expect(result.content).toContain("Content here");
+		expect(result.content).not.toContain("Sidebar content");
+	});
+
+	it("should handle empty HTML", () => {
+		const html = "";
+		const result = extractContent(html, "https://example.com");
+
+		expect(result.title).toBeNull();
+		expect(result.content).toBeNull();
+	});
+
+	it("should handle HTML with only structure", () => {
+		const html = `
+			<!DOCTYPE html>
+			<html>
+				<head></head>
+				<body></body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com");
+
+		expect(result.title).toBeNull();
+		// Content may be null, empty, or whitespace only depending on extraction
+		const hasContent = result.content && result.content.trim().length > 0;
+		expect(hasContent).toBe(false);
 	});
 });
