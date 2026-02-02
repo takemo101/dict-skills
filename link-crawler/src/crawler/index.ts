@@ -237,6 +237,7 @@ export class Crawler {
 					`depth: ${depth}`,
 					"---",
 					"",
+					"",
 				].join("\n");
 				this.pageContents.set(pageFile, frontmatter + markdown);
 				// writerにもページ情報を追加（ファイルは書き込まない）
