@@ -5,7 +5,7 @@ export const DEFAULTS = {
 	/** 最大深度上限 */
 	MAX_DEPTH_LIMIT: 10,
 	/** 出力ディレクトリ */
-	OUTPUT_DIR: "./crawled",
+	OUTPUT_DIR: "./.context",
 	/** リクエスト間の遅延(ms) */
 	DELAY_MS: 500,
 	/** デフォルトタイムアウト(秒) */
