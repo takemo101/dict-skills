@@ -23,7 +23,7 @@ description: 技術ドキュメントサイトをクロールし、AIコンテ�
 ## 前提条件
 
 - Bun インストール済み
-- playwright-cli: `npm install -g @playwright/cli`
+- [playwright-cli](https://www.npmjs.com/package/@playwright/cli): `npm install -g @playwright/cli`
 
 ## セットアップ
 
