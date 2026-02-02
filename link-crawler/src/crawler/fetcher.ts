@@ -19,6 +19,26 @@ export class PlaywrightFetcher implements Fetcher {
 		}
 	}
 
+	private async executeFetch(url: string): Promise<FetchResult> {
+		const headedFlag = this.config.headed ? "--headed" : "";
+
+		// ページを開く
+		await $`playwright-cli open ${url} --session ${this.sessionId} ${headedFlag}`.quiet();
+
+		// レンダリング待機
+		await Bun.sleep(this.config.spaWait);
+
+		// コンテンツ取得
+		const result = await $`playwright-cli eval "document.documentElement.outerHTML" --session ${this.sessionId}`.quiet();
+		const html = result.text();
+
+		return {
+			html,
+			finalUrl: url,
+			contentType: "text/html",
+		};
+	}
+
 	async fetch(url: string): Promise<FetchResult | null> {
 		if (!this.initialized) {
 			const hasPlaywright = await this.checkPlaywrightCli();
@@ -30,23 +50,15 @@ export class PlaywrightFetcher implements Fetcher {
 		}
 
 		try {
-			const headedFlag = this.config.headed ? "--headed" : "";
+			// タイムアウト用のPromiseを作成
+			const timeoutPromise = new Promise<never>((_, reject) => {
+				setTimeout(() => {
+					reject(new Error(`Request timeout after ${this.config.timeout}ms`));
+				}, this.config.timeout);
+			});
 
-			// ページを開く
-			await $`playwright-cli open ${url} --session ${this.sessionId} ${headedFlag}`.quiet();
-
-			// レンダリング待機
-			await Bun.sleep(this.config.spaWait);
-
-			// コンテンツ取得
-			const result = await $`playwright-cli content --session ${this.sessionId}`.quiet();
-			const html = result.text();
-
-			return {
-				html,
-				finalUrl: url,
-				contentType: "text/html",
-			};
+			// fetchとタイムアウトを競争させる
+			return await Promise.race([this.executeFetch(url), timeoutPromise]);
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
 			console.error(`  ✗ Fetch Error: ${message} - ${url}`);
