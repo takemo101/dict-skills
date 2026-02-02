@@ -166,6 +166,7 @@ export class OutputWriter {
 			`depth: ${depth}`,
 			"---",
 			"",
+			"",
 		]
 			.filter(Boolean)
 			.join("\n");
