@@ -43,7 +43,7 @@ crawl <url> [options]
 
 | オプション | 短縮 | デフォルト | 説明 |
 |-----------|------|-----------|------|
-| `--output <dir>` | `-o` | `./crawled` | 出力ディレクトリ |
+| `--output <dir>` | `-o` | `./.context` | 出力ディレクトリ |
 | `--no-pages` | | | ページ単位ファイル出力を無効化 |
 | `--no-merge` | | | 結合ファイル(full.md)出力を無効化 |
 | `--no-chunks` | | | チャンク分割出力を無効化 |
@@ -125,7 +125,7 @@ crawl https://docs.example.com --delay 2000
 ### 5.1 ディレクトリ構成
 
 ```
-crawled/
+.context/
 ├── index.json       # メタデータ・ハッシュ情報
 ├── full.md          # 全ページ結合（AIコンテキスト用）
 ├── chunks/          # 見出しベースチャンク分割

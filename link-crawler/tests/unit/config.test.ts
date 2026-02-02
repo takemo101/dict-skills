@@ -7,7 +7,7 @@ describe("parseConfig", () => {
 
 		expect(config.startUrl).toBe("https://example.com");
 		expect(config.maxDepth).toBe(1);
-		expect(config.outputDir).toBe("./crawled");
+		expect(config.outputDir).toBe("./.context");
 		expect(config.sameDomain).toBe(true);
 		expect(config.delay).toBe(500);
 		expect(config.timeout).toBe(30000);
