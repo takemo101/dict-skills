@@ -24,6 +24,7 @@ program
 	.option("--no-merge", "Skip merged output file")
 	.option("--chunks", "Enable chunked output files", false)
 	.option("--keep-session", "Keep .playwright-cli directory after crawl (for debugging)", false)
+	.version("2.0.0")
 	.parse();
 
 const options = program.opts();
