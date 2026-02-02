@@ -238,7 +238,9 @@ export class Crawler {
 					"---",
 					"",
 					"",
-				].join("\n");
+				]
+					.filter((line) => line !== null)
+					.join("\n");
 				this.pageContents.set(pageFile, frontmatter + markdown);
 				// writerにもページ情報を追加（ファイルは書き込まない）
 				this.writer.registerPage(url, pageFile, depth, links, metadata, title, hash);
