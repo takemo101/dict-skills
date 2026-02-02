@@ -118,7 +118,6 @@ export class Crawler {
 			}
 		} else if (this.config.chunks) {
 			// mergeなしでchunksのみの場合は、メモリから結合内容を生成
-			const _merger = new Merger(this.config.outputDir);
 			fullMdContent = this.buildFullMarkdown(pages, pageContents);
 		}
 
