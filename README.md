@@ -41,10 +41,43 @@ ln -s /path/to/dict-skills/link-crawler ~/.pi/agent/skills/link-crawler
 
 ## 使用方法
 
-### 基本コマンド
+### 基本的なクロール
 
 ```bash
-bun run link-crawler/src/crawl.ts <url> [options]
+# 深度2で指定URLをクロール
+bun run link-crawler/src/crawl.ts https://docs.example.com -d 2
+```
+
+### 出力先を指定
+
+```bash
+# 出力ディレクトリを指定してクロール
+bun run link-crawler/src/crawl.ts https://docs.example.com -o ./my-docs -d 3
+```
+
+### 差分クロール（2回目以降）
+
+```bash
+# 初回実行
+bun run link-crawler/src/crawl.ts https://docs.example.com -o ./docs -d 3
+
+# 2回目以降（変更のみ更新）
+bun run link-crawler/src/crawl.ts https://docs.example.com -o ./docs -d 3 --diff
+```
+
+### AIコンテキスト用（結合ファイルのみ）
+
+```bash
+# full.mdのみ出力（ページ・チャンク出力無効）
+bun run link-crawler/src/crawl.ts https://docs.example.com --no-pages --no-chunks
+# → crawled/full.md に全ページが結合されて出力
+```
+
+### 特定パスのみクロール
+
+```bash
+# APIドキュメントのみ対象
+bun run link-crawler/src/crawl.ts https://docs.example.com --include "/api/"
 ```
 
 ### オプション
@@ -59,22 +92,6 @@ bun run link-crawler/src/crawl.ts <url> [options]
 | `--diff` | | `false` | 差分クロール |
 | `--include <pattern>` | | | 含めるURL（正規表現） |
 | `--exclude <pattern>` | | | 除外するURL（正規表現） |
-
-### 使用例
-
-```bash
-# 基本（深度2でクロール）
-bun run link-crawler/src/crawl.ts https://docs.example.com -d 2
-
-# 特定パスのみ
-bun run link-crawler/src/crawl.ts https://docs.example.com --include "/api/"
-
-# AIコンテキスト用（結合ファイルのみ）
-bun run link-crawler/src/crawl.ts https://docs.example.com --no-pages --no-chunks
-
-# 結果確認
-cat ./crawled/full.md
-```
 
 ### 出力形式
 
