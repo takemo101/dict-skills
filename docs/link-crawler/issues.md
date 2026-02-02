@@ -47,7 +47,7 @@
 **概要**: 新設計に合わせて型定義を更新
 
 **タスク**:
-- [ ] `CrawlConfig` に `diff`, `outputPages`, `outputMerge`, `outputChunks` 追加
+- [ ] `CrawlConfig` に `diff`, `pages`, `merge`, `chunks` 追加
 - [ ] `CrawledPage` に `hash` フィールド追加
 - [ ] `PageIndex` 型を追加（index.json用）
 - [ ] 不要な `spa` フィールドを削除
