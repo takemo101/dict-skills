@@ -171,7 +171,7 @@ describe("CrawlLogger", () => {
 			logger.logComplete(5, 0, "./output/index.json");
 
 			const skippedCalls = consoleLogSpy.mock.calls.filter(
-				(call) => typeof call[0] === "string" && call[0].includes("Skipped"),
+				(call: unknown[]) => typeof call[0] === "string" && call[0].includes("Skipped"),
 			);
 			expect(skippedCalls).toHaveLength(1); // Only from logSkipped, not logComplete
 		});
