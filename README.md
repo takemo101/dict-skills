@@ -15,14 +15,21 @@
 ## インストール
 
 ```bash
-# TODO: インストール手順を追加
+cd link-crawler
+bun install
 ```
 
 ## 使用方法
 
 ```bash
-# TODO: 使用例を追加
+# 基本的なクロール
+bun run link-crawler/src/crawl.ts https://docs.example.com -d 2
+
+# 結合ファイルのみ出力
+bun run link-crawler/src/crawl.ts https://docs.example.com --no-pages --no-chunks
 ```
+
+詳細は [link-crawler/SKILL.md](./link-crawler/SKILL.md) を参照。
 
 ## ライセンス
 
