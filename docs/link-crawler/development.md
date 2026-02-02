@@ -48,8 +48,7 @@ link-crawler/
 │   └── output/
 │       ├── writer.ts           # ページ書き込み
 │       ├── merger.ts           # full.md 生成
-│       ├── chunker.ts          # chunks/*.md 生成
-│       └── index-writer.ts     # index.json 生成
+│       └── chunker.ts          # chunks/*.md 生成
 │
 ├── tests/                       # テストファイル
 │   ├── unit/                    # ユニットテスト
@@ -189,7 +188,7 @@ try {
 
 | 対象 | 規則 | 例 |
 |------|------|-----|
-| ファイル | kebab-case | `index-writer.ts` |
+| ファイル | kebab-case | `chunker.ts` |
 | クラス | PascalCase | `CrawlerEngine` |
 | 関数・変数 | camelCase | `fetchPage` |
 | 定数 | UPPER_SNAKE_CASE | `MAX_DEPTH` |

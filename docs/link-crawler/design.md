@@ -96,8 +96,7 @@ link-crawler/
 │   └── output/
 │       ├── writer.ts           # ページ書き込み
 │       ├── merger.ts           # full.md 生成
-│       ├── chunker.ts          # chunks/*.md 生成
-│       └── index-writer.ts     # index.json 生成
+│       └── chunker.ts          # chunks/*.md 生成
 │
 ├── package.json
 ├── tsconfig.json
@@ -118,7 +117,7 @@ link-crawler/
 | `PageWriter` | ページ保存 | Page | File |
 | `Merger` | 全ページ結合 | Pages | full.md |
 | `Chunker` | チャンク分割 | full.md | chunks/*.md |
-| `IndexWriter` | メタデータ保存 | CrawlResult | index.json |
+| `OutputWriter.saveIndex()` | メタデータ保存 | CrawlResult | index.json |
 
 ---
 
