@@ -230,3 +230,133 @@ const y = 2;</code></pre>
 		expect(result).toContain("Line 2");
 	});
 });
+
+describe("htmlToMarkdown - syntax highlighter support", () => {
+	it("should convert hljs div to code block", () => {
+		const html = `
+			<div class="hljs">
+				<pre><code>function hello() {
+  return "world";
+}</code></pre>
+			</div>
+		`;
+		const result = htmlToMarkdown(html);
+
+		expect(result).toContain("```");
+		expect(result).toContain("function hello()");
+		expect(result).toContain('return "world"');
+	});
+
+	it("should convert data-rehype-pretty-code-fragment to code block", () => {
+		const html = `
+			<div data-rehype-pretty-code-fragment="">
+				<pre data-language="bash"><code>npx create-next-app@latest</code></pre>
+			</div>
+		`;
+		const result = htmlToMarkdown(html);
+
+		expect(result).toContain("```");
+		expect(result).toContain("npx create-next-app@latest");
+	});
+
+	it("should convert figure with data-rehype-pretty-code-figure to code block", () => {
+		const html = `
+			<figure data-rehype-pretty-code-figure="">
+				<pre data-language="tsx"><code>export default function App() {
+  return <div>Hello</div>;
+}</code></pre>
+			</figure>
+		`;
+		const result = htmlToMarkdown(html);
+
+		expect(result).toContain("```");
+		expect(result).toContain("export default function App()");
+	});
+
+	it("should convert prism-code div to code block", () => {
+		const html = `
+			<div class="prism-code">
+				<pre><code class="language-javascript">console.log("hello");</code></pre>
+			</div>
+		`;
+		const result = htmlToMarkdown(html);
+
+		expect(result).toContain("```");
+		expect(result).toContain('console.log("hello")');
+	});
+
+	it("should convert shiki div to code block", () => {
+		const html = `
+			<div class="shiki" data-language="rust">
+				<pre><code>fn main() {
+    println!("Hello, world!");
+}</code></pre>
+			</div>
+		`;
+		const result = htmlToMarkdown(html);
+
+		expect(result).toContain("```");
+		expect(result).toContain("fn main()");
+		expect(result).toContain('println!("Hello, world!")');
+	});
+
+	it("should convert highlight div to code block", () => {
+		const html = `
+			<div class="highlight">
+				<pre><code>gem install rails</code></pre>
+			</div>
+		`;
+		const result = htmlToMarkdown(html);
+
+		expect(result).toContain("```");
+		expect(result).toContain("gem install rails");
+	});
+
+	it("should convert code-block div to code block", () => {
+		const html = `
+			<div class="code-block">
+				<pre><code>docker run hello-world</code></pre>
+			</div>
+		`;
+		const result = htmlToMarkdown(html);
+
+		expect(result).toContain("```");
+		expect(result).toContain("docker run hello-world");
+	});
+
+	it("should detect language from class name", () => {
+		const html = `
+			<div class="hljs">
+				<pre><code class="language-python">print("hello")</code></pre>
+			</div>
+		`;
+		const result = htmlToMarkdown(html);
+
+		expect(result).toContain("```python");
+		expect(result).toContain('print("hello")');
+	});
+
+	it("should detect language from data-language attribute", () => {
+		const html = `
+			<div data-rehype-pretty-code-fragment="" data-language="typescript">
+				<pre><code>const x: number = 42;</code></pre>
+			</div>
+		`;
+		const result = htmlToMarkdown(html);
+
+		expect(result).toContain("```");
+		expect(result).toContain("const x: number = 42");
+	});
+
+	it("should handle code block without language", () => {
+		const html = `
+			<div class="hljs">
+				<pre><code>some code here</code></pre>
+			</div>
+		`;
+		const result = htmlToMarkdown(html);
+
+		expect(result).toContain("```");
+		expect(result).toContain("some code here");
+	});
+});
