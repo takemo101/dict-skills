@@ -59,6 +59,7 @@ bun run link-crawler/src/crawl.ts <url> [options]
 | `--wait <ms>` | | `2000` | レンダリング待機時間 |
 | `--headed` | | `false` | ブラウザ表示 |
 | `--timeout <sec>` | | `30` | リクエストタイムアウト |
+| `--keep-session` | | `false` | デバッグ用: .playwright-cliディレクトリを保持 |
 
 ### スコープ制御
 
@@ -77,6 +78,7 @@ bun run link-crawler/src/crawl.ts <url> [options]
 | `--no-pages` | | | ページ単位出力無効 |
 | `--no-merge` | | | 結合ファイル無効 |
 | `--chunks` | | `false` | チャンク出力を有効化 |
+| `--keep-session` | | `false` | デバッグ用に.playwright-cliディレクトリを保持 |
 
 ---
 

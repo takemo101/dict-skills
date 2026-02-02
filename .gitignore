@@ -7,7 +7,15 @@
 .pi-runner.yaml.local
 .pi-prompt.md
 *.swp
+docs/plans/*.md
+!docs/plans/README.md
 
 # Playwright cli
 .playwright-cli/
 .context/
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/

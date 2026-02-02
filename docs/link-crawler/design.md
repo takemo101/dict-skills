@@ -32,7 +32,7 @@
 | Runtime | Bun | 1.3.x | 高速起動、TypeScriptネイティブ |
 | Language | TypeScript | 5.8.x | 型安全性 |
 | Linter/Formatter | Biome | 2.x | 高速、設定シンプル |
-| Test Framework | Vitest | 3.x | 高速、ESM対応、Bun互換 |
+| Test Framework | Vitest | 4.x | 高速、ESM対応、Bun互換 |
 | CLI Parser | Commander | 13.x | 軽量、標準的 |
 | Browser | playwright-cli | latest | SPA完全対応、セッション管理 |
 | DOM Parser | JSDOM | 26.x | Node.js標準的なDOM実装 |
@@ -80,10 +80,14 @@ link-crawler/
 │   ├── crawl.ts                # エントリーポイント
 │   ├── config.ts               # 設定パース
 │   ├── types.ts                # 型定義
+│   ├── constants.ts            # 定数定義
+│   ├── errors.ts               # エラークラス
 │   │
 │   ├── crawler/
 │   │   ├── index.ts            # CrawlerEngine
-│   │   └── fetcher.ts          # PlaywrightFetcher
+│   │   ├── fetcher.ts          # PlaywrightFetcher
+│   │   ├── logger.ts           # ログ出力
+│   │   └── post-processor.ts   # 後処理
 │   │
 │   ├── parser/
 │   │   ├── extractor.ts        # HTML → 本文抽出
@@ -91,12 +95,20 @@ link-crawler/
 │   │   └── links.ts            # リンク抽出・正規化
 │   │
 │   ├── diff/
+│   │   ├── index.ts            # バレルエクスポート
 │   │   └── hasher.ts           # SHA256ハッシュ・差分検知
 │   │
-│   └── output/
-│       ├── writer.ts           # ページ書き込み + index.json 生成
-│       ├── merger.ts           # full.md 生成
-│       └── chunker.ts          # chunks/*.md 生成
+│   ├── output/
+│   │   ├── writer.ts           # ページ書き込み
+│   │   ├── merger.ts           # full.md 生成
+│   │   ├── chunker.ts          # chunks/*.md 生成
+│   │   └── index-manager.ts    # index.json管理
+│   │
+│   ├── types/
+│   │   └── turndown-plugin-gfm.d.ts  # Turndown型定義
+│   │
+│   └── utils/
+│       └── runtime.ts          # ランタイムアダプター
 │
 ├── package.json
 ├── tsconfig.json
@@ -108,15 +120,21 @@ link-crawler/
 
 | モジュール | 責務 | 入力 | 出力 |
 |-----------|------|------|------|
+| `Constants` | 定数定義（デフォルト値、ファイル名、パターン、終了コード） | - | 定数オブジェクト |
+| `Errors` | エラークラス定義（CrawlError, FetchError, ConfigError等） | Error情報 | Typed Error |
 | `CrawlerEngine` | クロール制御、再帰管理 | URL, Config | CrawledPages |
 | `PlaywrightFetcher` | ページ取得 | URL | HTML |
+| `CrawlLogger` | クロールログ出力（開始、進捗、完了、エラー等） | Config, Events | コンソール出力 |
+| `PostProcessor` | 後処理実行（Merger/Chunker呼び出し、ページ内容読み込み） | CrawledPages | full.md, chunks/ |
 | `Extractor` | 本文抽出 | HTML | ContentHTML |
 | `Converter` | Markdown変換 | ContentHTML | Markdown |
 | `LinksParser` | リンク抽出 | HTML | URLs |
 | `Hasher` | ハッシュ計算・比較 | Content | Hash, Changed |
-| `OutputWriter` | ページ保存、index.json 生成 | Page | File, index.json |
+| `IndexManager` | index.jsonの読み込み・保存・管理 | CrawledPage | index.json |
+| `OutputWriter` | ページファイル保存、フロントマター付与 | Page | .md File |
 | `Merger` | 全ページ結合 | Pages | full.md |
 | `Chunker` | チャンク分割 | full.md | chunks/*.md |
+| `RuntimeAdapter` | ランタイム抽象化（Bun/Node.js互換） | Command | SpawnResult |
 
 ---
 
@@ -218,23 +236,25 @@ interface CrawlConfig {
   chunks: boolean;
 }
 
-/** クロール済みページ */
-interface CrawledPage {
-  url: string;
-  title: string;
-  markdown: string;
-  hash: string;
-  depth: number;
-  links: string[];
+/** ページメタデータ */
+interface PageMetadata {
+  title: string | null;
+  description: string | null;
+  keywords: string | null;
+  author: string | null;
+  ogTitle: string | null;
+  ogType: string | null;
 }
 
 /** 保存済みページ情報 (index.json用) */
 interface PageIndex {
   url: string;
-  title: string;
+  title: string | null;
   file: string;
-  hash: string;
   depth: number;
+  links: string[];
+  metadata: PageMetadata;
+  hash: string;
   crawledAt: string;
 }
 
@@ -245,7 +265,14 @@ interface CrawlResult {
   config: Partial<CrawlConfig>;
   totalPages: number;
   pages: PageIndex[];
-  specs: SpecIndex[];
+  specs: DetectedSpec[];
+}
+
+/** 検出されたAPI仕様 */
+interface DetectedSpec {
+  url: string;
+  type: string;
+  file: string;
 }
 ```
 
@@ -318,8 +345,20 @@ interface CrawlResult {
       "url": "https://docs.example.com/getting-started",
       "title": "Getting Started",
       "file": "pages/page-001.md",
-      "hash": "a1b2c3d4e5f6...",
       "depth": 1,
+      "links": [
+        "https://docs.example.com/installation",
+        "https://docs.example.com/configuration"
+      ],
+      "metadata": {
+        "title": "Getting Started",
+        "description": "Quick start guide for beginners",
+        "keywords": "guide, tutorial, quickstart",
+        "author": null,
+        "ogTitle": "Getting Started - Example Docs",
+        "ogType": "article"
+      },
+      "hash": "a1b2c3d4e5f6...",
       "crawledAt": "2026-02-01T14:00:01.000Z"
     }
   ],

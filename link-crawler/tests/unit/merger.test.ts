@@ -24,7 +24,7 @@ const createPage = (
 		ogTitle: null,
 		ogType: null,
 	},
-	hash: "abc123",
+	hash: "",
 	crawledAt: new Date().toISOString(),
 });
 
