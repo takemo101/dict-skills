@@ -117,7 +117,6 @@ link-crawler/
 | `PageWriter` | ページ保存 | Page | File |
 | `Merger` | 全ページ結合 | Pages | full.md |
 | `Chunker` | チャンク分割 | full.md | chunks/*.md |
-| `IndexWriter` | メタデータ保存 | CrawlResult | index.json |
 
 ---
 
