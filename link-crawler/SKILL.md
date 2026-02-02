@@ -28,7 +28,7 @@ bun install
 ## テスト実行
 
 ```bash
-npm run test
+bun run test
 ```
 
 ---
