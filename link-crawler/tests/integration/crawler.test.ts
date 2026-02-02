@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { rmSync, existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { Crawler } from "../../src/crawler/index.js";
 import type { CrawlConfig, Fetcher, FetchResult } from "../../src/types.js";
 
 const testOutputDir = "./test-output-integration";
@@ -94,6 +93,19 @@ const defaultConfig: CrawlConfig = {
 	chunks: true,
 };
 
+// Crawlerクラスの動的インポートとモックFetcher注入
+async function createCrawler(config: CrawlConfig, mockFetcher: MockFetcher) {
+	const mod = await import("../../src/crawler/index.js");
+	const Crawler = mod.Crawler;
+	
+	// モックFetcherを注入したCrawlerインスタンスを作成
+	const crawler = new Crawler(config);
+	// @ts-expect-error - テスト用にprivateフィールドを上書き
+	crawler.fetcher = mockFetcher;
+	
+	return crawler;
+}
+
 describe("CrawlerEngine Integration", () => {
 	beforeEach(() => {
 		rmSync(testOutputDir, { recursive: true, force: true });
@@ -115,7 +127,7 @@ describe("CrawlerEngine Integration", () => {
 				},
 			});
 
-			const crawler = new TestableCrawler(defaultConfig, mockFetcher);
+			const crawler = await createCrawler(defaultConfig, mockFetcher);
 			await crawler.run();
 
 			// 出力ディレクトリの確認
@@ -172,7 +184,7 @@ describe("CrawlerEngine Integration", () => {
 			});
 
 			const config = { ...defaultConfig, maxDepth: 2 };
-			const crawler = new TestableCrawler(config, mockFetcher);
+			const crawler = await createCrawler(config, mockFetcher);
 			await crawler.run();
 
 			const indexContent = JSON.parse(
@@ -230,7 +242,7 @@ describe("CrawlerEngine Integration", () => {
 
 			// sameDomain: true (default)
 			const config = { ...defaultConfig, sameDomain: true };
-			const crawler = new TestableCrawler(config, mockFetcher);
+			const crawler = await createCrawler(config, mockFetcher);
 			await crawler.run();
 
 			const indexContent = JSON.parse(
@@ -257,7 +269,7 @@ describe("CrawlerEngine Integration", () => {
 				// error-page is not defined, so it will return null
 			});
 
-			const crawler = new TestableCrawler(defaultConfig, mockFetcher);
+			const crawler = await createCrawler(defaultConfig, mockFetcher);
 			await crawler.run();
 
 			const indexContent = JSON.parse(
@@ -282,7 +294,7 @@ describe("CrawlerEngine Integration", () => {
 			});
 
 			const config1 = { ...defaultConfig, diff: false };
-			const crawler1 = new TestableCrawler(config1, mockFetcher1);
+			const crawler1 = await createCrawler(config1, mockFetcher1);
 			await crawler1.run();
 
 			// Get the hash from first crawl
@@ -298,7 +310,7 @@ describe("CrawlerEngine Integration", () => {
 			});
 
 			const config2 = { ...defaultConfig, diff: true };
-			const crawler2 = new TestableCrawler(config2, mockFetcher2);
+			const crawler2 = await createCrawler(config2, mockFetcher2);
 			await crawler2.run();
 
 			// When pages are skipped in diff mode, they are not included in the new index
@@ -330,7 +342,7 @@ describe("CrawlerEngine Integration", () => {
 			});
 
 			const config1 = { ...defaultConfig, diff: false };
-			const crawler1 = new TestableCrawler(config1, mockFetcher1);
+			const crawler1 = await createCrawler(config1, mockFetcher1);
 			await crawler1.run();
 
 			const index1 = JSON.parse(
@@ -349,7 +361,7 @@ describe("CrawlerEngine Integration", () => {
 			});
 
 			const config2 = { ...defaultConfig, diff: true };
-			const crawler2 = new TestableCrawler(config2, mockFetcher2);
+			const crawler2 = await createCrawler(config2, mockFetcher2);
 			await crawler2.run();
 
 			const index2 = JSON.parse(
@@ -372,7 +384,7 @@ describe("CrawlerEngine Integration", () => {
 			});
 
 			const config1 = { ...defaultConfig, diff: false };
-			const crawler1 = new TestableCrawler(config1, mockFetcher1);
+			const crawler1 = await createCrawler(config1, mockFetcher1);
 			await crawler1.run();
 
 			// Second crawl with new page
@@ -393,7 +405,7 @@ describe("CrawlerEngine Integration", () => {
 			});
 
 			const config2 = { ...defaultConfig, diff: true };
-			const crawler2 = new TestableCrawler(config2, mockFetcher2);
+			const crawler2 = await createCrawler(config2, mockFetcher2);
 			await crawler2.run();
 
 			const index2 = JSON.parse(
@@ -416,7 +428,7 @@ describe("CrawlerEngine Integration", () => {
 			});
 
 			const config = { ...defaultConfig, pages: true };
-			const crawler = new TestableCrawler(config, mockFetcher);
+			const crawler = await createCrawler(config, mockFetcher);
 			await crawler.run();
 
 			const indexContent = JSON.parse(
@@ -450,7 +462,7 @@ describe("CrawlerEngine Integration", () => {
 			});
 
 			const config = { ...defaultConfig, merge: true };
-			const crawler = new TestableCrawler(config, mockFetcher);
+			const crawler = await createCrawler(config, mockFetcher);
 			await crawler.run();
 
 			const fullMdPath = join(testOutputDir, "full.md");
@@ -481,7 +493,7 @@ describe("CrawlerEngine Integration", () => {
 			});
 
 			const config = { ...defaultConfig, chunks: true, merge: true };
-			const crawler = new TestableCrawler(config, mockFetcher);
+			const crawler = await createCrawler(config, mockFetcher);
 			await crawler.run();
 
 			const chunksDir = join(testOutputDir, "chunks");
@@ -508,7 +520,7 @@ describe("CrawlerEngine Integration", () => {
 			});
 
 			const config = { ...defaultConfig, pages: false, merge: true };
-			const crawler = new TestableCrawler(config, mockFetcher);
+			const crawler = await createCrawler(config, mockFetcher);
 			await crawler.run();
 
 			// pages/page-001.md should not exist
@@ -532,7 +544,7 @@ describe("CrawlerEngine Integration", () => {
 			});
 
 			const config = { ...defaultConfig, merge: false, pages: true };
-			const crawler = new TestableCrawler(config, mockFetcher);
+			const crawler = await createCrawler(config, mockFetcher);
 			await crawler.run();
 
 			// full.md should not exist
@@ -558,7 +570,7 @@ describe("CrawlerEngine Integration", () => {
 				},
 			});
 
-			const crawler = new TestableCrawler(defaultConfig, mockFetcher);
+			const crawler = await createCrawler(defaultConfig, mockFetcher);
 			await crawler.run();
 
 			const indexContent = JSON.parse(
@@ -599,7 +611,7 @@ describe("CrawlerEngine Integration", () => {
 				},
 			});
 
-			const crawler = new TestableCrawler(defaultConfig, mockFetcher);
+			const crawler = await createCrawler(defaultConfig, mockFetcher);
 			await crawler.run();
 
 			const indexContent = JSON.parse(
@@ -616,15 +628,3 @@ describe("CrawlerEngine Integration", () => {
 		});
 	});
 });
-
-// TestableCrawler: モックFetcherを注入できるCrawler
-class TestableCrawler extends Crawler {
-	constructor(
-		config: CrawlConfig,
-		private mockFetcher: MockFetcher,
-	) {
-		super(config);
-		// @ts-expect-error - テスト用にprivateフィールドを上書き
-		this.fetcher = mockFetcher;
-	}
-}
