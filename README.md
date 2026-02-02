@@ -25,7 +25,7 @@
 
 ```bash
 # リポジトリをクローン
-git clone <repository-url>
+git clone https://github.com/takemo101/dict-skills.git
 cd dict-skills
 
 # 依存関係をインストール
