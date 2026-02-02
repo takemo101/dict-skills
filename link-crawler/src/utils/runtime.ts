@@ -1,5 +1,3 @@
-import { DependencyError } from "../errors.js";
-
 /** プロセス実行結果 */
 export interface SpawnResult {
 	success: boolean;

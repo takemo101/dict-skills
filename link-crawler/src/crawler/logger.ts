@@ -1,4 +1,4 @@
-import type { CrawlConfig, CrawledPage } from "../types.js";
+import type { CrawlConfig } from "../types.js";
 
 /**
  * クロールログ出力クラス
