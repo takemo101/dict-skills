@@ -168,7 +168,7 @@ export class OutputWriter {
 			"",
 			"",
 		]
-			.filter(Boolean)
+			.filter((line) => line !== null)
 			.join("\n");
 
 		writeFileSync(pagePath, frontmatter + markdown);
