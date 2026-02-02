@@ -46,7 +46,7 @@ link-crawler/
 │   │   └── hasher.ts           # SHA256ハッシュ・差分検知
 │   │
 │   └── output/
-│       ├── writer.ts           # ページ書き込み、index.json 生成
+│       ├── writer.ts           # ページ書き込み + index.json 生成
 │       ├── merger.ts           # full.md 生成
 │       └── chunker.ts          # chunks/*.md 生成
 │
@@ -57,8 +57,8 @@ link-crawler/
 │   │   ├── chunker.test.ts
 │   │   ├── converter.test.ts
 │   │   └── links.test.ts
-│   └── integration/             # 統合テスト
-│       └── crawler.test.ts
+│   └── integration/             # 統合テスト（未実装）
+│       └── .gitkeep
 │
 ├── vitest.config.ts             # Vitest設定
 ├── package.json
@@ -188,7 +188,7 @@ try {
 
 | 対象 | 規則 | 例 |
 |------|------|-----|
-| ファイル | kebab-case | `link-parser.ts` |
+| ファイル | kebab-case | `writer.ts` |
 | クラス | PascalCase | `CrawlerEngine` |
 | 関数・変数 | camelCase | `fetchPage` |
 | 定数 | UPPER_SNAKE_CASE | `MAX_DEPTH` |
