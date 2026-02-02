@@ -1,3 +1,5 @@
+import { existsSync, rmSync } from "node:fs";
+import { join } from "node:path";
 import type { CrawlConfig, Fetcher, FetchResult } from "../types.js";
 
 /** コマンドを実行してstdoutを返す */
@@ -143,6 +145,18 @@ export class PlaywrightFetcher implements Fetcher {
 			await this.runCli(["close", "--session", this.sessionId]);
 		} catch {
 			// セッションが既に閉じている場合は無視
+		}
+
+		// .playwright-cli ディレクトリをクリーンアップ
+		if (!this.config.keepSession) {
+			try {
+				const cliDir = join(process.cwd(), ".playwright-cli");
+				if (existsSync(cliDir)) {
+					rmSync(cliDir, { recursive: true, force: true });
+				}
+			} catch {
+				// クリーンアップ失敗は無視
+			}
 		}
 	}
 }

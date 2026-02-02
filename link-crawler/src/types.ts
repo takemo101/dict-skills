@@ -14,6 +14,7 @@ export interface CrawlConfig {
 	pages: boolean;
 	merge: boolean;
 	chunks: boolean;
+	keepSession: boolean;
 }
 
 /** フェッチ結果 */

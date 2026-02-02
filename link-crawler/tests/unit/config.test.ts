@@ -17,6 +17,7 @@ describe("parseConfig", () => {
 		expect(config.pages).toBe(true);
 		expect(config.merge).toBe(true);
 		expect(config.chunks).toBe(true);
+		expect(config.keepSession).toBe(false);
 	});
 
 	it("should parse config with custom options", () => {
@@ -56,5 +57,16 @@ describe("parseConfig", () => {
 		expect(config.excludePattern).toBeInstanceOf(RegExp);
 		expect(config.includePattern?.test("/docs/guide")).toBe(true);
 		expect(config.excludePattern?.test("file.pdf")).toBe(true);
+	});
+
+	it("should parse keepSession option", () => {
+		const configWithKeep = parseConfig({ keepSession: true }, "https://example.com");
+		expect(configWithKeep.keepSession).toBe(true);
+
+		const configWithoutKeep = parseConfig({ keepSession: false }, "https://example.com");
+		expect(configWithoutKeep.keepSession).toBe(false);
+
+		const configDefault = parseConfig({}, "https://example.com");
+		expect(configDefault.keepSession).toBe(false);
 	});
 });

@@ -16,5 +16,6 @@ export function parseConfig(options: Record<string, unknown>, startUrl: string):
 		pages: options.pages !== false,
 		merge: options.merge !== false,
 		chunks: options.chunks !== false,
+		keepSession: Boolean(options.keepSession),
 	};
 }

@@ -21,6 +21,7 @@ program
 	.option("--no-pages", "Skip individual page output")
 	.option("--no-merge", "Skip merged output file")
 	.option("--no-chunks", "Skip chunked output files")
+	.option("--keep-session", "Keep .playwright-cli directory after crawl (for debugging)", false)
 	.parse();
 
 const options = program.opts();
