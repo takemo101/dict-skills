@@ -491,7 +491,7 @@ describe("CrawlerEngine Integration", () => {
 			await crawler.run();
 
 			expect(existsSync(join(testOutputDir, "full.md"))).toBe(false);
-			expect(existsSync(join(testOutputDir, "pages", "page-001.md"))).toBe(true);
+			expect(existsSync(join(testOutputDir, "pages", "page-001-home.md"))).toBe(true);
 		});
 	});
 
