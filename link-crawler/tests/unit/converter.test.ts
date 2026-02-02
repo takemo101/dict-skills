@@ -1,0 +1,232 @@
+import { describe, it, expect } from "vitest";
+import { htmlToMarkdown } from "../../src/parser/converter.js";
+
+describe("htmlToMarkdown", () => {
+	it("should convert basic HTML to Markdown", () => {
+		const html = "<h1>Heading</h1><p>Paragraph text</p>";
+		const result = htmlToMarkdown(html);
+
+		expect(result).toContain("# Heading");
+		expect(result).toContain("Paragraph text");
+	});
+
+	it("should convert headings correctly", () => {
+		const html = `
+			<h1>Heading 1</h1>
+			<h2>Heading 2</h2>
+			<h3>Heading 3</h3>
+			<h4>Heading 4</h4>
+			<h5>Heading 5</h5>
+			<h6>Heading 6</h6>
+		`;
+		const result = htmlToMarkdown(html);
+
+		expect(result).toContain("# Heading 1");
+		expect(result).toContain("## Heading 2");
+		expect(result).toContain("### Heading 3");
+		expect(result).toContain("#### Heading 4");
+		expect(result).toContain("##### Heading 5");
+		expect(result).toContain("###### Heading 6");
+	});
+
+	it("should convert links to Markdown format", () => {
+		const html = '<a href="https://example.com">Link Text</a>';
+		const result = htmlToMarkdown(html);
+
+		expect(result).toContain("[Link Text](https://example.com)");
+	});
+
+	it("should remove empty links", () => {
+		const html = `
+			<p>Some text <a href="https://example.com"></a> more text</p>
+			<p>Another <a href="https://example.com">  </a> paragraph</p>
+		`;
+		const result = htmlToMarkdown(html);
+
+		expect(result).not.toContain("[]");
+		expect(result).not.toContain("[ ]");
+		expect(result).toContain("Some text");
+		expect(result).toContain("more text");
+	});
+
+	it("should convert lists to Markdown", () => {
+		const html = `
+			<ul>
+				<li>Item 1</li>
+				<li>Item 2</li>
+				<li>Item 3</li>
+			</ul>
+		`;
+		const result = htmlToMarkdown(html);
+
+		expect(result).toContain("* Item 1");
+		expect(result).toContain("* Item 2");
+		expect(result).toContain("* Item 3");
+	});
+
+	it("should convert ordered lists to Markdown", () => {
+		const html = `
+			<ol>
+				<li>First</li>
+				<li>Second</li>
+				<li>Third</li>
+			</ol>
+		`;
+		const result = htmlToMarkdown(html);
+
+		expect(result).toContain("1. First");
+		expect(result).toContain("2. Second");
+		expect(result).toContain("3. Third");
+	});
+
+	it("should convert code blocks with fenced style", () => {
+		const html = `
+			<pre><code>const x = 1;
+const y = 2;</code></pre>
+		`;
+		const result = htmlToMarkdown(html);
+
+		expect(result).toContain("```");
+		expect(result).toContain("const x = 1;");
+		expect(result).toContain("const y = 2;");
+	});
+
+	it("should convert inline code", () => {
+		const html = "<p>Use the <code>console.log()</code> function</p>";
+		const result = htmlToMarkdown(html);
+
+		expect(result).toContain("`console.log()`");
+	});
+
+	it("should handle emphasis and strong text", () => {
+		const html = `
+			<p><em>Italic</em> and <strong>Bold</strong> text</p>
+		`;
+		const result = htmlToMarkdown(html);
+
+		expect(result).toContain("_Italic_");
+		expect(result).toContain("**Bold**");
+	});
+
+	it("should convert blockquotes", () => {
+		const html = "<blockquote>This is a quote</blockquote>";
+		const result = htmlToMarkdown(html);
+
+		expect(result).toContain("> This is a quote");
+	});
+
+	it("should normalize multiple spaces to single space", () => {
+		const html = "<p>Multiple   spaces   here</p>";
+		const result = htmlToMarkdown(html);
+
+		expect(result).not.toContain("   ");
+		expect(result).toContain("Multiple spaces here");
+	});
+
+	it("should remove space before comma", () => {
+		const html = "<p>Items , more items , end</p>";
+		const result = htmlToMarkdown(html);
+
+		expect(result).not.toContain(" ,");
+		expect(result).toContain("Items, more items, end");
+	});
+
+	it("should remove space before period", () => {
+		const html = "<p>Sentence . Another .</p>";
+		const result = htmlToMarkdown(html);
+
+		expect(result).not.toContain(" .");
+		expect(result).toContain("Sentence. Another.");
+	});
+
+	it("should normalize multiple newlines to double newline", () => {
+		const html = `
+			<p>Paragraph 1</p>
+			<br><br><br>
+			<p>Paragraph 2</p>
+		`;
+		const result = htmlToMarkdown(html);
+
+		// Should not have 3+ consecutive newlines
+		expect(result).not.toMatch(/\n{3,}/);
+	});
+
+	it("should handle tables with GFM", () => {
+		const html = `
+			<table>
+				<tr><th>Name</th><th>Age</th></tr>
+				<tr><td>John</td><td>30</td></tr>
+				<tr><td>Jane</td><td>25</td></tr>
+			</table>
+		`;
+		const result = htmlToMarkdown(html);
+
+		expect(result).toContain("| Name | Age |");
+		expect(result).toContain("| --- | --- |");
+		expect(result).toContain("| John | 30 |");
+		expect(result).toContain("| Jane | 25 |");
+	});
+
+	it("should handle strikethrough with GFM", () => {
+		const html = "<p>This is <del>deleted</del> text</p>";
+		const result = htmlToMarkdown(html);
+
+		expect(result).toContain("~deleted~");
+	});
+
+	it("should trim whitespace from result", () => {
+		const html = "\n\n\n<p>Content</p>\n\n\n";
+		const result = htmlToMarkdown(html);
+
+		expect(result).not.toMatch(/^\s/);
+		expect(result).not.toMatch(/\s$/);
+	});
+
+	it("should handle empty input", () => {
+		const result = htmlToMarkdown("");
+		expect(result).toBe("");
+	});
+
+	it("should handle complex nested structure", () => {
+		const html = `
+			<article>
+				<h2>Title</h2>
+				<p>Introduction with <a href="https://example.com">link</a> and <code>code</code>.</p>
+				<ul>
+					<li>Item with <strong>bold</strong></li>
+					<li>Item with <em>italic</em></li>
+				</ul>
+			</article>
+		`;
+		const result = htmlToMarkdown(html);
+
+		expect(result).toContain("## Title");
+		expect(result).toContain("Introduction with");
+		expect(result).toContain("[link](https://example.com)");
+		expect(result).toContain("`code`");
+		expect(result).toContain("* Item with **bold**");
+		expect(result).toContain("* Item with _italic_");
+	});
+
+	it("should handle horizontal rules", () => {
+		const html = "<p>Before</p><hr><p>After</p>";
+		const result = htmlToMarkdown(html);
+
+		expect(result).toContain("* * *");
+	});
+
+	it("should handle images", () => {
+		const html = '<img src="image.png" alt="Description">';
+		const result = htmlToMarkdown(html);
+
+		expect(result).toContain("![Description](image.png)");
+	});
+
+	it("should handle line breaks", () => {
+		const html = "<p>Line 1<br>Line 2</p>";
+		const result = htmlToMarkdown(html);
+
+		expect(result).toContain("Line 1");
+		expect(result).toContain("Line 2");
+	});
+});
