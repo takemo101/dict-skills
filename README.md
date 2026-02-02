@@ -15,14 +15,31 @@
 ## インストール
 
 ```bash
-# TODO: インストール手順を追加
+# リポジトリクローン
+git clone https://github.com/takemo101/dict-skills.git
+cd dict-skills/link-crawler
+
+# 依存関係インストール
+bun install
+
+# playwright-cli のインストール
+npm install -g @playwright/cli
 ```
 
 ## 使用方法
 
 ```bash
-# TODO: 使用例を追加
+# 基本的なクロール
+bun run dev https://docs.example.com -d 2
+
+# 結合ファイルのみ出力
+bun run dev https://docs.example.com --no-pages --no-chunks
+
+# 差分クロール
+bun run dev https://docs.example.com --diff
 ```
+
+詳細は [link-crawler/SKILL.md](./link-crawler/SKILL.md) を参照。
 
 ## ライセンス
 
