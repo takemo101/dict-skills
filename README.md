@@ -15,14 +15,31 @@
 ## インストール
 
 ```bash
-# TODO: インストール手順を追加
+# Bun のインストール（未インストールの場合）
+curl -fsSL https://bun.sh/install | bash
+
+# playwright-cli のインストール
+npm install -g @playwright/cli
+
+# 依存関係のインストール
+cd link-crawler
+bun install
 ```
 
 ## 使用方法
 
 ```bash
-# TODO: 使用例を追加
+# 基本的なクロール
+bun run link-crawler/src/crawl.ts https://docs.example.com -d 2
+
+# 出力先を指定
+bun run link-crawler/src/crawl.ts https://docs.example.com -o ./my-docs
+
+# 差分クロール
+bun run link-crawler/src/crawl.ts https://docs.example.com -o ./docs --diff
 ```
+
+詳細は [link-crawler/SKILL.md](./link-crawler/SKILL.md) を参照。
 
 ## ライセンス
 
