@@ -442,5 +442,35 @@ describe("extractContent", () => {
 			const result = extractContent(html, "https://example.com");
 			expect(result.content).toContain("Simple content");
 		});
+
+		it("should return null title in fallback mode when no readable title found", () => {
+			// Very minimal HTML with insufficient content for Readability
+			const html = `
+				<html>
+					<head><title></title></head>
+					<body>
+						<div>Minimal content only</div>
+					</body>
+				</html>
+			`;
+			const result = extractContent(html, "https://example.com");
+			// Title should be empty or null in fallback mode since Readability fails
+			expect(result.title === null || result.title === "").toBe(true);
+			expect(result.content).not.toBeNull();
+		});
+
+		it("should use fallback when HTML is nearly empty", () => {
+			// HTML with only basic structure, no readable article content
+			const html = `
+				<html>
+					<head><title>Minimal</title></head>
+					<body><p>One paragraph only</p></body>
+				</html>
+			`;
+			const result = extractContent(html, "https://example.com");
+			// Should still extract body content via fallback
+			expect(result.content).not.toBeNull();
+			expect(result.content).toContain("One paragraph only");
+		});
 	});
 });
