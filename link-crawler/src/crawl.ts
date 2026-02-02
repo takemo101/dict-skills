@@ -1,9 +1,9 @@
 #!/usr/bin/env bun
 import { program } from "commander";
 import { parseConfig } from "./config.js";
-import { Crawler } from "./crawler/index.js";
-import { CrawlError, DependencyError, FetchError, TimeoutError, ConfigError } from "./errors.js";
 import { EXIT_CODES } from "./constants.js";
+import { Crawler } from "./crawler/index.js";
+import { ConfigError, CrawlError, DependencyError, FetchError, TimeoutError } from "./errors.js";
 
 program
 	.name("crawl")

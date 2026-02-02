@@ -1,4 +1,4 @@
-import type { CrawlConfig, CrawledPage } from "../types.js";
+import type { CrawlConfig } from "../types.js";
 
 /**
  * クロールログ出力クラス
@@ -48,12 +48,7 @@ export class CrawlLogger {
 	}
 
 	/** ページ保存ログ */
-	logPageSaved(
-		file: string,
-		depth: number,
-		linkCount: number,
-		cached = false,
-	): void {
+	logPageSaved(file: string, depth: number, linkCount: number, cached = false): void {
 		const indent = "  ".repeat(depth);
 		const action = cached ? "Cached" : "Saved";
 		console.log(`${indent}  ✓ ${action}: ${file} (${linkCount} links found)`);
