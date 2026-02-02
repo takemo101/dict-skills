@@ -45,7 +45,7 @@ ln -s /path/to/link-crawler ~/.pi/agent/skills/link-crawler
 
 | ドキュメント | 内容 |
 |-------------|------|
-| [設計書](../docs/link-crawler/design.md) | アーキテクチャ・データ構造・モジュール設計 |
-| [CLI仕様](../docs/link-crawler/cli-spec.md) | オプション・使用例・出力形式 |
-| [開発ガイド](../docs/link-crawler/development.md) | 開発環境・コーディング規約 |
+| [設計書](./design.md) | アーキテクチャ・データ構造・モジュール設計 |
+| [CLI仕様](./cli-spec.md) | オプション・使用例・出力形式 |
+| [開発ガイド](./development.md) | 開発環境・コーディング規約 |
 | [SKILL.md](./SKILL.md) | piエージェント向けスキル定義 |
