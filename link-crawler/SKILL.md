@@ -69,7 +69,7 @@ bun run link-crawler/src/crawl.ts <url> [options]
 | `--diff` | | `false` | 差分クロール |
 | `--no-pages` | | | ページ単位出力無効 |
 | `--no-merge` | | | 結合ファイル無効 |
-| `--no-chunks` | | | チャンク出力無効 |
+| `--chunks` | | `false` | チャンク出力を有効化 |
 
 ---
 
@@ -98,9 +98,13 @@ bun run link-crawler/src/crawl.ts https://docs.example.com -o ./docs -d 3 --diff
 ### AIコンテキスト用
 
 ```bash
-# 結合ファイルのみ取得
-bun run link-crawler/src/crawl.ts https://docs.example.com --no-pages --no-chunks
+# デフォルトでは full.md のみ出力
+bun run link-crawler/src/crawl.ts https://docs.example.com
 # → crawled/full.md のみ出力
+
+# 必要な時だけ chunks を有効化
+bun run link-crawler/src/crawl.ts https://docs.example.com --chunks
+# → crawled/full.md + crawled/chunks/*.md
 ```
 
 ---
@@ -155,7 +159,7 @@ Bun.spawn([nodePath, cliPath, "open", url, "--session", sessionId])
 crawled/
 ├── index.json    # メタデータ・ハッシュ
 ├── full.md       # 全ページ結合 ★ AIコンテキスト用
-├── chunks/       # 見出しベース分割
+├── chunks/       # 見出しベース分割 (--chunks 有効時のみ)
 │   └── chunk-001.md
 ├── pages/        # ページ単位
 │   └── page-001.md
