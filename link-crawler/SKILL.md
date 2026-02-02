@@ -1,3 +1,8 @@
+---
+name: link-crawler
+description: 技術ドキュメントサイトをクロールし、AIコンテキスト用のMarkdownとして保存するCLIツール
+---
+
 # link-crawler
 
 技術ドキュメントサイトをクロールし、AIコンテキスト用のMarkdownとして保存するCLIツール。
