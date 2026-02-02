@@ -90,9 +90,13 @@ bun run link-crawler/src/crawl.ts https://docs.example.com -o ./docs -d 3 --diff
 ### AIコンテキスト用（結合ファイルのみ）
 
 ```bash
-# full.mdのみ出力（ページ・チャンク出力無効）
-bun run link-crawler/src/crawl.ts https://docs.example.com --no-pages --no-chunks
+# デフォルトでは full.md のみ出力
+bun run link-crawler/src/crawl.ts https://docs.example.com
 # → .context/full.md に全ページが結合されて出力
+
+# 必要な時だけ chunks を有効化
+bun run link-crawler/src/crawl.ts https://docs.example.com --chunks
+# → .context/full.md + .context/chunks/*.md
 ```
 
 ### 特定パスのみクロール

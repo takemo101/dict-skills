@@ -16,7 +16,7 @@ describe("parseConfig", () => {
 		expect(config.diff).toBe(false);
 		expect(config.pages).toBe(true);
 		expect(config.merge).toBe(true);
-		expect(config.chunks).toBe(true);
+		expect(config.chunks).toBe(false);
 		expect(config.keepSession).toBe(false);
 	});
 

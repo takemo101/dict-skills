@@ -130,6 +130,27 @@ describe("OutputWriter", () => {
 		expect(result.pages[0].crawledAt).toBeDefined();
 	});
 
+	it("should add blank line after frontmatter closing ---", () => {
+		const writer = new OutputWriter(defaultConfig);
+		const markdown = "## Introduction\n\nThis is content.";
+
+		writer.savePage(
+			"https://example.com/page1",
+			markdown,
+			1,
+			[],
+			defaultMetadata,
+			"Test Page",
+		);
+
+		const pagePath = join(testOutputDir, "pages/page-001-test-page.md");
+		const content = readFileSync(pagePath, "utf-8");
+
+		// Verify that there's a blank line between frontmatter and content
+		// The frontmatter should end with "---\n\n" followed by content
+		expect(content).toMatch(/---\n\n## Introduction/);
+	});
+
 	describe("filename with title", () => {
 		it("should include slugified title in filename", () => {
 			const writer = new OutputWriter(defaultConfig);

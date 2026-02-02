@@ -15,7 +15,7 @@ export function parseConfig(options: Record<string, unknown>, startUrl: string):
 		diff: Boolean(options.diff),
 		pages: options.pages !== false,
 		merge: options.merge !== false,
-		chunks: options.chunks !== false,
+		chunks: options.chunks === true,
 		keepSession: Boolean(options.keepSession),
 	};
 }

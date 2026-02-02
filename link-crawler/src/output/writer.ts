@@ -166,8 +166,9 @@ export class OutputWriter {
 			`depth: ${depth}`,
 			"---",
 			"",
+			"",
 		]
-			.filter(Boolean)
+			.filter((line) => line !== null)
 			.join("\n");
 
 		writeFileSync(pagePath, frontmatter + markdown);
