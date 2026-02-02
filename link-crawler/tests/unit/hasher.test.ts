@@ -1,7 +1,5 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import { computeHash, Hasher } from "../../src/diff/hasher.js";
-import { join } from "node:path";
-import { writeFile, mkdir, rm } from "node:fs/promises";
 
 describe("computeHash", () => {
 	it("should return consistent hash for same content", () => {
@@ -42,85 +40,41 @@ describe("computeHash", () => {
 });
 
 describe("Hasher", () => {
-	const testDir = join(import.meta.dirname, ".test-hasher");
-
-	beforeEach(async () => {
-		await rm(testDir, { recursive: true, force: true });
-		await mkdir(testDir, { recursive: true });
-	});
-
-	describe("loadHashes", () => {
-		it("should load hashes from index.json", async () => {
-			const indexPath = join(testDir, "index.json");
-			const indexData = {
-				pages: [
-					{ url: "https://example.com/page1", hash: "abc123" },
-					{ url: "https://example.com/page2", hash: "def456" },
-				],
-			};
-			await writeFile(indexPath, JSON.stringify(indexData));
-
+	describe("constructor", () => {
+		it("should initialize with empty map by default", () => {
 			const hasher = new Hasher();
-			await hasher.loadHashes(indexPath);
+
+			expect(hasher.getHash("https://example.com/page1")).toBeUndefined();
+			expect(hasher.size).toBe(0);
+		});
+
+		it("should initialize with provided hashes", () => {
+			const hashes = new Map([
+				["https://example.com/page1", "abc123"],
+				["https://example.com/page2", "def456"],
+			]);
+			const hasher = new Hasher(hashes);
 
 			expect(hasher.getHash("https://example.com/page1")).toBe("abc123");
 			expect(hasher.getHash("https://example.com/page2")).toBe("def456");
 			expect(hasher.size).toBe(2);
 		});
 
-		it("should handle missing index.json", async () => {
-			const indexPath = join(testDir, "nonexistent.json");
+		it("should create a copy of the provided map", () => {
+			const hashes = new Map([["https://example.com/page1", "abc123"]]);
+			const hasher = new Hasher(hashes);
 
-			const hasher = new Hasher();
-			await hasher.loadHashes(indexPath);
+			// Modify original map
+			hashes.set("https://example.com/page2", "def456");
 
-			expect(hasher.getHash("https://example.com/page1")).toBeUndefined();
-			expect(hasher.size).toBe(0);
-		});
-
-		it("should handle empty pages array", async () => {
-			const indexPath = join(testDir, "index.json");
-			await writeFile(indexPath, JSON.stringify({ pages: [] }));
-
-			const hasher = new Hasher();
-			await hasher.loadHashes(indexPath);
-
-			expect(hasher.getHash("https://example.com/page1")).toBeUndefined();
-			expect(hasher.size).toBe(0);
-		});
-
-		it("should skip pages without hash", async () => {
-			const indexPath = join(testDir, "index.json");
-			const indexData = {
-				pages: [
-					{ url: "https://example.com/page1" }, // no hash
-					{ url: "https://example.com/page2", hash: "def456" },
-				],
-			};
-			await writeFile(indexPath, JSON.stringify(indexData));
-
-			const hasher = new Hasher();
-			await hasher.loadHashes(indexPath);
-
-			expect(hasher.getHash("https://example.com/page1")).toBeUndefined();
-			expect(hasher.getHash("https://example.com/page2")).toBe("def456");
+			// Hasher should not be affected
+			expect(hasher.getHash("https://example.com/page2")).toBeUndefined();
 			expect(hasher.size).toBe(1);
-		});
-
-		it("should handle invalid JSON", async () => {
-			const indexPath = join(testDir, "index.json");
-			await writeFile(indexPath, "{ invalid json }");
-
-			const hasher = new Hasher();
-			await hasher.loadHashes(indexPath);
-
-			expect(hasher.getHash("https://example.com/page1")).toBeUndefined();
-			expect(hasher.size).toBe(0);
 		});
 	});
 
 	describe("isChanged", () => {
-		it("should return true for new URL", async () => {
+		it("should return true for new URL", () => {
 			const hasher = new Hasher();
 
 			const result = hasher.isChanged(
@@ -131,31 +85,18 @@ describe("Hasher", () => {
 			expect(result).toBe(true);
 		});
 
-		it("should return false for same hash", async () => {
-			const indexPath = join(testDir, "index.json");
-			const hash = "abc123def456";
-			const indexData = {
-				pages: [{ url: "https://example.com/page1", hash }],
-			};
-			await writeFile(indexPath, JSON.stringify(indexData));
+		it("should return false for same hash", () => {
+			const hashes = new Map([["https://example.com/page1", "abc123def456"]]);
+			const hasher = new Hasher(hashes);
 
-			const hasher = new Hasher();
-			await hasher.loadHashes(indexPath);
-
-			const result = hasher.isChanged("https://example.com/page1", hash);
+			const result = hasher.isChanged("https://example.com/page1", "abc123def456");
 
 			expect(result).toBe(false);
 		});
 
-		it("should return true for different hash", async () => {
-			const indexPath = join(testDir, "index.json");
-			const indexData = {
-				pages: [{ url: "https://example.com/page1", hash: "original-hash" }],
-			};
-			await writeFile(indexPath, JSON.stringify(indexData));
-
-			const hasher = new Hasher();
-			await hasher.loadHashes(indexPath);
+		it("should return true for different hash", () => {
+			const hashes = new Map([["https://example.com/page1", "original-hash"]]);
+			const hasher = new Hasher(hashes);
 
 			const result = hasher.isChanged(
 				"https://example.com/page1",
@@ -165,34 +106,21 @@ describe("Hasher", () => {
 			expect(result).toBe(true);
 		});
 
-		it("should be case-sensitive for URL matching", async () => {
-			const indexPath = join(testDir, "index.json");
-			const hash = "abc123";
-			const indexData = {
-				pages: [{ url: "https://example.com/Page1", hash }],
-			};
-			await writeFile(indexPath, JSON.stringify(indexData));
-
-			const hasher = new Hasher();
-			await hasher.loadHashes(indexPath);
+		it("should be case-sensitive for URL matching", () => {
+			const hashes = new Map([["https://example.com/Page1", "abc123"]]);
+			const hasher = new Hasher(hashes);
 
 			// Different case = new URL = changed
-			const result = hasher.isChanged("https://example.com/page1", hash);
+			const result = hasher.isChanged("https://example.com/page1", "abc123");
 
 			expect(result).toBe(true);
 		});
 	});
 
 	describe("getHash", () => {
-		it("should return hash for existing URL", async () => {
-			const indexPath = join(testDir, "index.json");
-			const indexData = {
-				pages: [{ url: "https://example.com/page1", hash: "abc123" }],
-			};
-			await writeFile(indexPath, JSON.stringify(indexData));
-
-			const hasher = new Hasher();
-			await hasher.loadHashes(indexPath);
+		it("should return hash for existing URL", () => {
+			const hashes = new Map([["https://example.com/page1", "abc123"]]);
+			const hasher = new Hasher(hashes);
 
 			expect(hasher.getHash("https://example.com/page1")).toBe("abc123");
 		});
@@ -210,19 +138,13 @@ describe("Hasher", () => {
 			expect(hasher.size).toBe(0);
 		});
 
-		it("should return correct count after loading", async () => {
-			const indexPath = join(testDir, "index.json");
-			const indexData = {
-				pages: [
-					{ url: "https://example.com/page1", hash: "hash1" },
-					{ url: "https://example.com/page2", hash: "hash2" },
-					{ url: "https://example.com/page3", hash: "hash3" },
-				],
-			};
-			await writeFile(indexPath, JSON.stringify(indexData));
-
-			const hasher = new Hasher();
-			await hasher.loadHashes(indexPath);
+		it("should return correct count after initialization", () => {
+			const hashes = new Map([
+				["https://example.com/page1", "hash1"],
+				["https://example.com/page2", "hash2"],
+				["https://example.com/page3", "hash3"],
+			]);
+			const hasher = new Hasher(hashes);
 
 			expect(hasher.size).toBe(3);
 		});
