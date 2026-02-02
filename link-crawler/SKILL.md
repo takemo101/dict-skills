@@ -13,6 +13,19 @@
 - Bun インストール済み
 - playwright-cli: `npm install -g @playwright/cli`
 
+## セットアップ
+
+```bash
+cd link-crawler
+bun install
+```
+
+## テスト実行
+
+```bash
+npm run test
+```
+
 ---
 
 ## 基本コマンド
