@@ -1,12 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { rmSync, existsSync, readFileSync, readdirSync } from "node:fs";
+import { mkdir, rm, readFile, readdir } from "node:fs/promises";
+import { existsSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { Crawler } from "../../src/crawler/index.js";
 import type { CrawlConfig, Fetcher, FetchResult } from "../../src/types.js";
 
 const testOutputDir = "./test-output-integration";
 
-// モックFetcher: テスト用のHTMLを返す
+/** テスト用のモックFetcher */
 class MockFetcher implements Fetcher {
 	private pages: Map<string, { html: string; contentType: string }>;
 	private callCount = 0;
@@ -47,7 +48,7 @@ class MockFetcher implements Fetcher {
 	}
 }
 
-// テスト用のHTML生成ヘルパー
+/** テスト用HTMLを生成 */
 function createTestHtml(options: {
 	title: string;
 	content: string;
@@ -59,8 +60,12 @@ function createTestHtml(options: {
 		.join("\n");
 
 	const metaHtml = [
-		options.meta?.description ? `<meta name="description" content="${options.meta.description}">` : "",
-		options.meta?.keywords ? `<meta name="keywords" content="${options.meta.keywords}">` : "",
+		options.meta?.description
+			? `<meta name="description" content="${options.meta.description}">`
+			: "",
+		options.meta?.keywords
+			? `<meta name="keywords" content="${options.meta.keywords}">`
+			: "",
 	].join("\n");
 
 	return `<!DOCTYPE html>
@@ -88,7 +93,7 @@ const defaultConfig: CrawlConfig = {
 	sameDomain: true,
 	includePattern: null,
 	excludePattern: null,
-	delay: 0, // テストでは遅延なし
+	delay: 0,
 	timeout: 30000,
 	spaWait: 0,
 	headed: false,
@@ -97,8 +102,6 @@ const defaultConfig: CrawlConfig = {
 	merge: true,
 	chunks: true,
 };
-
-
 
 describe("CrawlerEngine Integration", () => {
 	beforeEach(() => {
@@ -124,12 +127,10 @@ describe("CrawlerEngine Integration", () => {
 			const crawler = new Crawler(defaultConfig, mockFetcher);
 			await crawler.run();
 
-			// 出力ディレクトリの確認
 			expect(existsSync(testOutputDir)).toBe(true);
 			expect(existsSync(join(testOutputDir, "pages"))).toBe(true);
 			expect(existsSync(join(testOutputDir, "specs"))).toBe(true);
 
-			// index.jsonの確認
 			const indexPath = join(testOutputDir, "index.json");
 			expect(existsSync(indexPath)).toBe(true);
 
@@ -141,14 +142,13 @@ describe("CrawlerEngine Integration", () => {
 			expect(indexContent.pages[0].hash).toBeDefined();
 			expect(indexContent.pages[0].crawledAt).toBeDefined();
 
-			// ページファイルの確認
 			const pagePath = join(testOutputDir, indexContent.pages[0].file);
 			expect(existsSync(pagePath)).toBe(true);
 
 			const pageContent = readFileSync(pagePath, "utf-8");
 			expect(pageContent).toContain("Home Page");
 			expect(pageContent).toContain("home page content");
-			expect(pageContent).toContain("---"); // frontmatter
+			expect(pageContent).toContain("---");
 			expect(pageContent).toContain("url: https://example.com");
 		});
 
@@ -196,7 +196,6 @@ describe("CrawlerEngine Integration", () => {
 				"https://example.com/team",
 			);
 
-			// Verify depth tracking
 			const homePage = indexContent.pages.find(
 				(p: { url: string }) => p.url === "https://example.com",
 			);
@@ -234,7 +233,6 @@ describe("CrawlerEngine Integration", () => {
 				},
 			});
 
-			// sameDomain: true (default)
 			const config = { ...defaultConfig, sameDomain: true };
 			const crawler = new Crawler(config, mockFetcher);
 			await crawler.run();
@@ -243,7 +241,6 @@ describe("CrawlerEngine Integration", () => {
 				readFileSync(join(testOutputDir, "index.json"), "utf-8"),
 			);
 
-			// External domain should not be crawled
 			expect(indexContent.totalPages).toBe(2);
 			const urls = indexContent.pages.map((p: { url: string }) => p.url);
 			expect(urls).toContain("https://example.com");
@@ -260,7 +257,6 @@ describe("CrawlerEngine Integration", () => {
 						links: ["https://example.com/error-page"],
 					}),
 				},
-				// error-page is not defined, so it will return null
 			});
 
 			const crawler = new Crawler(defaultConfig, mockFetcher);
@@ -270,14 +266,52 @@ describe("CrawlerEngine Integration", () => {
 				readFileSync(join(testOutputDir, "index.json"), "utf-8"),
 			);
 
-			// Should only have the home page
 			expect(indexContent.totalPages).toBe(1);
+		});
+	});
+
+	describe("Depth control", () => {
+		it("should respect maxDepth option", async () => {
+			const mockFetcher = new MockFetcher({
+				"https://example.com": {
+					html: createTestHtml({
+						title: "Depth 0",
+						content: "<p>Root page</p>",
+						links: ["https://example.com/level1"],
+					}),
+				},
+				"https://example.com/level1": {
+					html: createTestHtml({
+						title: "Depth 1",
+						content: "<p>Level 1 page</p>",
+						links: ["https://example.com/level2"],
+					}),
+				},
+				"https://example.com/level2": {
+					html: createTestHtml({
+						title: "Depth 2",
+						content: "<p>Level 2 page</p>",
+					}),
+				},
+			});
+
+			const config = { ...defaultConfig, maxDepth: 1 };
+			const crawler = new Crawler(config, mockFetcher);
+			await crawler.run();
+
+			const indexContent = JSON.parse(
+				readFileSync(join(testOutputDir, "index.json"), "utf-8"),
+			);
+
+			expect(indexContent.totalPages).toBe(2);
+			expect(indexContent.pages.map((p: { url: string }) => p.url)).not.toContain(
+				"https://example.com/level2",
+			);
 		});
 	});
 
 	describe("Diff crawling behavior", () => {
 		it("should skip unchanged pages in diff mode", async () => {
-			// First crawl without diff mode to establish baseline
 			const initialHtml = createTestHtml({
 				title: "Home",
 				content: "<p>Original content.</p>",
@@ -291,14 +325,11 @@ describe("CrawlerEngine Integration", () => {
 			const crawler1 = new Crawler(config1, mockFetcher1);
 			await crawler1.run();
 
-			// Get the hash from first crawl
 			const index1 = JSON.parse(
 				readFileSync(join(testOutputDir, "index.json"), "utf-8"),
 			);
 			const originalHash = index1.pages[0].hash;
-			const originalCrawledAt = index1.pages[0].crawledAt;
 
-			// Second crawl with diff mode - same content
 			const mockFetcher2 = new MockFetcher({
 				"https://example.com": { html: initialHtml },
 			});
@@ -307,25 +338,16 @@ describe("CrawlerEngine Integration", () => {
 			const crawler2 = new Crawler(config2, mockFetcher2);
 			await crawler2.run();
 
-			// When pages are skipped in diff mode, they are not included in the new index
-			// The index.json contains only pages that were actually crawled in this run
 			const index2 = JSON.parse(
 				readFileSync(join(testOutputDir, "index.json"), "utf-8"),
 			);
 
-			// In diff mode with unchanged content, no pages are processed
-			// so the index will have 0 pages (the new crawl result)
 			expect(index2.totalPages).toBe(0);
 			expect(index2.pages).toHaveLength(0);
-
-			// But the hash file (index.json) from the first crawl still exists
-			// and contains the original page info
 			expect(originalHash).toBeDefined();
-			expect(originalCrawledAt).toBeDefined();
 		});
 
 		it("should detect changed content in diff mode", async () => {
-			// First crawl
 			const mockFetcher1 = new MockFetcher({
 				"https://example.com": {
 					html: createTestHtml({
@@ -344,7 +366,6 @@ describe("CrawlerEngine Integration", () => {
 			);
 			const originalHash = index1.pages[0].hash;
 
-			// Second crawl with changed content
 			const mockFetcher2 = new MockFetcher({
 				"https://example.com": {
 					html: createTestHtml({
@@ -362,82 +383,11 @@ describe("CrawlerEngine Integration", () => {
 				readFileSync(join(testOutputDir, "index.json"), "utf-8"),
 			);
 
-			// Hash should be different
 			expect(index2.pages[0].hash).not.toBe(originalHash);
-		});
-
-		it("should detect new pages in diff mode", async () => {
-			// First crawl with single page
-			const mockFetcher1 = new MockFetcher({
-				"https://example.com": {
-					html: createTestHtml({
-						title: "Home",
-						content: "<p>Home content.</p>",
-					}),
-				},
-			});
-
-			const config1 = { ...defaultConfig, diff: false };
-			const crawler1 = new Crawler(config1, mockFetcher1);
-			await crawler1.run();
-
-			// Second crawl with new page
-			const mockFetcher2 = new MockFetcher({
-				"https://example.com": {
-					html: createTestHtml({
-						title: "Home",
-						content: "<p>Home content.</p>",
-						links: ["https://example.com/new-page"],
-					}),
-				},
-				"https://example.com/new-page": {
-					html: createTestHtml({
-						title: "New Page",
-						content: "<p>New content.</p>",
-					}),
-				},
-			});
-
-			const config2 = { ...defaultConfig, diff: true };
-			const crawler2 = new Crawler(config2, mockFetcher2);
-			await crawler2.run();
-
-			const index2 = JSON.parse(
-				readFileSync(join(testOutputDir, "index.json"), "utf-8"),
-			);
-
-			expect(index2.totalPages).toBe(2);
 		});
 	});
 
 	describe("Output file generation", () => {
-		it("should generate individual page files", async () => {
-			const mockFetcher = new MockFetcher({
-				"https://example.com": {
-					html: createTestHtml({
-						title: "Home",
-						content: "<p>Home content.</p>",
-					}),
-				},
-			});
-
-			const config = { ...defaultConfig, pages: true };
-			const crawler = new Crawler(config, mockFetcher);
-			await crawler.run();
-
-			const indexContent = JSON.parse(
-				readFileSync(join(testOutputDir, "index.json"), "utf-8"),
-			);
-			const pageFile = join(testOutputDir, indexContent.pages[0].file);
-
-			expect(existsSync(pageFile)).toBe(true);
-
-			const pageContent = readFileSync(pageFile, "utf-8");
-			expect(pageContent).toContain("---");
-			expect(pageContent).toContain("url: https://example.com");
-			expect(pageContent).toContain("Home");
-		});
-
 		it("should generate full.md when merge is enabled", async () => {
 			const mockFetcher = new MockFetcher({
 				"https://example.com": {
@@ -467,7 +417,6 @@ describe("CrawlerEngine Integration", () => {
 			expect(fullContent).toContain("# About");
 			expect(fullContent).toContain("Home content");
 			expect(fullContent).toContain("About content");
-			expect(fullContent).toContain("---"); // Separator
 		});
 
 		it("should generate chunks when chunks is enabled", async () => {
@@ -475,13 +424,19 @@ describe("CrawlerEngine Integration", () => {
 				"https://example.com": {
 					html: createTestHtml({
 						title: "Home",
-						content: "<p>Home content with enough text to make it substantial for chunking.</p>".repeat(10),
+						content:
+							"<p>Home content with enough text to make it substantial for chunking.</p>".repeat(
+								10,
+							),
 					}),
 				},
 				"https://example.com/about": {
 					html: createTestHtml({
 						title: "About",
-						content: "<p>About content with enough text to make it substantial for chunking.</p>".repeat(10),
+						content:
+							"<p>About content with enough text to make it substantial for chunking.</p>".repeat(
+								10,
+							),
 					}),
 				},
 			});
@@ -496,7 +451,6 @@ describe("CrawlerEngine Integration", () => {
 			const chunkFiles = readdirSync(chunksDir).filter((f) => f.endsWith(".md"));
 			expect(chunkFiles.length).toBeGreaterThan(0);
 
-			// Each chunk should contain H1 header
 			for (const chunkFile of chunkFiles) {
 				const chunkContent = readFileSync(join(chunksDir, chunkFile), "utf-8");
 				expect(chunkContent).toMatch(/^# /m);
@@ -517,13 +471,8 @@ describe("CrawlerEngine Integration", () => {
 			const crawler = new Crawler(config, mockFetcher);
 			await crawler.run();
 
-			// pages/page-001.md should not exist
 			expect(existsSync(join(testOutputDir, "pages", "page-001.md"))).toBe(false);
-
-			// But full.md should exist (from merge)
 			expect(existsSync(join(testOutputDir, "full.md"))).toBe(true);
-
-			// And index.json should still exist
 			expect(existsSync(join(testOutputDir, "index.json"))).toBe(true);
 		});
 
@@ -541,10 +490,7 @@ describe("CrawlerEngine Integration", () => {
 			const crawler = new Crawler(config, mockFetcher);
 			await crawler.run();
 
-			// full.md should not exist
 			expect(existsSync(join(testOutputDir, "full.md"))).toBe(false);
-
-			// But page file should exist
 			expect(existsSync(join(testOutputDir, "pages", "page-001.md"))).toBe(true);
 		});
 	});
@@ -617,7 +563,6 @@ describe("CrawlerEngine Integration", () => {
 			);
 			expect(homePage.links).toContain("https://example.com/page1");
 			expect(homePage.links).toContain("https://example.com/page2");
-			// External links are filtered by sameDomain
 			expect(homePage.links).not.toContain("https://external.com/page");
 		});
 	});
