@@ -24,6 +24,8 @@ const createPage = (
 		ogTitle: null,
 		ogType: null,
 	},
+	hash: "",
+	crawledAt: new Date().toISOString(),
 });
 
 describe("Merger", () => {
