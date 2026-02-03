@@ -47,6 +47,7 @@ crawl <url> [options]
 | `--no-pages` | | | ページ単位ファイル出力を無効化 |
 | `--no-merge` | | | 結合ファイル(full.md)出力を無効化 |
 | `--chunks` | | `false` | チャンク分割出力を有効化 |
+| `--keep-session` | | `false` | デバッグ用に.playwright-cliディレクトリを保持 |
 
 ### 3.5 ヘルプ
 
