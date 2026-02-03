@@ -453,7 +453,7 @@ bun run build
 ./dist/crawl.js https://example.com
 
 # 5. バージョン更新
-# package.json の version を更新
+# package.json の version を更新（crawl.ts は自動的に反映されます）
 
 # 6. コミット・タグ
 git add -A

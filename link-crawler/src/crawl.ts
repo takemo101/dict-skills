@@ -1,9 +1,18 @@
 #!/usr/bin/env bun
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { program } from "commander";
 import { parseConfig } from "./config.js";
 import { EXIT_CODES } from "./constants.js";
 import { Crawler } from "./crawler/index.js";
 import { ConfigError, CrawlError, DependencyError, FetchError, TimeoutError } from "./errors.js";
+
+// package.jsonからバージョンを読み込む
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const packageJsonPath = join(__dirname, "../package.json");
+const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
 
 program
 	.name("crawl")
@@ -24,7 +33,7 @@ program
 	.option("--no-merge", "Skip merged output file")
 	.option("--chunks", "Enable chunked output files", false)
 	.option("--keep-session", "Keep .playwright-cli directory after crawl (for debugging)", false)
-	.version("2.0.0")
+	.version(packageJson.version)
 	.parse();
 
 const options = program.opts();
