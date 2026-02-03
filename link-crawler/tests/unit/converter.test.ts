@@ -359,4 +359,74 @@ describe("htmlToMarkdown - syntax highlighter support", () => {
 		expect(result).toContain("```");
 		expect(result).toContain("some code here");
 	});
+
+	it("should detect language from child pre element with data-language attribute", () => {
+		const html = `
+			<div class="hljs">
+				<pre data-language="rust"><code>fn main() { println!("Hello"); }</code></pre>
+			</div>
+		`;
+		const result = htmlToMarkdown(html);
+
+		expect(result).toContain("```rust");
+		expect(result).toContain('fn main()');
+	});
+
+	it("should extract direct text content when no pre or code elements exist", () => {
+		const html = `
+			<div class="hljs">direct code text without tags</div>
+		`;
+		const result = htmlToMarkdown(html);
+
+		expect(result).toContain("```");
+		expect(result).toContain("direct code text without tags");
+	});
+
+	it("should detect language from child code element class", () => {
+		const html = `
+			<div class="highlight">
+				<pre><code class="language-ruby">puts "Hello World"</code></pre>
+			</div>
+		`;
+		const result = htmlToMarkdown(html);
+
+		expect(result).toContain("```ruby");
+		expect(result).toContain('puts "Hello World"');
+	});
+
+	it("should detect language from parent div class with language pattern", () => {
+		const html = `
+			<div class="highlight language-python">
+				<pre><code>print("hello")</code></pre>
+			</div>
+		`;
+		const result = htmlToMarkdown(html);
+
+		expect(result).toContain("```python");
+		expect(result).toContain('print("hello")');
+	});
+
+	it("should detect language from parent div class with lang pattern", () => {
+		const html = `
+			<div class="code-block lang-typescript">
+				<pre><code>const x: number = 42;</code></pre>
+			</div>
+		`;
+		const result = htmlToMarkdown(html);
+
+		expect(result).toContain("```typescript");
+		expect(result).toContain('const x: number = 42');
+	});
+
+	it("should extract code content from code element without pre element", () => {
+		const html = `
+			<div class="hljs">
+				<code>inline code without pre</code>
+			</div>
+		`;
+		const result = htmlToMarkdown(html);
+
+		expect(result).toContain("```");
+		expect(result).toContain("inline code without pre");
+	});
 });

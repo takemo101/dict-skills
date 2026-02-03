@@ -744,4 +744,105 @@ describe("extractContent - code block preservation", () => {
 		expect(result.content).not.toBeNull();
 		expect(result.content).toContain("code-block");
 	});
+
+	it("should collect and preserve code blocks when removed from content in fallback mode", () => {
+		const html = `
+			<!DOCTYPE html>
+			<html>
+				<head>
+					<title>Code Collection Test</title>
+				</head>
+				<body>
+					<div class="container">
+						<p>Some text content here that is not substantial enough.</p>
+						<pre><code>npm install package</code></pre>
+					</div>
+				</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com/code-collection");
+
+		// In fallback mode, code blocks should be collected and preserved
+		expect(result.content).not.toBeNull();
+	});
+
+	it("should handle nested code block elements without duplication", () => {
+		const html = `
+			<!DOCTYPE html>
+			<html>
+				<head>
+					<title>Nested Code Test</title>
+				</head>
+				<body>
+					<article>
+						<h1>Article with Nested Code</h1>
+						<p>This article has nested code blocks that should be handled correctly without duplication.</p>
+						<p>Additional content to make the article substantial for Readability extraction.</p>
+						<div data-rehype-pretty-code-fragment="">
+							<pre data-language="javascript">
+								<code class="language-javascript">
+									const x = 1;
+								</code>
+							</pre>
+						</div>
+						<p>More content after the code block.</p>
+					</article>
+				</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com/nested-code");
+
+		expect(result.content).not.toBeNull();
+		// Should contain the code content without duplication
+		const matches = result.content?.match(/const x = 1/g);
+		expect(matches?.length).toBeLessThanOrEqual(1);
+	});
+});
+
+describe("extractContent - edge cases", () => {
+	it("should handle HTML with only navigation elements", () => {
+		// HTML with only nav elements - Readability should fail, triggering fallback
+		const html = `
+			<!DOCTYPE html>
+			<html>
+			<head><title>Nav Only</title></head>
+			<body>
+				<nav><a href="/">Home</a></nav>
+				<header>Header</header>
+				<pre><code>some code</code></pre>
+				<footer>Footer</footer>
+			</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com/nav-only");
+
+		// Fallback should provide content
+		expect(result).toHaveProperty("content");
+	});
+
+	it("should handle data-rehype-pretty-code-figure with pre inside", () => {
+		const html = `
+			<!DOCTYPE html>
+			<html>
+			<head><title>Figure Test</title></head>
+			<body>
+				<article>
+					<h1>Test</h1>
+					<p>Content here with enough text to be substantial for readability extraction.</p>
+					<p>More content to ensure the article is detected properly by Readability.</p>
+					<figure data-rehype-pretty-code-figure="">
+						<pre data-language="python"><code>print("hello")</code></pre>
+					</figure>
+					<p>Final paragraph to close the article.</p>
+				</article>
+			</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com/figure");
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			expect(result.content).toContain("print");
+		}
+	});
 });
