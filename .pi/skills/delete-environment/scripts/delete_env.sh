@@ -3,6 +3,7 @@ set -euo pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 ENV_JSON_FILE="${REPO_ROOT}/environments.json"
+ENV_JSON_SCRIPT="${REPO_ROOT}/.pi/skills/delete-environment/scripts/env-json.sh"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -20,6 +21,15 @@ update_environments_json() {
     
     if [ ! -f "$json_file" ]; then
         log_warn "environments.json not found at $json_file. Skipping JSON update."
+        return 0
+    fi
+    
+    # Try external env-json.sh script first if available
+    if [ -f "$ENV_JSON_SCRIPT" ]; then
+        log_info "Using env-json.sh to update environments.json..."
+        bash "$ENV_JSON_SCRIPT" remove "$env_id" 2>/dev/null || {
+            log_warn "env-json.sh failed, falling back to built-in method..."
+        }
         return 0
     fi
     

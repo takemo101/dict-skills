@@ -76,6 +76,7 @@ bash .pi/skills/delete-environment/scripts/delete_env.sh temp-env /tmp/dev-env
 ```bash
 # 自動検出された environments.json を更新
 # デフォルトパス: <repo-root>/environments.json
+# または、env-json.sh が存在する場合はそれを使用
 ```
 
 ### 2. Docker リソースのクリーンアップ
