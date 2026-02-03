@@ -1,5 +1,8 @@
 # Pi Agent
 .pi
+!.pi/skills/
+!.pi/skills/delete-environment/
+!.pi/skills/delete-environment/**
 
 # pi-issue-runner
 .worktrees/
