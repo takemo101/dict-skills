@@ -66,8 +66,6 @@ bun run link-crawler/src/crawl.ts <url> [options]
 | `--help` | `-h` | ヘルプ表示 |
 | `--version` | `-V` | バージョン表示 |
 
-**詳細な仕様は [CLI仕様書](../docs/link-crawler/cli-spec.md) を参照してください。**
-
 ## piエージェントでの使用例
 
 ```bash
@@ -87,12 +85,3 @@ bun run src/crawl.ts https://nextjs.org/docs -d 2
 | `chunks/*.md` | 見出しベース分割（`--chunks`有効時） |
 | `pages/*.md` | ページ単位 |
 | `index.json` | メタデータ・ハッシュ |
-
-**詳細な仕様は [CLI仕様書](../docs/link-crawler/cli-spec.md) を参照してください。**
-
-## 参考リンク
-
-| ドキュメント | 内容 |
-|-------------|------|
-| [CLI仕様書](../docs/link-crawler/cli-spec.md) | 完全なオプション一覧・使用例・出力形式の詳細 |
-| [設計書](../docs/link-crawler/design.md) | アーキテクチャ・データ構造・技術仕様 |
