@@ -1,6 +1,23 @@
 {
 	"name": "link-crawler",
 	"version": "2.0.0",
+	"description": "技術ドキュメントサイトをクロールし、AIコンテキスト用のMarkdownとして保存するCLIツール",
+	"license": "MIT",
+	"author": "takemo101",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/takemo101/dict-skills.git",
+		"directory": "link-crawler"
+	},
+	"keywords": [
+		"crawler",
+		"documentation",
+		"markdown",
+		"ai-context",
+		"playwright",
+		"cli-tool",
+		"web-scraping"
+	],
 	"type": "module",
 	"bin": {
 		"crawl": "./dist/crawl.js"
@@ -30,5 +47,8 @@
 		"@vitest/coverage-v8": "^4.0.18",
 		"typescript": "^5.8.0",
 		"vitest": "^4.0.18"
+	},
+	"engines": {
+		"node": ">=18.0.0"
 	}
 }
