@@ -143,7 +143,8 @@ describe("BunRuntimeAdapter", () => {
 			const result = await adapter.readFile("/path/to/file.txt");
 
 			expect(result).toBe("file content");
-			expect((globalThis as { Bun?: typeof Bun }).Bun?.file).toHaveBeenCalledWith(
+			// biome-ignore lint/style/noNonNullAssertion: MockでBunが定義されていることを保証
+			expect((globalThis as { Bun?: typeof Bun }).Bun!.file).toHaveBeenCalledWith(
 				"/path/to/file.txt",
 			);
 
