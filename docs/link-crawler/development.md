@@ -412,7 +412,7 @@ rm -rf node_modules/.cache
 ### 8.3 型エラーが解消しない
 
 ```bash
-rm -rf node_modules bun.lockb
+rm -rf node_modules bun.lock
 bun install
 ```
 
@@ -430,7 +430,7 @@ npx playwright install chromium
 rm -rf node_modules/.vitest
 
 # 依存関係再インストール
-rm -rf node_modules bun.lockb
+rm -rf node_modules bun.lock
 bun install
 ```
 
