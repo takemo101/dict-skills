@@ -161,6 +161,18 @@ Bun.spawn([nodePath, cliPath, "open", url, "--session", sessionId])
 
 この方式により、npmグローバルインストールされたplaywright-cliを安定して実行できます。
 
+### セッション管理
+
+`--keep-session`オプションを有効にすると、クロール完了後も`.playwright-cli`ディレクトリが削除されず、デバッグ情報が保持されます。
+
+通常時（`--keep-session`未指定または`false`）：
+- クロール完了時に`.playwright-cli`ディレクトリを自動削除
+- 一時ファイルが残らない
+
+デバッグ時（`--keep-session`指定）：
+- `.playwright-cli`ディレクトリを保持
+- Playwrightのセッション情報や一時ファイルの確認が可能
+
 ### 出力ファイル形式
 
 #### ディレクトリ構造
