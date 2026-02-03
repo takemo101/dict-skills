@@ -37,7 +37,7 @@ bun run link-crawler/src/crawl.ts <url> [options]
 
 ```bash
 # Next.jsドキュメントをクロール
-bun run link-crawler/src/crawl.ts https://nextjs.org/docs -d 2
+bun run src/crawl.ts https://nextjs.org/docs -d 2
 
 # → .context/nextjs-docs/full.md が生成され、piエージェントのコンテキストとして利用可能
 ```
