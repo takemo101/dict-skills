@@ -67,9 +67,16 @@ bash .pi/skills/delete-environment/scripts/delete_env.sh temp-env /tmp/dev-env
 
 `environments.json` から指定された環境IDのエントリを削除します。
 
+スクリプトは自動的に以下の方法で JSON を更新します：
+
+1. **jq が利用可能な場合**: `jq` を使用して安全に JSON を更新
+2. **Python3 が利用可能な場合**: Python の `json` モジュールを使用
+3. **どちらも利用できない場合**: 警告を表示して他の処理を継続
+
 ```bash
-# 内部で env-json.sh を使用
-bash .pi/skills/delete-environment/scripts/env-json.sh remove <env-id>
+# 自動検出された environments.json を更新
+# デフォルトパス: <repo-root>/environments.json
+# または、env-json.sh が存在する場合はそれを使用
 ```
 
 ### 2. Docker リソースのクリーンアップ
@@ -140,14 +147,18 @@ rm -rf <path-to-delete>
 
 ## トラブルシューティング
 
-### env-json.sh が見つからない
+### environments.json の更新に失敗する
 
 ```bash
-# 警告が表示されますが、他の処理は継続されます
-[WARN] env-json.sh not found. Skipping JSON update.
+# jq または Python3 がない場合、警告が表示されます
+[WARN] jq not found. Attempting basic JSON update...
+[WARN] Could not update environments.json. Manual update may be required.
 ```
 
-**対処**: environments.json の手動更新が必要な場合があります
+**対処**: 
+- `jq` をインストールすることをお勧めします: `brew install jq` (macOS) または `apt-get install jq` (Linux)
+- または Python3 を使用可能にしてください
+- 手動で environments.json を編集することもできます
 
 ### Dockerコンテナが削除できない
 

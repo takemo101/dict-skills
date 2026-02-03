@@ -2,6 +2,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+ENV_JSON_FILE="${REPO_ROOT}/environments.json"
 ENV_JSON_SCRIPT="${REPO_ROOT}/.pi/skills/delete-environment/scripts/env-json.sh"
 
 RED='\033[0;31m'
@@ -12,6 +13,79 @@ NC='\033[0m'
 log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
 log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
+
+# Update environments.json by removing the specified environment ID
+update_environments_json() {
+    local env_id="$1"
+    local json_file="$ENV_JSON_FILE"
+    
+    if [ ! -f "$json_file" ]; then
+        log_warn "environments.json not found at $json_file. Skipping JSON update."
+        return 0
+    fi
+    
+    # Try external env-json.sh script first if available
+    if [ -f "$ENV_JSON_SCRIPT" ]; then
+        log_info "Using env-json.sh to update environments.json..."
+        bash "$ENV_JSON_SCRIPT" remove "$env_id" 2>/dev/null || {
+            log_warn "env-json.sh failed, falling back to built-in method..."
+        }
+        return 0
+    fi
+    
+    # Check if jq is available
+    if command -v jq &> /dev/null; then
+        # Use jq to remove the environment entry
+        local temp_file="${json_file}.tmp"
+        if jq --arg id "$env_id" 'del(.[$id])' "$json_file" > "$temp_file" 2>/dev/null; then
+            mv "$temp_file" "$json_file"
+            log_info "Removed environment '$env_id' from environments.json"
+        else
+            log_warn "Failed to update environments.json with jq."
+            rm -f "$temp_file"
+        fi
+    else
+        # Fallback: simple grep-based removal (basic implementation)
+        log_warn "jq not found. Attempting basic JSON update..."
+        
+        # Create a backup
+        cp "$json_file" "${json_file}.bak"
+        
+        # Remove lines containing the environment ID (naive approach for simple JSON)
+        if grep -q "\"$env_id\"" "$json_file"; then
+            # Try to remove the entry - this is a basic implementation
+            # For complex JSON, jq is strongly recommended
+            local temp_file="${json_file}.tmp"
+            
+            # Remove the key-value pair for this env_id
+            # This is a simplified approach that works for flat JSON structures
+            if python3 -c "
+import json
+import sys
+try:
+    with open('$json_file', 'r') as f:
+        data = json.load(f)
+    if '$env_id' in data:
+        del data['$env_id']
+        with open('$json_file', 'w') as f:
+            json.dump(data, f, indent=2)
+        sys.exit(0)
+    sys.exit(0)
+except Exception as e:
+    sys.exit(1)
+" 2>/dev/null; then
+                log_info "Removed environment '$env_id' from environments.json"
+            else
+                log_warn "Could not update environments.json. Manual update may be required."
+                mv "${json_file}.bak" "$json_file"
+            fi
+        else
+            log_info "Environment '$env_id' not found in environments.json"
+        fi
+        
+        rm -f "${json_file}.bak"
+    fi
+}
 
 if [ $# -lt 1 ]; then
     echo "Usage: $0 <env-id> [path-to-delete]"
@@ -29,12 +103,8 @@ fi
 
 log_info "Starting deletion for environment: $ENV_ID"
 
-if [ -f "$ENV_JSON_SCRIPT" ]; then
-    log_info "Updating environments.json..."
-    bash "$ENV_JSON_SCRIPT" remove "$ENV_ID"
-else
-    log_warn "env-json.sh not found at $ENV_JSON_SCRIPT. Skipping JSON update."
-fi
+log_info "Updating environments.json..."
+update_environments_json "$ENV_ID"
 
 log_info "Cleaning up Docker resources..."
 
