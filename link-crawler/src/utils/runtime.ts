@@ -3,7 +3,7 @@ export interface SpawnResult {
 	success: boolean;
 	stdout: string;
 	stderr: string;
-	exitCode: number;
+	exitCode: number | null;
 }
 
 /** ランタイムアダプターインターフェース */
@@ -70,7 +70,7 @@ export class NodeRuntimeAdapter implements RuntimeAdapter {
 					success: exitCode === 0,
 					stdout,
 					stderr,
-					exitCode: exitCode ?? -1,
+					exitCode,
 				});
 			});
 
