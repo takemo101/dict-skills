@@ -601,7 +601,9 @@ describe("PlaywrightFetcher", () => {
 			mockRuntime.readFile = vi.fn().mockResolvedValue("status: 200");
 
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
-			const result = await (fetcher as unknown as { getHttpStatusCode(): Promise<number | null> }).getHttpStatusCode();
+			const result = await (
+				fetcher as unknown as { getHttpStatusCode(): Promise<number | null> }
+			).getHttpStatusCode();
 
 			expect(result).toBe(200);
 			// Verify that the normalized path is used
@@ -624,7 +626,9 @@ describe("PlaywrightFetcher", () => {
 			mockRuntime.readFile = vi.fn().mockResolvedValue("status: 404");
 
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
-			const result = await (fetcher as unknown as { getHttpStatusCode(): Promise<number | null> }).getHttpStatusCode();
+			const result = await (
+				fetcher as unknown as { getHttpStatusCode(): Promise<number | null> }
+			).getHttpStatusCode();
 
 			expect(result).toBe(404);
 		});
@@ -645,7 +649,9 @@ describe("PlaywrightFetcher", () => {
 			mockRuntime.readFile = vi.fn().mockResolvedValue("status: 301");
 
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
-			const result = await (fetcher as unknown as { getHttpStatusCode(): Promise<number | null> }).getHttpStatusCode();
+			const result = await (
+				fetcher as unknown as { getHttpStatusCode(): Promise<number | null> }
+			).getHttpStatusCode();
 
 			expect(result).toBe(301);
 		});
@@ -664,7 +670,9 @@ describe("PlaywrightFetcher", () => {
 			mockExistsSync.mockReturnValue(false);
 
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
-			const result = await (fetcher as unknown as { getHttpStatusCode(): Promise<number | null> }).getHttpStatusCode();
+			const result = await (
+				fetcher as unknown as { getHttpStatusCode(): Promise<number | null> }
+			).getHttpStatusCode();
 
 			expect(result).toBeNull();
 		});
