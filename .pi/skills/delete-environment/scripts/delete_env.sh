@@ -2,7 +2,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-ENV_JSON_SCRIPT="${REPO_ROOT}/.opencode/skill/environments-json-management/scripts/env-json.sh"
+ENV_JSON_SCRIPT="${REPO_ROOT}/.pi/skills/delete-environment/scripts/env-json.sh"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'

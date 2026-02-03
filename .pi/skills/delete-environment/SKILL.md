@@ -69,7 +69,7 @@ bash .pi/skills/delete-environment/scripts/delete_env.sh temp-env /tmp/dev-env
 
 ```bash
 # 内部で env-json.sh を使用
-bash .opencode/skill/environments-json-management/scripts/env-json.sh remove <env-id>
+bash .pi/skills/delete-environment/scripts/env-json.sh remove <env-id>
 ```
 
 ### 2. Docker リソースのクリーンアップ
