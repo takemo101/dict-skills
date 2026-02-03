@@ -67,6 +67,8 @@ async function main(): Promise<void> {
 			console.error(`✗ Request timeout after ${error.timeoutMs}ms`);
 			process.exit(EXIT_CODES.CRAWL_ERROR);
 		}
+		// Note: CrawlError check must come after all subclasses (TimeoutError, FetchError, etc.)
+		// to ensure specific error handling takes precedence over the generic handler.
 		if (error instanceof CrawlError) {
 			console.error(`✗ ${error.toString()}`);
 			process.exit(EXIT_CODES.CRAWL_ERROR);
