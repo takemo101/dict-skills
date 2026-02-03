@@ -127,20 +127,40 @@ crawl https://docs.example.com --delay 2000
 
 ```
 .context/
-├── index.json       # メタデータ・ハッシュ情報
-├── full.md          # 全ページ結合（AIコンテキスト用）
-├── chunks/          # 見出しベースチャンク分割
-│   ├── chunk-001.md
-│   ├── chunk-002.md
-│   └── ...
-├── pages/           # ページ単位
-│   ├── page-001.md
-│   ├── page-002.md
-│   └── ...
-└── specs/           # 検出されたAPI仕様
-    ├── openapi.yaml
-    └── ...
+└── <サイト名>/       # URLから自動生成（例: nextjs-docs, python-3, example）
+    ├── index.json       # メタデータ・ハッシュ情報
+    ├── full.md          # 全ページ結合（AIコンテキスト用）
+    ├── chunks/          # 見出しベースチャンク分割
+    │   ├── chunk-001.md
+    │   ├── chunk-002.md
+    │   └── ...
+    ├── pages/           # ページ単位
+    │   ├── page-001.md
+    │   ├── page-002.md
+    │   └── ...
+    └── specs/           # 検出されたAPI仕様
+        ├── openapi.yaml
+        └── ...
 ```
+
+**サイト名の命名規則:**
+
+出力ディレクトリ名（`<サイト名>`）は、クロール対象URLから自動生成されます：
+
+1. サブドメイン（`docs`, `api`, `www`, `blog`, `dev`等）は除去されます
+2. TLD（`.com`, `.org`, `.dev`等）は除去されます
+3. パスの最初のセグメントが追加されます
+
+**変換例:**
+
+| URL | 生成されるサイト名 |
+|-----|------------------|
+| `https://nextjs.org/docs` | `nextjs-docs` |
+| `https://docs.python.org/3/` | `python-3` |
+| `https://docs.example.com` | `example` |
+| `https://www.example.com` | `example` |
+| `https://api.example.com/v1` | `example-v1` |
+| `https://docs.example.com/api` | `example-api` |
 
 ### 5.2 index.json
 

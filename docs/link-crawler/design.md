@@ -431,9 +431,40 @@ class PlaywrightFetcher {
 
 ---
 
-## 7. 差分クロール
+## 7. セッション管理
 
-### 7.1 ハッシュ計算
+### 7.1 概要
+
+`--keep-session`オプションを使用して、Playwrightのセッションデータ（`.playwright-cli`ディレクトリ）の保持/削除を制御できます。
+
+### 7.2 動作
+
+**通常時（`--keep-session`未指定または`false`）：**
+- クロール完了時に`.playwright-cli`ディレクトリを自動削除
+- 一時ファイルが残らず、クリーンな状態を維持
+- デフォルト動作
+
+**デバッグ時（`--keep-session`指定）：**
+- `.playwright-cli`ディレクトリを保持
+- Playwrightのセッション情報、一時ファイル、ブラウザ状態の確認が可能
+- トラブルシューティングやデバッグに有用
+
+### 7.3 使用例
+
+```bash
+# 通常実行（セッション自動削除）
+crawl https://docs.example.com
+
+# デバッグ実行（セッション保持）
+crawl https://docs.example.com --keep-session
+# → クロール後も .playwright-cli/ が残る
+```
+
+---
+
+## 8. 差分クロール
+
+### 8.1 ハッシュ計算
 
 ```typescript
 import { createHash } from "crypto";
@@ -443,7 +474,7 @@ function computeHash(content: string): string {
 }
 ```
 
-### 7.2 差分検知
+### 8.2 差分検知
 
 ```typescript
 class Hasher {
@@ -467,9 +498,9 @@ class Hasher {
 
 ---
 
-## 8. 出力処理
+## 9. 出力処理
 
-### 8.1 Merger（全ページ結合）
+### 9.1 Merger（全ページ結合）
 
 ```typescript
 class Merger {
@@ -486,7 +517,7 @@ class Merger {
 }
 ```
 
-### 8.2 Chunker（見出しベース分割）
+### 9.2 Chunker（見出しベース分割）
 
 ```typescript
 class Chunker {
@@ -515,7 +546,7 @@ class Chunker {
 
 ---
 
-## 9. エラーハンドリング
+## 10. エラーハンドリング
 
 | エラー種別 | 検知方法 | 対応 |
 |-----------|---------|------|
@@ -527,7 +558,7 @@ class Chunker {
 
 ---
 
-## 10. パフォーマンス
+## 11. パフォーマンス
 
 | 観点 | 対策 |
 |------|------|
@@ -538,7 +569,7 @@ class Chunker {
 
 ---
 
-## 11. スキル統合
+## 12. スキル統合
 
 ### 11.1 SKILL.md配置
 
@@ -566,7 +597,7 @@ pi> Next.jsのドキュメントをクロールして設計の参考にしたい
 
 ---
 
-## 12. 今後の拡張ポイント
+## 13. 今後の拡張ポイント
 
 | 機能 | 説明 | 優先度 |
 |------|------|--------|
