@@ -1,14 +1,9 @@
-import { createHash } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { FILENAME, SPEC_PATTERNS } from "../constants.js";
+import { computeHash } from "../diff/hasher.js";
 import type { CrawlConfig, CrawledPage, PageMetadata } from "../types.js";
 import { IndexManager } from "./index-manager.js";
-
-/** コンテンツのSHA256ハッシュを計算 */
-function computeHash(content: string): string {
-	return createHash("sha256").update(content, "utf8").digest("hex");
-}
 
 /** 文字列をslug形式に変換（小文字化、スペース→ハイフン、特殊文字除去） */
 function slugify(text: string | null | undefined, maxLength = 50): string {
