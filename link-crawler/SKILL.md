@@ -90,15 +90,15 @@ bun run link-crawler/src/crawl.ts <url> [options]
 bun run link-crawler/src/crawl.ts https://nextjs.org/docs -d 2
 # → .context/nextjs-docs/ に出力
 
-# 特定パスのみ
+# 特定パスのみ（docs.example.com → example）
 bun run link-crawler/src/crawl.ts https://docs.example.com --include "/api/"
-# → .context/example-docs/ に出力
+# → .context/example/ に出力
 ```
 
 ### 差分クロール
 
 ```bash
-# 初回
+# 初回（docs.example.com → example）
 bun run link-crawler/src/crawl.ts https://docs.example.com -o ./docs -d 3
 
 # 2回目以降（変更のみ更新）
@@ -108,13 +108,13 @@ bun run link-crawler/src/crawl.ts https://docs.example.com -o ./docs -d 3 --diff
 ### AIコンテキスト用
 
 ```bash
-# デフォルトでは full.md のみ出力
+# デフォルトでは full.md のみ出力（docs.example.com → example）
 bun run link-crawler/src/crawl.ts https://docs.example.com
-# → .context/example-docs/full.md のみ出力
+# → .context/example/full.md のみ出力
 
 # 必要な時だけ chunks を有効化
 bun run link-crawler/src/crawl.ts https://docs.example.com --chunks
-# → .context/example-docs/full.md + .context/example-docs/chunks/*.md
+# → .context/example/full.md + .context/example/chunks/*.md
 ```
 
 ---
@@ -167,7 +167,7 @@ Bun.spawn([nodePath, cliPath, "open", url, "--session", sessionId])
 
 ```
 .context/
-└── <サイト名>/    # URLから自動生成（例: nextjs-docs, python-3）
+└── <サイト名>/    # URLから自動生成（例: nextjs-docs, python-3, example）
     ├── index.json    # メタデータ・ハッシュ
     ├── full.md       # 全ページ結合 ★ AIコンテキスト用
     ├── chunks/       # 見出しベース分割 (--chunks 有効時のみ)
@@ -177,6 +177,12 @@ Bun.spawn([nodePath, cliPath, "open", url, "--session", sessionId])
     └── specs/        # API仕様
         └── openapi.yaml
 ```
+
+**サイト名の命名規則:**
+- サブドメイン（`docs`, `api`, `www`等）は除去されます
+- TLD（`.com`, `.org`等）は除去されます
+- 最初のパスセグメントが追加されます
+- 例: `https://docs.example.com/api` → `example-api`
 
 #### 個別ページファイルの frontmatter 構造
 
