@@ -1,11 +1,9 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { PostProcessor } from "../../src/crawler/post-processor.js";
-import { CrawlLogger } from "../../src/crawler/logger.js";
-import { Merger } from "../../src/output/merger.js";
-import { Chunker } from "../../src/output/chunker.js";
-import type { CrawlConfig, CrawledPage } from "../../src/types.js";
-import { mkdirSync, rmSync, writeFileSync, readFileSync, existsSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { CrawlLogger } from "../../src/crawler/logger.js";
+import { PostProcessor } from "../../src/crawler/post-processor.js";
+import type { CrawlConfig, CrawledPage } from "../../src/types.js";
 
 const testOutputDir = "./test-output-post-processor";
 
@@ -162,10 +160,7 @@ describe("PostProcessor", () => {
 			// Create page files on disk
 			const pagesDir = join(testOutputDir, "pages");
 			mkdirSync(pagesDir, { recursive: true });
-			writeFileSync(
-				join(pagesDir, "page-001.md"),
-				"# Page 1\n\nContent from disk for chunking",
-			);
+			writeFileSync(join(pagesDir, "page-001.md"), "# Page 1\n\nContent from disk for chunking");
 
 			const pages = [createPage("https://example.com/page1", "Page 1", "pages/page-001.md")];
 
@@ -185,10 +180,7 @@ describe("PostProcessor", () => {
 			// Create page files first
 			const pagesDir = join(testOutputDir, "pages");
 			mkdirSync(pagesDir, { recursive: true });
-			writeFileSync(
-				join(pagesDir, "page-001.md"),
-				"# Page 1\n\nContent",
-			);
+			writeFileSync(join(pagesDir, "page-001.md"), "# Page 1\n\nContent");
 
 			const pages = [createPage("https://example.com/page1", "Page 1", "pages/page-001.md")];
 
@@ -205,10 +197,7 @@ describe("PostProcessor", () => {
 			// Create page files first
 			const pagesDir = join(testOutputDir, "pages");
 			mkdirSync(pagesDir, { recursive: true });
-			writeFileSync(
-				join(pagesDir, "page-001.md"),
-				"# Page 1\n\nContent",
-			);
+			writeFileSync(join(pagesDir, "page-001.md"), "# Page 1\n\nContent");
 
 			const pages = [createPage("https://example.com/page1", "Page 1", "pages/page-001.md")];
 
@@ -243,10 +232,7 @@ describe("PostProcessor", () => {
 			// Create page files
 			const pagesDir = join(testOutputDir, "pages");
 			mkdirSync(pagesDir, { recursive: true });
-			writeFileSync(
-				join(pagesDir, "page-001.md"),
-				"# Page 1\n\nContent from disk",
-			);
+			writeFileSync(join(pagesDir, "page-001.md"), "# Page 1\n\nContent from disk");
 
 			const pages = [createPage("https://example.com/page1", "Page 1", "pages/page-001.md")];
 
@@ -279,9 +265,7 @@ describe("PostProcessor", () => {
 			const config = { ...baseConfig, pages: true };
 			const processor = new PostProcessor(config, mockLogger);
 
-			const pages = [
-				createPage("https://example.com/page1", "Page 1", "pages/nonexistent.md"),
-			];
+			const pages = [createPage("https://example.com/page1", "Page 1", "pages/nonexistent.md")];
 
 			// Should not throw even though file doesn't exist
 			await expect(processor.process(pages)).resolves.not.toThrow();
@@ -295,10 +279,7 @@ describe("PostProcessor", () => {
 			// Create page files
 			const pagesDir = join(testOutputDir, "pages");
 			mkdirSync(pagesDir, { recursive: true });
-			writeFileSync(
-				join(pagesDir, "page-001.md"),
-				"# Page 1\n\nContent that will be chunked",
-			);
+			writeFileSync(join(pagesDir, "page-001.md"), "# Page 1\n\nContent that will be chunked");
 
 			const pages = [createPage("https://example.com/page1", "Page 1", "pages/page-001.md")];
 
@@ -359,7 +340,7 @@ This is the second page content.`;
 			expect(existsSync(fullMdPath)).toBe(true);
 
 			// Verify chunks were created (since content is small, might not be chunked)
-			const chunksDir = join(testOutputDir, "chunks");
+			const _chunksDir = join(testOutputDir, "chunks");
 			// Content might or might not be chunked depending on size
 		});
 

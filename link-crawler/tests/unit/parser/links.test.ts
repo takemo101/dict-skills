@@ -1,9 +1,9 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
-	normalizeUrl,
-	isSameDomain,
-	shouldCrawl,
 	extractLinks,
+	isSameDomain,
+	normalizeUrl,
+	shouldCrawl,
 } from "../../../src/parser/links.js";
 import type { CrawlConfig } from "../../../src/types.js";
 

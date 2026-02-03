@@ -1,10 +1,10 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
-	CrawlError,
-	FetchError,
 	ConfigError,
-	FileError,
+	CrawlError,
 	DependencyError,
+	FetchError,
+	FileError,
 	TimeoutError,
 } from "../../src/errors.js";
 
@@ -37,9 +37,7 @@ describe("CrawlError", () => {
 		const cause = new Error("Caused by this");
 		const error = new CrawlError("Test message", "TEST_CODE", cause);
 
-		expect(error.toString()).toBe(
-			"CrawlError[TEST_CODE]: Test message\nCaused by: Caused by this",
-		);
+		expect(error.toString()).toBe("CrawlError[TEST_CODE]: Test message\nCaused by: Caused by this");
 	});
 });
 
@@ -55,11 +53,7 @@ describe("FetchError", () => {
 
 	it("should create fetch error with cause", () => {
 		const cause = new Error("Network error");
-		const error = new FetchError(
-			"Failed to fetch",
-			"https://example.com",
-			cause,
-		);
+		const error = new FetchError("Failed to fetch", "https://example.com", cause);
 
 		expect(error.cause).toBe(cause);
 		expect(error.toString()).toContain("Network error");
@@ -108,11 +102,7 @@ describe("FileError", () => {
 
 	it("should create file error with cause", () => {
 		const cause = new Error("Permission denied");
-		const error = new FileError(
-			"Cannot write file",
-			"/path/to/file.txt",
-			cause,
-		);
+		const error = new FileError("Cannot write file", "/path/to/file.txt", cause);
 
 		expect(error.cause).toBe(cause);
 		expect(error.toString()).toContain("Permission denied");

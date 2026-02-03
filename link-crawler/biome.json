@@ -7,7 +7,7 @@
 		"useIgnoreFile": true
 	},
 	"files": {
-		"includes": ["src/**/*.ts"],
+		"includes": ["src/**/*.ts", "tests/**/*.ts"],
 		"ignoreUnknown": true
 	},
 	"linter": {

@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { computeHash, Hasher } from "../../src/diff/hasher.js";
 
 describe("computeHash", () => {
@@ -77,10 +77,7 @@ describe("Hasher", () => {
 		it("should return true for new URL", () => {
 			const hasher = new Hasher();
 
-			const result = hasher.isChanged(
-				"https://example.com/new-page",
-				"somehash",
-			);
+			const result = hasher.isChanged("https://example.com/new-page", "somehash");
 
 			expect(result).toBe(true);
 		});
@@ -98,10 +95,7 @@ describe("Hasher", () => {
 			const hashes = new Map([["https://example.com/page1", "original-hash"]]);
 			const hasher = new Hasher(hashes);
 
-			const result = hasher.isChanged(
-				"https://example.com/page1",
-				"modified-hash",
-			);
+			const result = hasher.isChanged("https://example.com/page1", "modified-hash");
 
 			expect(result).toBe(true);
 		});

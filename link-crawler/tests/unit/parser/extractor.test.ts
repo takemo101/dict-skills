@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest";
 import { JSDOM } from "jsdom";
-import { extractMetadata, extractContent } from "../../../src/parser/extractor.js";
+import { describe, expect, it } from "vitest";
+import { extractContent, extractMetadata } from "../../../src/parser/extractor.js";
 
 describe("extractMetadata", () => {
 	it("should extract title from title tag", () => {
@@ -577,7 +577,7 @@ describe("extractContent - code block preservation", () => {
 
 		expect(result.content).not.toBeNull();
 		expect(result.content).toContain("hljs");
-		expect(result.content).toContain('function hello()');
+		expect(result.content).toContain("function hello()");
 	});
 
 	it("should preserve prism-code blocks", () => {

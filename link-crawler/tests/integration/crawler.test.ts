@@ -1,7 +1,6 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdir, rm, readFile, readdir } from "node:fs/promises";
-import { existsSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Crawler } from "../../src/crawler/index.js";
 import type { CrawlConfig, Fetcher, FetchResult } from "../../src/types.js";
 
@@ -55,17 +54,13 @@ function createTestHtml(options: {
 	links?: string[];
 	meta?: { description?: string; keywords?: string };
 }): string {
-	const linksHtml = (options.links || [])
-		.map((link) => `<a href="${link}">${link}</a>`)
-		.join("\n");
+	const linksHtml = (options.links || []).map((link) => `<a href="${link}">${link}</a>`).join("\n");
 
 	const metaHtml = [
 		options.meta?.description
 			? `<meta name="description" content="${options.meta.description}">`
 			: "",
-		options.meta?.keywords
-			? `<meta name="keywords" content="${options.meta.keywords}">`
-			: "",
+		options.meta?.keywords ? `<meta name="keywords" content="${options.meta.keywords}">` : "",
 	].join("\n");
 
 	return `<!DOCTYPE html>
@@ -182,9 +177,7 @@ describe("CrawlerEngine Integration", () => {
 			const crawler = new Crawler(config, mockFetcher);
 			await crawler.run();
 
-			const indexContent = JSON.parse(
-				readFileSync(join(testOutputDir, "index.json"), "utf-8"),
-			);
+			const indexContent = JSON.parse(readFileSync(join(testOutputDir, "index.json"), "utf-8"));
 
 			expect(indexContent.totalPages).toBe(3);
 			expect(indexContent.pages.map((p: { url: string }) => p.url)).toContain(
@@ -214,10 +207,7 @@ describe("CrawlerEngine Integration", () => {
 					html: createTestHtml({
 						title: "Home",
 						content: "<p>Home content.</p>",
-						links: [
-							"https://example.com/page1",
-							"https://other-site.com/external",
-						],
+						links: ["https://example.com/page1", "https://other-site.com/external"],
 					}),
 				},
 				"https://example.com/page1": {
@@ -238,9 +228,7 @@ describe("CrawlerEngine Integration", () => {
 			const crawler = new Crawler(config, mockFetcher);
 			await crawler.run();
 
-			const indexContent = JSON.parse(
-				readFileSync(join(testOutputDir, "index.json"), "utf-8"),
-			);
+			const indexContent = JSON.parse(readFileSync(join(testOutputDir, "index.json"), "utf-8"));
 
 			expect(indexContent.totalPages).toBe(2);
 			const urls = indexContent.pages.map((p: { url: string }) => p.url);
@@ -263,9 +251,7 @@ describe("CrawlerEngine Integration", () => {
 			const crawler = new Crawler(defaultConfig, mockFetcher);
 			await crawler.run();
 
-			const indexContent = JSON.parse(
-				readFileSync(join(testOutputDir, "index.json"), "utf-8"),
-			);
+			const indexContent = JSON.parse(readFileSync(join(testOutputDir, "index.json"), "utf-8"));
 
 			expect(indexContent.totalPages).toBe(1);
 		});
@@ -300,9 +286,7 @@ describe("CrawlerEngine Integration", () => {
 			const crawler = new Crawler(config, mockFetcher);
 			await crawler.run();
 
-			const indexContent = JSON.parse(
-				readFileSync(join(testOutputDir, "index.json"), "utf-8"),
-			);
+			const indexContent = JSON.parse(readFileSync(join(testOutputDir, "index.json"), "utf-8"));
 
 			expect(indexContent.totalPages).toBe(2);
 			expect(indexContent.pages.map((p: { url: string }) => p.url)).not.toContain(
@@ -326,9 +310,7 @@ describe("CrawlerEngine Integration", () => {
 			const crawler1 = new Crawler(config1, mockFetcher1);
 			await crawler1.run();
 
-			const index1 = JSON.parse(
-				readFileSync(join(testOutputDir, "index.json"), "utf-8"),
-			);
+			const index1 = JSON.parse(readFileSync(join(testOutputDir, "index.json"), "utf-8"));
 			const originalHash = index1.pages[0].hash;
 
 			const mockFetcher2 = new MockFetcher({
@@ -339,9 +321,7 @@ describe("CrawlerEngine Integration", () => {
 			const crawler2 = new Crawler(config2, mockFetcher2);
 			await crawler2.run();
 
-			const index2 = JSON.parse(
-				readFileSync(join(testOutputDir, "index.json"), "utf-8"),
-			);
+			const index2 = JSON.parse(readFileSync(join(testOutputDir, "index.json"), "utf-8"));
 
 			expect(index2.totalPages).toBe(0);
 			expect(index2.pages).toHaveLength(0);
@@ -362,9 +342,7 @@ describe("CrawlerEngine Integration", () => {
 			const crawler1 = new Crawler(config1, mockFetcher1);
 			await crawler1.run();
 
-			const index1 = JSON.parse(
-				readFileSync(join(testOutputDir, "index.json"), "utf-8"),
-			);
+			const index1 = JSON.parse(readFileSync(join(testOutputDir, "index.json"), "utf-8"));
 			const originalHash = index1.pages[0].hash;
 
 			const mockFetcher2 = new MockFetcher({
@@ -380,9 +358,7 @@ describe("CrawlerEngine Integration", () => {
 			const crawler2 = new Crawler(config2, mockFetcher2);
 			await crawler2.run();
 
-			const index2 = JSON.parse(
-				readFileSync(join(testOutputDir, "index.json"), "utf-8"),
-			);
+			const index2 = JSON.parse(readFileSync(join(testOutputDir, "index.json"), "utf-8"));
 
 			expect(index2.pages[0].hash).not.toBe(originalHash);
 		});
@@ -514,9 +490,7 @@ describe("CrawlerEngine Integration", () => {
 			const crawler = new Crawler(defaultConfig, mockFetcher);
 			await crawler.run();
 
-			const indexContent = JSON.parse(
-				readFileSync(join(testOutputDir, "index.json"), "utf-8"),
-			);
+			const indexContent = JSON.parse(readFileSync(join(testOutputDir, "index.json"), "utf-8"));
 
 			expect(indexContent.pages[0].metadata.title).toBe("Test Page");
 			expect(indexContent.pages[0].metadata.description).toBe("Test description");
@@ -555,9 +529,7 @@ describe("CrawlerEngine Integration", () => {
 			const crawler = new Crawler(defaultConfig, mockFetcher);
 			await crawler.run();
 
-			const indexContent = JSON.parse(
-				readFileSync(join(testOutputDir, "index.json"), "utf-8"),
-			);
+			const indexContent = JSON.parse(readFileSync(join(testOutputDir, "index.json"), "utf-8"));
 
 			const homePage = indexContent.pages.find(
 				(p: { url: string }) => p.url === "https://example.com",

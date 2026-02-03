@@ -1,9 +1,8 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	BunRuntimeAdapter,
-	NodeRuntimeAdapter,
 	createRuntimeAdapter,
-	type SpawnResult,
+	NodeRuntimeAdapter,
 } from "../../src/utils/runtime.js";
 
 describe("BunRuntimeAdapter", () => {
@@ -145,7 +144,10 @@ describe("NodeRuntimeAdapter", () => {
 		});
 
 		it("should handle command failure", async () => {
-			const result = await adapter.spawn("node", ["-e", "process.stderr.write('error'); process.exit(1)"]);
+			const result = await adapter.spawn("node", [
+				"-e",
+				"process.stderr.write('error'); process.exit(1)",
+			]);
 
 			expect(result.success).toBe(false);
 			expect(result.exitCode).toBe(1);
