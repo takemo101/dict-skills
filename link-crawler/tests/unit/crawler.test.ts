@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Crawler } from "../../src/crawler/index.js";
 import type { CrawlConfig, Fetcher, FetchResult } from "../../src/types.js";
@@ -28,7 +29,7 @@ class MockFetcher implements Fetcher {
 }
 
 describe("Crawler", () => {
-	const testDir = join(import.meta.dirname, ".test-crawler");
+	const testDir = join(fileURLToPath(import.meta.url), "..", ".test-crawler");
 	let mockFetcher: MockFetcher;
 	let baseConfig: CrawlConfig;
 
