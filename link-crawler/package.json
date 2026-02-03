@@ -11,9 +11,9 @@
 		"check": "biome check .",
 		"fix": "biome check --write .",
 		"typecheck": "tsc --noEmit",
-		"test": "npx vitest run",
-		"test:watch": "npx vitest",
-		"test:coverage": "npx vitest run --coverage"
+		"test": "bun x vitest run",
+		"test:watch": "bun x vitest",
+		"test:coverage": "bun x vitest run --coverage"
 	},
 	"dependencies": {
 		"@mozilla/readability": "^0.5.0",
