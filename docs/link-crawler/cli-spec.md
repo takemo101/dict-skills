@@ -193,7 +193,7 @@ crawl https://docs.example.com --delay 2000
 | `url` | string | ページURL |
 | `title` | string \| null | ページタイトル |
 | `file` | string | 出力ファイルパス（pages/以下） |
-| `depth` | number | クロール深度（開始URL=1） |
+| `depth` | number | クロール深度（開始URL=0） |
 | `links` | string[] | ページから抽出されたリンク一覧 |
 | `metadata` | object | ページメタデータ |
 | `metadata.title` | string \| null | メタタグから抽出したタイトル |
