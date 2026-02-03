@@ -114,11 +114,36 @@ describe("BunRuntimeAdapter", () => {
 			(globalThis as { Bun?: typeof Bun }).Bun = {
 				spawn: vi.fn(),
 				sleep: mockSleep,
+				file: vi.fn().mockReturnValue({
+					text: vi.fn().mockResolvedValue("file content"),
+				}),
 			} as unknown as typeof Bun;
 
 			await adapter.sleep(100);
 
 			expect(mockSleep).toHaveBeenCalledWith(100);
+
+			// Restore
+			(globalThis as { Bun?: typeof Bun }).Bun = originalBun;
+		});
+	});
+
+	describe("readFile", () => {
+		it("should read file content", async () => {
+			const mockText = vi.fn().mockResolvedValue("file content");
+			const originalBun = (globalThis as { Bun?: typeof Bun }).Bun;
+			(globalThis as { Bun?: typeof Bun }).Bun = {
+				spawn: vi.fn(),
+				sleep: vi.fn(),
+				file: vi.fn().mockReturnValue({
+					text: mockText,
+				}),
+			} as unknown as typeof Bun;
+
+			const result = await adapter.readFile("/path/to/file.txt");
+
+			expect(result).toBe("file content");
+			expect((globalThis as { Bun?: typeof Bun }).Bun!.file).toHaveBeenCalledWith("/path/to/file.txt");
 
 			// Restore
 			(globalThis as { Bun?: typeof Bun }).Bun = originalBun;
@@ -170,6 +195,25 @@ describe("NodeRuntimeAdapter", () => {
 			const elapsed = Date.now() - start;
 
 			expect(elapsed).toBeGreaterThanOrEqual(45);
+		});
+	});
+
+	describe("readFile", () => {
+		it("should read file content", async () => {
+			// Create a temporary file to read
+			const { writeFile, unlink } = await import("node:fs/promises");
+			const { join } = await import("node:path");
+			const { tmpdir } = await import("node:os");
+			
+			const testFile = join(tmpdir(), `test-${Date.now()}.txt`);
+			await writeFile(testFile, "test content", "utf-8");
+			
+			try {
+				const result = await adapter.readFile(testFile);
+				expect(result).toBe("test content");
+			} finally {
+				await unlink(testFile).catch(() => {});
+			}
 		});
 	});
 });

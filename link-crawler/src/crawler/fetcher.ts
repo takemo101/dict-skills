@@ -57,7 +57,7 @@ export class PlaywrightFetcher implements Fetcher {
 	}
 
 	/** フェッチを実行 */
-	private async executeFetch(url: string): Promise<FetchResult> {
+	private async executeFetch(url: string): Promise<FetchResult | null> {
 		const openArgs = ["open", url, "--session", this.sessionId];
 		if (this.config.headed) {
 			openArgs.push("--headed");
@@ -65,8 +65,27 @@ export class PlaywrightFetcher implements Fetcher {
 
 		// ページを開く
 		const openResult = await this.runCli(openArgs);
+		
+		// 404等でページが開けない場合はnullを返してスキップ
 		if (!openResult.success) {
+			if (openResult.stderr.includes("ERR_HTTP_RESPONSE_CODE_FAILURE") ||
+			    openResult.stdout.includes("chrome-error://")) {
+				return null;
+			}
 			throw new FetchError(`Failed to open page: ${openResult.stderr}`, url);
+		}
+
+		// エラーページにリダイレクトされた場合はスキップ
+		if (openResult.stdout.includes("chrome-error://") || 
+		    openResult.stdout.includes("Page URL: chrome-error://")) {
+			return null;
+		}
+
+		// HTTPステータスコードを確認（networkコマンドを使用）
+		const statusCode = await this.getHttpStatusCode();
+		if (statusCode !== null && statusCode !== 200) {
+			// 200以外はスキップ
+			return null;
 		}
 
 		// レンダリング待機
@@ -90,6 +109,36 @@ export class PlaywrightFetcher implements Fetcher {
 			finalUrl: url,
 			contentType: "text/html",
 		};
+	}
+
+	/** HTTPステータスコードを取得 */
+	private async getHttpStatusCode(): Promise<number | null> {
+		try {
+			const networkResult = await this.runCli(["network", "--session", this.sessionId]);
+			if (!networkResult.success) {
+				return null;
+			}
+
+			// networkログファイルのパスを抽出
+			const logMatch = networkResult.stdout.match(/\[Network\]\(([^)]+)\)/);
+			if (logMatch) {
+				// 相対パスから絶対パスを構築
+				const logPath = logMatch[1].replace(/\.\.\/+/g, "");
+				const fullPath = join(process.cwd(), logPath);
+				
+				if (existsSync(fullPath)) {
+					const logContent = await this.runtime.readFile(fullPath);
+					// 最後のリクエストのステータスコードを抽出
+					const statusMatch = logContent.match(/status:\s*(\d+)/);
+					if (statusMatch) {
+						return parseInt(statusMatch[1], 10);
+					}
+				}
+			}
+			return null;
+		} catch {
+			return null;
+		}
 	}
 
 	async fetch(url: string): Promise<FetchResult | null> {

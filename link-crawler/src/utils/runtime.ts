@@ -17,6 +17,11 @@ export interface RuntimeAdapter {
 	 * 指定時間スリープする
 	 */
 	sleep(ms: number): Promise<void>;
+
+	/**
+	 * ファイルを読み込む
+	 */
+	readFile(path: string): Promise<string>;
 }
 
 /** Bunランタイムアダプター */
@@ -43,6 +48,11 @@ export class BunRuntimeAdapter implements RuntimeAdapter {
 
 	async sleep(ms: number): Promise<void> {
 		return Bun.sleep(ms);
+	}
+
+	async readFile(path: string): Promise<string> {
+		const file = Bun.file(path);
+		return file.text();
 	}
 }
 
@@ -87,6 +97,11 @@ export class NodeRuntimeAdapter implements RuntimeAdapter {
 
 	async sleep(ms: number): Promise<void> {
 		return new Promise((resolve) => setTimeout(resolve, ms));
+	}
+
+	async readFile(path: string): Promise<string> {
+		const { readFile } = await import("node:fs/promises");
+		return readFile(path, "utf-8");
 	}
 }
 

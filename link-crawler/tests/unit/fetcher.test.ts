@@ -35,6 +35,7 @@ const createMockConfig = (overrides: Partial<CrawlConfig> = {}): CrawlConfig => 
 const createMockRuntime = (): RuntimeAdapter => ({
 	spawn: vi.fn(),
 	sleep: vi.fn(),
+	readFile: vi.fn(),
 });
 
 beforeEach(() => {
@@ -376,13 +377,15 @@ describe("PlaywrightFetcher", () => {
 				} as SpawnResult);
 			});
 			mockRuntime.sleep = vi.fn().mockResolvedValue(undefined);
+			mockRuntime.readFile = vi.fn().mockResolvedValue("status: 200");
 
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
 			await fetcher.fetch("https://example.com");
 			await fetcher.fetch("https://example.com/page2");
 
 			// Should only check playwright cli once
-			expect(mockRuntime.spawn).toHaveBeenCalledTimes(5); // 1 version check + 2*(open+eval)
+			// 1 version check + 2*(open + network + eval) = 7
+			expect(mockRuntime.spawn).toHaveBeenCalledTimes(7);
 		});
 
 		it("should wrap unknown errors in FetchError", async () => {
