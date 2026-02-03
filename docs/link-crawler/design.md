@@ -247,8 +247,8 @@ interface PageMetadata {
   ogType: string | null;
 }
 
-/** 保存済みページ情報 (index.json用) */
-interface PageIndex {
+/** クロール済みページ情報 */
+interface CrawledPage {
   url: string;
   title: string | null;
   file: string;
@@ -265,7 +265,7 @@ interface CrawlResult {
   baseUrl: string;
   config: Partial<CrawlConfig>;
   totalPages: number;
-  pages: PageIndex[];
+  pages: CrawledPage[];
   specs: DetectedSpec[];
 }
 
