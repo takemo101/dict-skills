@@ -19,7 +19,7 @@
 ### 前提条件
 
 - [Bun](https://bun.sh/) 1.0以上
-- [playwright-cli](https://playwright.dev/): `npm install -g @playwright/cli`
+- [playwright-cli](https://www.npmjs.com/package/@playwright/cli): `npm install -g @playwright/cli`
 
 ### セットアップ
 
