@@ -65,19 +65,23 @@ export class PlaywrightFetcher implements Fetcher {
 
 		// ページを開く
 		const openResult = await this.runCli(openArgs);
-		
+
 		// 404等でページが開けない場合はnullを返してスキップ
 		if (!openResult.success) {
-			if (openResult.stderr.includes("ERR_HTTP_RESPONSE_CODE_FAILURE") ||
-			    openResult.stdout.includes("chrome-error://")) {
+			if (
+				openResult.stderr.includes("ERR_HTTP_RESPONSE_CODE_FAILURE") ||
+				openResult.stdout.includes("chrome-error://")
+			) {
 				return null;
 			}
 			throw new FetchError(`Failed to open page: ${openResult.stderr}`, url);
 		}
 
 		// エラーページにリダイレクトされた場合はスキップ
-		if (openResult.stdout.includes("chrome-error://") || 
-		    openResult.stdout.includes("Page URL: chrome-error://")) {
+		if (
+			openResult.stdout.includes("chrome-error://") ||
+			openResult.stdout.includes("Page URL: chrome-error://")
+		) {
 			return null;
 		}
 
@@ -125,7 +129,7 @@ export class PlaywrightFetcher implements Fetcher {
 				// 相対パスから絶対パスを構築
 				const logPath = logMatch[1].replace(/\.\.\/+/g, "");
 				const fullPath = join(process.cwd(), logPath);
-				
+
 				if (existsSync(fullPath)) {
 					const logContent = await this.runtime.readFile(fullPath);
 					// 最後のリクエストのステータスコードを抽出
