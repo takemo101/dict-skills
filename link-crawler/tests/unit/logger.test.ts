@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CrawlLogger } from "../../src/crawler/logger.js";
 import type { CrawlConfig } from "../../src/types.js";
 
@@ -150,7 +150,9 @@ describe("CrawlLogger", () => {
 			const logger = new CrawlLogger(baseConfig);
 			logger.logComplete(5, 0, "./output/index.json");
 
-			expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining("Index: ./output/index.json"));
+			expect(consoleLogSpy).toHaveBeenCalledWith(
+				expect.stringContaining("Index: ./output/index.json"),
+			);
 		});
 
 		it("should display skipped count when in diff mode and has skips", () => {
@@ -181,7 +183,9 @@ describe("CrawlLogger", () => {
 			const logger = new CrawlLogger(configWithDiff);
 			logger.logComplete(5, 0, "./output/index.json");
 
-			expect(consoleLogSpy).not.toHaveBeenCalledWith(expect.stringContaining("Skipped (unchanged)"));
+			expect(consoleLogSpy).not.toHaveBeenCalledWith(
+				expect.stringContaining("Skipped (unchanged)"),
+			);
 		});
 	});
 
@@ -205,7 +209,9 @@ describe("CrawlLogger", () => {
 			const logger = new CrawlLogger(baseConfig);
 			logger.logLoadedHashes(5);
 
-			expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining("📊 Loaded 5 existing page hashes"));
+			expect(consoleLogSpy).toHaveBeenCalledWith(
+				expect.stringContaining("📊 Loaded 5 existing page hashes"),
+			);
 		});
 
 		it("should not log loaded hashes when count is 0", () => {
@@ -219,49 +225,63 @@ describe("CrawlLogger", () => {
 			const logger = new CrawlLogger(baseConfig);
 			logger.logLoadedIndex(3);
 
-			expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining("📂 Loaded existing index.json: 3 pages"));
+			expect(consoleLogSpy).toHaveBeenCalledWith(
+				expect.stringContaining("📂 Loaded existing index.json: 3 pages"),
+			);
 		});
 
 		it("should log index load failure", () => {
 			const logger = new CrawlLogger(baseConfig);
 			logger.logIndexLoadFailed();
 
-			expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining("⚠️ Failed to load existing index.json"));
+			expect(consoleLogSpy).toHaveBeenCalledWith(
+				expect.stringContaining("⚠️ Failed to load existing index.json"),
+			);
 		});
 
 		it("should log crawl start with correct indentation", () => {
 			const logger = new CrawlLogger(baseConfig);
 			logger.logCrawlStart("https://example.com/page", 1);
 
-			expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining("→ [1] https://example.com/page"));
+			expect(consoleLogSpy).toHaveBeenCalledWith(
+				expect.stringContaining("→ [1] https://example.com/page"),
+			);
 		});
 
 		it("should log page saved", () => {
 			const logger = new CrawlLogger(baseConfig);
 			logger.logPageSaved("page-001.md", 0, 5);
 
-			expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining("✓ Saved: page-001.md (5 links found)"));
+			expect(consoleLogSpy).toHaveBeenCalledWith(
+				expect.stringContaining("✓ Saved: page-001.md (5 links found)"),
+			);
 		});
 
 		it("should log cached page", () => {
 			const logger = new CrawlLogger(baseConfig);
 			logger.logPageSaved("page-001.md", 0, 5, true);
 
-			expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining("✓ Cached: page-001.md (5 links found)"));
+			expect(consoleLogSpy).toHaveBeenCalledWith(
+				expect.stringContaining("✓ Cached: page-001.md (5 links found)"),
+			);
 		});
 
 		it("should log spec detected", () => {
 			const logger = new CrawlLogger(baseConfig);
 			logger.logSpecDetected("openapi", "openapi.yaml");
 
-			expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining("📋 Spec: openapi - openapi.yaml"));
+			expect(consoleLogSpy).toHaveBeenCalledWith(
+				expect.stringContaining("📋 Spec: openapi - openapi.yaml"),
+			);
 		});
 
 		it("should log fetch error", () => {
 			const logger = new CrawlLogger(baseConfig);
 			logger.logFetchError("https://example.com", "Network error", 0);
 
-			expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining("✗ Fetch Error: Network error"));
+			expect(consoleErrorSpy).toHaveBeenCalledWith(
+				expect.stringContaining("✗ Fetch Error: Network error"),
+			);
 			expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining("https://example.com"));
 		});
 
@@ -269,7 +289,9 @@ describe("CrawlLogger", () => {
 			const logger = new CrawlLogger(baseConfig);
 			logger.logPostProcessingStart();
 
-			expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining("🔄 Running Post-processing..."));
+			expect(consoleLogSpy).toHaveBeenCalledWith(
+				expect.stringContaining("🔄 Running Post-processing..."),
+			);
 		});
 
 		it("should log post processing skipped", () => {
@@ -290,7 +312,9 @@ describe("CrawlLogger", () => {
 			const logger = new CrawlLogger(baseConfig);
 			logger.logMergerComplete("./output/full.md");
 
-			expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining("✓ full.md: ./output/full.md"));
+			expect(consoleLogSpy).toHaveBeenCalledWith(
+				expect.stringContaining("✓ full.md: ./output/full.md"),
+			);
 		});
 
 		it("should log chunker start", () => {
@@ -304,14 +328,18 @@ describe("CrawlLogger", () => {
 			const logger = new CrawlLogger(baseConfig);
 			logger.logChunkerComplete(5);
 
-			expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining("✓ chunks: 5 files in chunks/"));
+			expect(consoleLogSpy).toHaveBeenCalledWith(
+				expect.stringContaining("✓ chunks: 5 files in chunks/"),
+			);
 		});
 
 		it("should log chunker complete with no files", () => {
 			const logger = new CrawlLogger(baseConfig);
 			logger.logChunkerComplete(0);
 
-			expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining("ℹ️  No chunks created (content too small)"));
+			expect(consoleLogSpy).toHaveBeenCalledWith(
+				expect.stringContaining("ℹ️  No chunks created (content too small)"),
+			);
 		});
 	});
 });

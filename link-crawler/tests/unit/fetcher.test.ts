@@ -1,9 +1,8 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import type { CrawlConfig } from "../../src/types.js";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PlaywrightFetcher, parseCliOutput } from "../../src/crawler/fetcher.js";
 import { DependencyError, FetchError, TimeoutError } from "../../src/errors.js";
-import type { RuntimeAdapter } from "../../src/utils/runtime.js";
-import type { SpawnResult } from "../../src/utils/runtime.js";
+import type { CrawlConfig } from "../../src/types.js";
+import type { RuntimeAdapter, SpawnResult } from "../../src/utils/runtime.js";
 
 // Mock node:fs
 const mockExistsSync = vi.fn();
@@ -87,7 +86,9 @@ describe("PlaywrightFetcher", () => {
 
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
 			// Access private method through prototype
-			const result = await (fetcher as unknown as { checkPlaywrightCli(): Promise<boolean> }).checkPlaywrightCli();
+			const result = await (
+				fetcher as unknown as { checkPlaywrightCli(): Promise<boolean> }
+			).checkPlaywrightCli();
 
 			expect(result).toBe(true);
 		});
@@ -115,7 +116,9 @@ describe("PlaywrightFetcher", () => {
 			});
 
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
-			const result = await (fetcher as unknown as { checkPlaywrightCli(): Promise<boolean> }).checkPlaywrightCli();
+			const result = await (
+				fetcher as unknown as { checkPlaywrightCli(): Promise<boolean> }
+			).checkPlaywrightCli();
 
 			expect(result).toBe(true);
 			expect(mockRuntime.spawn).toHaveBeenCalledTimes(3);
@@ -132,7 +135,9 @@ describe("PlaywrightFetcher", () => {
 			} as SpawnResult);
 
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
-			const result = await (fetcher as unknown as { checkPlaywrightCli(): Promise<boolean> }).checkPlaywrightCli();
+			const result = await (
+				fetcher as unknown as { checkPlaywrightCli(): Promise<boolean> }
+			).checkPlaywrightCli();
 
 			expect(result).toBe(false);
 		});
@@ -165,7 +170,13 @@ describe("PlaywrightFetcher", () => {
 			mockRuntime.sleep = vi.fn().mockResolvedValue(undefined);
 
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
-			const result = await (fetcher as unknown as { executeFetch(url: string): Promise<{ html: string; finalUrl: string; contentType: string }> }).executeFetch("https://example.com");
+			const result = await (
+				fetcher as unknown as {
+					executeFetch(
+						url: string,
+					): Promise<{ html: string; finalUrl: string; contentType: string }>;
+				}
+			).executeFetch("https://example.com");
 
 			expect(result.html).toBe("<html>Test Content</html>");
 			expect(result.finalUrl).toBe("https://example.com");
@@ -176,7 +187,7 @@ describe("PlaywrightFetcher", () => {
 			const config = createMockConfig({ headed: true });
 			const mockRuntime = createMockRuntime();
 			let callCount = 0;
-			mockRuntime.spawn = vi.fn().mockImplementation((cmd, args) => {
+			mockRuntime.spawn = vi.fn().mockImplementation((_cmd, args) => {
 				callCount++;
 				if (callCount === 1) {
 					// Verify headed flag is passed
@@ -192,7 +203,9 @@ describe("PlaywrightFetcher", () => {
 			mockRuntime.sleep = vi.fn().mockResolvedValue(undefined);
 
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
-			await (fetcher as unknown as { executeFetch(url: string): Promise<unknown> }).executeFetch("https://example.com");
+			await (fetcher as unknown as { executeFetch(url: string): Promise<unknown> }).executeFetch(
+				"https://example.com",
+			);
 		});
 
 		it("should throw FetchError when page open fails", async () => {
@@ -207,7 +220,9 @@ describe("PlaywrightFetcher", () => {
 
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
 			await expect(
-				(fetcher as unknown as { executeFetch(url: string): Promise<unknown> }).executeFetch("https://example.com"),
+				(fetcher as unknown as { executeFetch(url: string): Promise<unknown> }).executeFetch(
+					"https://example.com",
+				),
 			).rejects.toThrow(FetchError);
 		});
 
@@ -236,7 +251,9 @@ describe("PlaywrightFetcher", () => {
 
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
 			await expect(
-				(fetcher as unknown as { executeFetch(url: string): Promise<unknown> }).executeFetch("https://example.com"),
+				(fetcher as unknown as { executeFetch(url: string): Promise<unknown> }).executeFetch(
+					"https://example.com",
+				),
 			).rejects.toThrow(FetchError);
 		});
 
@@ -252,7 +269,9 @@ describe("PlaywrightFetcher", () => {
 			mockRuntime.sleep = vi.fn().mockResolvedValue(undefined);
 
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
-			await (fetcher as unknown as { executeFetch(url: string): Promise<unknown> }).executeFetch("https://example.com");
+			await (fetcher as unknown as { executeFetch(url: string): Promise<unknown> }).executeFetch(
+				"https://example.com",
+			);
 
 			expect(mockRuntime.sleep).toHaveBeenCalledWith(5000);
 		});
@@ -369,7 +388,8 @@ describe("PlaywrightFetcher", () => {
 		it("should wrap unknown errors in FetchError", async () => {
 			const config = createMockConfig();
 			const mockRuntime = createMockRuntime();
-			mockRuntime.spawn = vi.fn()
+			mockRuntime.spawn = vi
+				.fn()
 				.mockResolvedValueOnce({
 					success: true,
 					stdout: "1.0.0",
@@ -385,7 +405,8 @@ describe("PlaywrightFetcher", () => {
 		it("should re-throw FetchError as-is", async () => {
 			const config = createMockConfig();
 			const mockRuntime = createMockRuntime();
-			mockRuntime.spawn = vi.fn()
+			mockRuntime.spawn = vi
+				.fn()
 				.mockResolvedValueOnce({
 					success: true,
 					stdout: "1.0.0",
@@ -406,19 +427,29 @@ describe("PlaywrightFetcher", () => {
 		it("should re-throw TimeoutError as-is", async () => {
 			const config = createMockConfig({ timeout: 50 });
 			const mockRuntime = createMockRuntime();
-			mockRuntime.spawn = vi.fn()
+			mockRuntime.spawn = vi
+				.fn()
 				.mockResolvedValueOnce({
 					success: true,
 					stdout: "1.0.0",
 					stderr: "",
 					exitCode: 0,
 				} as SpawnResult)
-				.mockImplementation(() => new Promise((resolve) => setTimeout(() => resolve({
-					success: true,
-					stdout: "",
-					stderr: "",
-					exitCode: 0,
-				} as SpawnResult), 1000)));
+				.mockImplementation(
+					() =>
+						new Promise((resolve) =>
+							setTimeout(
+								() =>
+									resolve({
+										success: true,
+										stdout: "",
+										stderr: "",
+										exitCode: 0,
+									} as SpawnResult),
+								1000,
+							),
+						),
+				);
 
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
 			await expect(fetcher.fetch("https://example.com")).rejects.toThrow(TimeoutError);
@@ -441,10 +472,12 @@ describe("PlaywrightFetcher", () => {
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
 			await fetcher.close();
 
-			expect(mockRuntime.spawn).toHaveBeenCalledWith(
+			expect(mockRuntime.spawn).toHaveBeenCalledWith(expect.any(String), [
+				"playwright-cli",
+				"close",
+				"--session",
 				expect.any(String),
-				["playwright-cli", "close", "--session", expect.any(String)],
-			);
+			]);
 		});
 
 		it("should remove .playwright-cli directory when keepSession is false", async () => {
@@ -593,7 +626,8 @@ describe("parseCliOutput", () => {
 	});
 
 	it("should handle multiline HTML content", () => {
-		const output = '### Result\n"<html>\\n  <body>\\n    <h1>Title</h1>\\n  </body>\\n</html>"\n### Ran Playwright code';
+		const output =
+			'### Result\n"<html>\\n  <body>\\n    <h1>Title</h1>\\n  </body>\\n</html>"\n### Ran Playwright code';
 		const result = parseCliOutput(output);
 		expect(result).toBe("<html>\n  <body>\n    <h1>Title</h1>\n  </body>\n</html>");
 	});

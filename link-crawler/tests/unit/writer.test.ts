@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdirSync, rmSync, writeFileSync, readFileSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { OutputWriter } from "../../src/output/writer.js";
 import type { CrawlConfig, CrawlResult, PageMetadata } from "../../src/types.js";
 
@@ -104,10 +104,7 @@ describe("OutputWriter", () => {
 			specs: [],
 		};
 
-		writeFileSync(
-			join(testOutputDir, "index.json"),
-			JSON.stringify(existingResult, null, 2),
-		);
+		writeFileSync(join(testOutputDir, "index.json"), JSON.stringify(existingResult, null, 2));
 
 		// Create new writer that should read existing index
 		const writer = new OutputWriter(defaultConfig);
@@ -135,14 +132,7 @@ describe("OutputWriter", () => {
 		const writer = new OutputWriter(defaultConfig);
 		const markdown = "## Introduction\n\nThis is content.";
 
-		writer.savePage(
-			"https://example.com/page1",
-			markdown,
-			1,
-			[],
-			defaultMetadata,
-			"Test Page",
-		);
+		writer.savePage("https://example.com/page1", markdown, 1, [], defaultMetadata, "Test Page");
 
 		const pagePath = join(testOutputDir, "pages/page-001-test-page.md");
 		const content = readFileSync(pagePath, "utf-8");

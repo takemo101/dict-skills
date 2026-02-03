@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { htmlToMarkdown } from "../../src/parser/converter.js";
 
 describe("htmlToMarkdown", () => {
@@ -369,7 +369,7 @@ describe("htmlToMarkdown - syntax highlighter support", () => {
 		const result = htmlToMarkdown(html);
 
 		expect(result).toContain("```rust");
-		expect(result).toContain('fn main()');
+		expect(result).toContain("fn main()");
 	});
 
 	it("should extract direct text content when no pre or code elements exist", () => {
@@ -415,7 +415,7 @@ describe("htmlToMarkdown - syntax highlighter support", () => {
 		const result = htmlToMarkdown(html);
 
 		expect(result).toContain("```typescript");
-		expect(result).toContain('const x: number = 42');
+		expect(result).toContain("const x: number = 42");
 	});
 
 	it("should extract code content from code element without pre element", () => {

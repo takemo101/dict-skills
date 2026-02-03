@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { IndexManager } from "../../src/output/index-manager.js";
-import { join } from "node:path";
-import { writeFile, mkdir, rm, readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { IndexManager } from "../../src/output/index-manager.js";
 import type { PageMetadata } from "../../src/types.js";
 
 describe("IndexManager", () => {
@@ -203,7 +203,14 @@ describe("IndexManager", () => {
 						file: "pages/page-001.md",
 						depth: 0,
 						links: [],
-						metadata: { title: "Page 1", description: null, keywords: null, author: null, ogTitle: null, ogType: null },
+						metadata: {
+							title: "Page 1",
+							description: null,
+							keywords: null,
+							author: null,
+							ogTitle: null,
+							ogType: null,
+						},
 						hash: "hash1",
 						crawledAt: "2025-01-01T00:00:00.000Z",
 					},
@@ -213,7 +220,14 @@ describe("IndexManager", () => {
 						file: "pages/page-002.md",
 						depth: 1,
 						links: [],
-						metadata: { title: "Page 2", description: null, keywords: null, author: null, ogTitle: null, ogType: null },
+						metadata: {
+							title: "Page 2",
+							description: null,
+							keywords: null,
+							author: null,
+							ogTitle: null,
+							ogType: null,
+						},
 						hash: "hash2",
 						crawledAt: "2025-01-01T00:00:00.000Z",
 					},
@@ -244,7 +258,14 @@ describe("IndexManager", () => {
 						file: "pages/page-001.md",
 						depth: 0,
 						links: [],
-						metadata: { title: "Page 1", description: null, keywords: null, author: null, ogTitle: null, ogType: null },
+						metadata: {
+							title: "Page 1",
+							description: null,
+							keywords: null,
+							author: null,
+							ogTitle: null,
+							ogType: null,
+						},
 						hash: "hash1",
 						crawledAt: "2025-01-01T00:00:00.000Z",
 					},
@@ -276,7 +297,14 @@ describe("IndexManager", () => {
 						file: "pages/page-001.md",
 						depth: 0,
 						links: [],
-						metadata: { title: "Page 1", description: null, keywords: null, author: null, ogTitle: null, ogType: null },
+						metadata: {
+							title: "Page 1",
+							description: null,
+							keywords: null,
+							author: null,
+							ogTitle: null,
+							ogType: null,
+						},
 						hash: "hash1",
 						crawledAt: "2025-01-01T00:00:00.000Z",
 					},
@@ -286,7 +314,14 @@ describe("IndexManager", () => {
 						file: "pages/page-002.md",
 						depth: 1,
 						links: [],
-						metadata: { title: "Page 2", description: null, keywords: null, author: null, ogTitle: null, ogType: null },
+						metadata: {
+							title: "Page 2",
+							description: null,
+							keywords: null,
+							author: null,
+							ogTitle: null,
+							ogType: null,
+						},
 						hash: "hash2",
 						crawledAt: "2025-01-01T00:00:00.000Z",
 					},
@@ -320,7 +355,14 @@ describe("IndexManager", () => {
 						file: "pages/page-001.md",
 						depth: 0,
 						links: [],
-						metadata: { title: "Page 1", description: null, keywords: null, author: null, ogTitle: null, ogType: null },
+						metadata: {
+							title: "Page 1",
+							description: null,
+							keywords: null,
+							author: null,
+							ogTitle: null,
+							ogType: null,
+						},
 						hash: "hash1",
 						crawledAt: "2025-01-01T00:00:00.000Z",
 					},
@@ -330,7 +372,14 @@ describe("IndexManager", () => {
 						file: "pages/page-002.md",
 						depth: 1,
 						links: [],
-						metadata: { title: "Page 2", description: null, keywords: null, author: null, ogTitle: null, ogType: null },
+						metadata: {
+							title: "Page 2",
+							description: null,
+							keywords: null,
+							author: null,
+							ogTitle: null,
+							ogType: null,
+						},
 						// no hash
 						crawledAt: "2025-01-01T00:00:00.000Z",
 					},
@@ -422,9 +471,25 @@ describe("IndexManager", () => {
 			};
 
 			expect(manager.getNextPageNumber()).toBe(1);
-			manager.registerPage("https://example.com/page1", "pages/page-001.md", 0, [], metadata, "Page 1", "hash1");
+			manager.registerPage(
+				"https://example.com/page1",
+				"pages/page-001.md",
+				0,
+				[],
+				metadata,
+				"Page 1",
+				"hash1",
+			);
 			expect(manager.getNextPageNumber()).toBe(2);
-			manager.registerPage("https://example.com/page2", "pages/page-002.md", 1, [], metadata, "Page 2", "hash2");
+			manager.registerPage(
+				"https://example.com/page2",
+				"pages/page-002.md",
+				1,
+				[],
+				metadata,
+				"Page 2",
+				"hash2",
+			);
 			expect(manager.getNextPageNumber()).toBe(3);
 		});
 	});
@@ -479,9 +544,25 @@ describe("IndexManager", () => {
 			};
 
 			expect(manager.getTotalPages()).toBe(0);
-			manager.registerPage("https://example.com/page1", "pages/page-001.md", 0, [], metadata, "Page 1", "hash1");
+			manager.registerPage(
+				"https://example.com/page1",
+				"pages/page-001.md",
+				0,
+				[],
+				metadata,
+				"Page 1",
+				"hash1",
+			);
 			expect(manager.getTotalPages()).toBe(1);
-			manager.registerPage("https://example.com/page2", "pages/page-002.md", 1, [], metadata, "Page 2", "hash2");
+			manager.registerPage(
+				"https://example.com/page2",
+				"pages/page-002.md",
+				1,
+				[],
+				metadata,
+				"Page 2",
+				"hash2",
+			);
 			expect(manager.getTotalPages()).toBe(2);
 		});
 
@@ -580,7 +661,15 @@ describe("IndexManager", () => {
 				ogType: null,
 			};
 
-			manager.registerPage("https://example.com/page1", "pages/page-001.md", 0, [], metadata, "Page 1", "hash1");
+			manager.registerPage(
+				"https://example.com/page1",
+				"pages/page-001.md",
+				0,
+				[],
+				metadata,
+				"Page 1",
+				"hash1",
+			);
 			manager.addSpec("https://example.com/openapi.yaml", "openapi", "specs/openapi.yaml");
 
 			const savedPath = manager.saveIndex();
@@ -627,7 +716,15 @@ describe("IndexManager", () => {
 				ogType: null,
 			};
 
-			manager.registerPage("https://example.com/page1", "pages/page-001.md", 0, [], metadata, "Page 1", "hash1");
+			manager.registerPage(
+				"https://example.com/page1",
+				"pages/page-001.md",
+				0,
+				[],
+				metadata,
+				"Page 1",
+				"hash1",
+			);
 
 			const result = manager.getResult();
 

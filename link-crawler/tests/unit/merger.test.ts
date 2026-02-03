@@ -1,16 +1,12 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdirSync, rmSync, readFileSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Merger } from "../../src/output/merger.js";
-import type { CrawledPage, PageMetadata } from "../../src/types.js";
+import type { CrawledPage } from "../../src/types.js";
 
 const testOutputDir = "./test-output-merger";
 
-const createPage = (
-	url: string,
-	title: string | null,
-	file: string,
-): CrawledPage => ({
+const createPage = (url: string, title: string | null, file: string): CrawledPage => ({
 	url,
 	title,
 	file,
@@ -109,9 +105,7 @@ Content after title.`;
 
 		it("should use URL as title if title is null", () => {
 			const merger = new Merger(testOutputDir);
-			const pages = [
-				createPage("https://example.com/untitled", null, "pages/page-001.md"),
-			];
+			const pages = [createPage("https://example.com/untitled", null, "pages/page-001.md")];
 
 			const result = merger.merge(pages);
 
@@ -122,12 +116,8 @@ Content after title.`;
 	describe("writeFull", () => {
 		it("should write full.md file", () => {
 			const merger = new Merger(testOutputDir);
-			const pages = [
-				createPage("https://example.com/page1", "Page 1", "pages/page-001.md"),
-			];
-			const pageContents = new Map([
-				["pages/page-001.md", "# Page 1\n\nThis is content."],
-			]);
+			const pages = [createPage("https://example.com/page1", "Page 1", "pages/page-001.md")];
+			const pageContents = new Map([["pages/page-001.md", "# Page 1\n\nThis is content."]]);
 
 			const outputPath = merger.writeFull(pages, pageContents);
 
@@ -181,9 +171,7 @@ Content after title.`;
 
 		it("should handle empty content in pageContents", () => {
 			const merger = new Merger(testOutputDir);
-			const pages = [
-				createPage("https://example.com/page1", "Page 1", "pages/page-001.md"),
-			];
+			const pages = [createPage("https://example.com/page1", "Page 1", "pages/page-001.md")];
 			const pageContents = new Map<string, string>([]);
 
 			const outputPath = merger.writeFull(pages, pageContents);
@@ -197,12 +185,8 @@ Content after title.`;
 
 		it("should handle pages with empty markdown content", () => {
 			const merger = new Merger(testOutputDir);
-			const pages = [
-				createPage("https://example.com/page1", "Page 1", "pages/page-001.md"),
-			];
-			const pageContents = new Map([
-				["pages/page-001.md", ""],
-			]);
+			const pages = [createPage("https://example.com/page1", "Page 1", "pages/page-001.md")];
+			const pageContents = new Map([["pages/page-001.md", ""]]);
 
 			const outputPath = merger.writeFull(pages, pageContents);
 
@@ -218,11 +202,7 @@ Content after title.`;
 
 			for (let i = 1; i <= 10; i++) {
 				const file = `pages/page-${String(i).padStart(3, "0")}.md`;
-				pages.push(createPage(
-					`https://example.com/page${i}`,
-					`Page ${i}`,
-					file,
-				));
+				pages.push(createPage(`https://example.com/page${i}`, `Page ${i}`, file));
 				pageContents.set(file, `# Page ${i}\n\nContent ${i}`);
 			}
 
