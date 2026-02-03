@@ -9,8 +9,9 @@ description: 技術ドキュメントサイトをクロールし、AIコンテ�
 
 ## セットアップ
 
+このスキルディレクトリに移動して依存関係をインストールします：
+
 ```bash
-cd link-crawler
 bun install
 ```
 
