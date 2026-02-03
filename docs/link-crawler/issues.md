@@ -31,11 +31,11 @@
 **背景**: 設計方針として全サイトplaywright-cli統一。SPA/静的の分岐を排除。
 
 **タスク**:
-- [ ] `src/crawler/static.ts` を削除
-- [ ] `src/crawler/spa.ts` を `src/crawler/fetcher.ts` にリネーム
-- [ ] クラス名を `SPAFetcher` → `PlaywrightFetcher` に変更
-- [ ] `src/crawler/index.ts` からStaticFetcher参照を削除
-- [ ] `--spa` オプションを削除（常にplaywright-cli使用）
+- [x] `src/crawler/static.ts` を削除
+- [x] `src/crawler/spa.ts` を `src/crawler/fetcher.ts` にリネーム
+- [x] クラス名を `SPAFetcher` → `PlaywrightFetcher` に変更
+- [x] `src/crawler/index.ts` からStaticFetcher参照を削除
+- [x] `--spa` オプションを削除（常にplaywright-cli使用）
 
 **影響ファイル**: 3ファイル
 **見積もり**: 50行程度の変更
@@ -116,11 +116,11 @@
 **概要**: CrawlerEngineに差分検知ロジックを組み込み
 
 **タスク**:
-- [ ] `Hasher` をCrawlerEngineに注入
-- [ ] `--diff` 時のみハッシュ比較を実行
-- [ ] 変更なしページはスキップ
-- [ ] ページ保存時にハッシュを記録
-- [ ] スキップ時のログ出力
+- [x] `Hasher` をCrawlerEngineに注入
+- [x] `--diff` 時のみハッシュ比較を実行
+- [x] 変更なしページはスキップ
+- [x] ページ保存時にハッシュを記録
+- [x] スキップ時のログ出力
 
 **依存**: Issue #4
 
@@ -136,9 +136,9 @@
 **概要**: index.jsonにハッシュ情報を追加
 
 **タスク**:
-- [ ] `PageIndex` に `hash`, `crawledAt` フィールド追加
-- [ ] `OutputWriter` でハッシュを保存
-- [ ] 既存index.json読み込み処理を追加
+- [x] `PageIndex` に `hash`, `crawledAt` フィールド追加
+- [x] `OutputWriter` でハッシュを保存
+- [x] 既存index.json読み込み処理を追加
 
 **依存**: Issue #2
 
@@ -221,11 +221,11 @@
 **概要**: クロール完了後にMerger/Chunkerを実行
 
 **タスク**:
-- [ ] CrawlerEngineにMerger/Chunker呼び出しを追加
-- [ ] `--no-merge` 時はMergerスキップ
-- [ ] `--no-chunks` 時はChunkerスキップ
-- [ ] `--no-pages` 時はページ単位出力スキップ
-- [ ] 完了ログにfull.md/chunks情報追加
+- [x] CrawlerEngineにMerger/Chunker呼び出しを追加
+- [x] `--no-merge` 時はMergerスキップ
+- [x] `--no-chunks` 時はChunkerスキップ
+- [x] `--no-pages` 時はページ単位出力スキップ
+- [x] 完了ログにfull.md/chunks情報追加
 
 **依存**: Issue #7, #8
 
@@ -241,10 +241,10 @@
 **概要**: 既存Converterモジュールのユニットテスト
 
 **タスク**:
-- [ ] `tests/unit/converter.test.ts` を作成
-- [ ] HTML→Markdown変換テスト
-- [ ] 空リンク除去テスト
-- [ ] 複数改行正規化テスト
+- [x] `tests/unit/converter.test.ts` を作成
+- [x] HTML→Markdown変換テスト
+- [x] 空リンク除去テスト
+- [x] 複数改行正規化テスト
 
 **影響ファイル**: 1ファイル（新規）
 **見積もり**: 60行程度
@@ -256,11 +256,11 @@
 **概要**: 既存Linksモジュールのユニットテスト
 
 **タスク**:
-- [ ] `tests/unit/links.test.ts` を作成
-- [ ] `normalizeUrl` テスト
-- [ ] `isSameDomain` テスト
-- [ ] `shouldCrawl` テスト（フィルタ条件）
-- [ ] `extractLinks` テスト
+- [x] `tests/unit/links.test.ts` を作成
+- [x] `normalizeUrl` テスト
+- [x] `isSameDomain` テスト
+- [x] `shouldCrawl` テスト（フィルタ条件）
+- [x] `extractLinks` テスト
 
 **影響ファイル**: 1ファイル（新規）
 **見積もり**: 80行程度
@@ -274,10 +274,10 @@
 **概要**: CrawlerEngine全体の統合テスト
 
 **タスク**:
-- [ ] `tests/integration/crawler.test.ts` を作成
-- [ ] モックFetcherを使用したE2E風テスト
-- [ ] 差分クロールの動作確認テスト
-- [ ] 出力ファイル生成確認テスト
+- [x] `tests/integration/crawler.test.ts` を作成
+- [x] モックFetcherを使用したE2E風テスト
+- [x] 差分クロールの動作確認テスト
+- [x] 出力ファイル生成確認テスト
 
 **依存**: Phase 1-4 完了後
 
@@ -291,10 +291,10 @@
 **概要**: 実装完了後のドキュメント微調整
 
 **タスク**:
-- [ ] SKILL.mdの `<skill-path>` を実際のパスに確認
-- [ ] 使用例の動作確認
-- [ ] ヘルプ出力の確認
-- [ ] READMEの更新
+- [x] SKILL.mdの `<skill-path>` を実際のパスに確認
+- [x] 使用例の動作確認
+- [x] ヘルプ出力の確認
+- [x] READMEの更新
 
 **依存**: Issue #1-12 全て完了後
 
