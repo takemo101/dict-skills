@@ -7,7 +7,7 @@ describe("parseConfig", () => {
 
 		expect(config.startUrl).toBe("https://example.com");
 		expect(config.maxDepth).toBe(1);
-		expect(config.outputDir).toBe("./.context");
+		expect(config.outputDir).toBe("./.context/example");
 		expect(config.sameDomain).toBe(true);
 		expect(config.delay).toBe(500);
 		expect(config.timeout).toBe(30000);
@@ -68,5 +68,26 @@ describe("parseConfig", () => {
 
 		const configDefault = parseConfig({}, "https://example.com");
 		expect(configDefault.keepSession).toBe(false);
+	});
+
+	it("should generate site-specific output directory from URL", () => {
+		const config1 = parseConfig({}, "https://nextjs.org/docs");
+		expect(config1.outputDir).toBe("./.context/nextjs-docs");
+
+		const config2 = parseConfig({}, "https://docs.python.org/3/");
+		expect(config2.outputDir).toBe("./.context/python-3");
+
+		const config3 = parseConfig({}, "https://www.example.com");
+		expect(config3.outputDir).toBe("./.context/example");
+	});
+
+	it("should allow custom output directory to override default", () => {
+		const config = parseConfig({ output: "./custom-dir" }, "https://nextjs.org/docs");
+		expect(config.outputDir).toBe("./custom-dir");
+	});
+
+	it("should allow legacy ./.context directory to be specified explicitly", () => {
+		const config = parseConfig({ output: "./.context" }, "https://nextjs.org/docs");
+		expect(config.outputDir).toBe("./.context");
 	});
 });

@@ -72,7 +72,7 @@ bun run link-crawler/src/crawl.ts <url> [options]
 
 | オプション | 短縮 | デフォルト | 説明 |
 |-----------|------|-----------|------|
-| `--output <dir>` | `-o` | `./.context` | 出力先 |
+| `--output <dir>` | `-o` | `./.context/<サイト名>/` | 出力先（サイト名は自動生成） |
 | `--diff` | | `false` | 差分クロール |
 | `--no-pages` | | | ページ単位出力無効 |
 | `--no-merge` | | | 結合ファイル無効 |
@@ -86,11 +86,13 @@ bun run link-crawler/src/crawl.ts <url> [options]
 ### 基本
 
 ```bash
-# 深度2でクロール
-bun run link-crawler/src/crawl.ts https://docs.example.com -d 2
+# 深度2でクロール（自動的に .context/<サイト名>/ に出力）
+bun run link-crawler/src/crawl.ts https://nextjs.org/docs -d 2
+# → .context/nextjs-docs/ に出力
 
 # 特定パスのみ
 bun run link-crawler/src/crawl.ts https://docs.example.com --include "/api/"
+# → .context/example-docs/ に出力
 ```
 
 ### 差分クロール
@@ -108,11 +110,11 @@ bun run link-crawler/src/crawl.ts https://docs.example.com -o ./docs -d 3 --diff
 ```bash
 # デフォルトでは full.md のみ出力
 bun run link-crawler/src/crawl.ts https://docs.example.com
-# → .context/full.md のみ出力
+# → .context/example-docs/full.md のみ出力
 
 # 必要な時だけ chunks を有効化
 bun run link-crawler/src/crawl.ts https://docs.example.com --chunks
-# → .context/full.md + .context/chunks/*.md
+# → .context/example-docs/full.md + .context/example-docs/chunks/*.md
 ```
 
 ---
@@ -165,14 +167,15 @@ Bun.spawn([nodePath, cliPath, "open", url, "--session", sessionId])
 
 ```
 .context/
-├── index.json    # メタデータ・ハッシュ
-├── full.md       # 全ページ結合 ★ AIコンテキスト用
-├── chunks/       # 見出しベース分割 (--chunks 有効時のみ)
-│   └── chunk-001.md
-├── pages/        # ページ単位
-│   └── page-001.md
-└── specs/        # API仕様
-    └── openapi.yaml
+└── <サイト名>/    # URLから自動生成（例: nextjs-docs, python-3）
+    ├── index.json    # メタデータ・ハッシュ
+    ├── full.md       # 全ページ結合 ★ AIコンテキスト用
+    ├── chunks/       # 見出しベース分割 (--chunks 有効時のみ)
+    │   └── chunk-001.md
+    ├── pages/        # ページ単位
+    │   └── page-001.md
+    └── specs/        # API仕様
+        └── openapi.yaml
 ```
 
 #### 個別ページファイルの frontmatter 構造
@@ -329,7 +332,7 @@ h1見出しを境界として分割。長大ドキュメントの分割に利用
 bun run link-crawler/src/crawl.ts https://docs.example.com -d 3
 
 # 2. LLMに読み込ませる
-cat .context/full.md | llm "この技術について要約して"
+cat .context/example-docs/full.md | llm "この技術について要約して"
 ```
 
 ### 設計相談

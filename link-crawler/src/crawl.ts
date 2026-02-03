@@ -10,7 +10,7 @@ program
 	.description("Crawl technical documentation sites recursively")
 	.argument("<url>", "Starting URL to crawl")
 	.option("-d, --depth <num>", "Maximum crawl depth", "1")
-	.option("-o, --output <dir>", "Output directory", "./.context")
+	.option("-o, --output <dir>", "Output directory (default: ./.context/<site-name>/)")
 	.option("--same-domain", "Only follow same-domain links", true)
 	.option("--no-same-domain", "Follow cross-domain links")
 	.option("--include <pattern>", "Include URL pattern (regex)")
