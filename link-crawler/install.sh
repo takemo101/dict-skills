@@ -60,8 +60,11 @@ echo ""
 # 3. playwright-cli のインストール
 echo "3️⃣  playwright-cli のチェック..."
 if command -v playwright-cli &> /dev/null; then
-    PLAYWRIGHT_VERSION=$(playwright-cli --version 2>/dev/null || echo "unknown")
-    ok "playwright-cli $PLAYWRIGHT_VERSION がインストール済み"
+    if PLAYWRIGHT_VERSION=$(playwright-cli --version 2>&1); then
+        ok "playwright-cli ${PLAYWRIGHT_VERSION} がインストール済み"
+    else
+        warn "playwright-cli のバージョン取得に失敗しましたが、コマンドは存在します"
+    fi
 else
     warn "playwright-cli がインストールされていません。インストール中..."
     npm install -g @playwright/cli
