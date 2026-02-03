@@ -1,5 +1,5 @@
 import { existsSync, rmSync } from "node:fs";
-import { join } from "node:path";
+import { join, normalize } from "node:path";
 import { PATHS, PATTERNS } from "../constants.js";
 import { DependencyError, FetchError, TimeoutError } from "../errors.js";
 import type { CrawlConfig, Fetcher, FetchResult } from "../types.js";
@@ -127,7 +127,7 @@ export class PlaywrightFetcher implements Fetcher {
 			const logMatch = networkResult.stdout.match(/\[Network\]\(([^)]+)\)/);
 			if (logMatch) {
 				// 相対パスから絶対パスを構築
-				const logPath = logMatch[1].replace(/\.\.\/+/g, "");
+				const logPath = normalize(logMatch[1]);
 				const fullPath = join(process.cwd(), logPath);
 
 				if (existsSync(fullPath)) {

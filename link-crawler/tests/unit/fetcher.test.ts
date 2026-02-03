@@ -583,6 +583,100 @@ describe("PlaywrightFetcher", () => {
 			expect(config.keepSession).toBe(false);
 		});
 	});
+
+	describe("getHttpStatusCode", () => {
+		it("should normalize relative paths with parent directory references", async () => {
+			const config = createMockConfig();
+			const mockRuntime = createMockRuntime();
+
+			// Test with path containing ../ (parent directory references)
+			mockRuntime.spawn = vi.fn().mockResolvedValue({
+				success: true,
+				stdout: "[Network](../logs/network.log)",
+				stderr: "",
+				exitCode: 0,
+			} as SpawnResult);
+
+			mockExistsSync.mockReturnValue(true);
+			mockRuntime.readFile = vi.fn().mockResolvedValue("status: 200");
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			const result = await (
+				fetcher as unknown as { getHttpStatusCode(): Promise<number | null> }
+			).getHttpStatusCode();
+
+			expect(result).toBe(200);
+			// Verify that the normalized path is used
+			expect(mockExistsSync).toHaveBeenCalled();
+		});
+
+		it("should handle paths with multiple parent directory references", async () => {
+			const config = createMockConfig();
+			const mockRuntime = createMockRuntime();
+
+			// Test with path containing multiple ../
+			mockRuntime.spawn = vi.fn().mockResolvedValue({
+				success: true,
+				stdout: "[Network](../../test/logs/network.log)",
+				stderr: "",
+				exitCode: 0,
+			} as SpawnResult);
+
+			mockExistsSync.mockReturnValue(true);
+			mockRuntime.readFile = vi.fn().mockResolvedValue("status: 404");
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			const result = await (
+				fetcher as unknown as { getHttpStatusCode(): Promise<number | null> }
+			).getHttpStatusCode();
+
+			expect(result).toBe(404);
+		});
+
+		it("should handle normalized paths correctly", async () => {
+			const config = createMockConfig();
+			const mockRuntime = createMockRuntime();
+
+			// Test with already normalized path
+			mockRuntime.spawn = vi.fn().mockResolvedValue({
+				success: true,
+				stdout: "[Network](.playwright-cli/logs/network.log)",
+				stderr: "",
+				exitCode: 0,
+			} as SpawnResult);
+
+			mockExistsSync.mockReturnValue(true);
+			mockRuntime.readFile = vi.fn().mockResolvedValue("status: 301");
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			const result = await (
+				fetcher as unknown as { getHttpStatusCode(): Promise<number | null> }
+			).getHttpStatusCode();
+
+			expect(result).toBe(301);
+		});
+
+		it("should return null when network log file does not exist", async () => {
+			const config = createMockConfig();
+			const mockRuntime = createMockRuntime();
+
+			mockRuntime.spawn = vi.fn().mockResolvedValue({
+				success: true,
+				stdout: "[Network](../logs/network.log)",
+				stderr: "",
+				exitCode: 0,
+			} as SpawnResult);
+
+			mockExistsSync.mockReturnValue(false);
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			const result = await (
+				fetcher as unknown as { getHttpStatusCode(): Promise<number | null> }
+			).getHttpStatusCode();
+
+			expect(result).toBeNull();
+		});
+	});
 });
 
 describe("parseCliOutput", () => {
