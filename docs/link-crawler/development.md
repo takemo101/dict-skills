@@ -57,8 +57,8 @@ link-crawler/
 │   │   ├── chunker.test.ts
 │   │   ├── converter.test.ts
 │   │   └── links.test.ts
-│   └── integration/             # 統合テスト（未実装）
-│       └── .gitkeep
+│   └── integration/             # 統合テスト
+│       └── crawler.test.ts      # 13テスト
 │
 ├── vitest.config.ts             # Vitest設定
 ├── package.json
@@ -300,23 +300,17 @@ Content`;
 ### 5.4 統合テスト例
 
 ```typescript
-// tests/integration/crawler.test.ts
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { Crawler } from "../../src/crawler";
+// tests/integration/crawler.test.ts を参照
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { Crawler } from "../../src/crawler/index.js";
+import type { CrawlConfig, Fetcher, FetchResult } from "../../src/types.js";
 
-describe("Crawler", () => {
-  it("ページをクロールしてMarkdownに変換", async () => {
-    // モックFetcherを使用
-    const mockFetcher = {
-      fetch: vi.fn().mockResolvedValue({
-        html: "<html><body><h1>Test</h1><p>Content</p></body></html>",
-        finalUrl: "https://example.com",
-      }),
-      close: vi.fn(),
-    };
-
-    // テスト実行
-    // ...
+describe("CrawlerEngine Integration", () => {
+  describe("E2E-style crawling with mock Fetcher", () => {
+    it("should crawl single page and generate output files", async () => {
+      // モックFetcherを使用したE2Eテスト
+      // ...
+    });
   });
 });
 ```
