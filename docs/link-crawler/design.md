@@ -337,7 +337,7 @@ interface DetectedSpec {
   "crawledAt": "2026-02-01T14:00:00.000Z",
   "baseUrl": "https://docs.example.com",
   "config": {
-    "depth": 2,
+    "maxDepth": 2,
     "sameDomain": true
   },
   "totalPages": 15,
