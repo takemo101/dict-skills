@@ -119,6 +119,9 @@ bun run link-crawler/src/crawl.ts https://docs.example.com --include "/api/"
 | `--diff` | | `false` | 差分クロール |
 | `--no-pages` | | | ページ単位出力無効 |
 | `--no-merge` | | | 結合ファイル無効 |
+| `--same-domain` | | `true` | 同一ドメインのみフォロー |
+| `--no-same-domain` | | | クロスドメインリンクもフォロー |
+| `--chunks` | | `false` | チャンク出力を有効化 |
 | `--include <pattern>` | | | 含めるURL（正規表現） |
 | `--exclude <pattern>` | | | 除外するURL（正規表現） |
 | `--keep-session` | | `false` | デバッグ用: .playwright-cliディレクトリを保持 |
