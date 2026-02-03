@@ -6,7 +6,7 @@
 
 このスキルは、指定されたWebページを起点として、リンクを再帰的に辿りながら情報を収集し、AIが読みやすいMarkdown形式で保存します。
 
-## 機能
+### 主要機能
 
 - 指定URLからのリンク探索（深さ制限付き）
 - 同一ドメイン内の再帰的クローリング
@@ -61,7 +61,7 @@ Next.jsのドキュメントをクロールして
 
 ---
 
-## 使用方法
+## クイックスタート
 
 ### 基本的なクロール
 
@@ -69,82 +69,46 @@ Next.jsのドキュメントをクロールして
 # 深度2で指定URLをクロール（自動的に .context/<サイト名>/ に出力）
 bun run link-crawler/src/crawl.ts https://nextjs.org/docs -d 2
 # → .context/nextjs-docs/ に出力
-
-bun run link-crawler/src/crawl.ts https://docs.python.org/3/ -d 2
-# → .context/python-3/ に出力
 ```
 
-### 出力先を指定
-
-```bash
-# カスタムディレクトリを指定してクロール
-bun run link-crawler/src/crawl.ts https://docs.example.com -o ./my-docs -d 3
-```
-
-### 差分クロール（2回目以降）
-
-```bash
-# 初回実行
-bun run link-crawler/src/crawl.ts https://docs.example.com -o ./docs -d 3
-
-# 2回目以降（変更のみ更新）
-bun run link-crawler/src/crawl.ts https://docs.example.com -o ./docs -d 3 --diff
-```
-
-### AIコンテキスト用（結合ファイルのみ）
-
-```bash
-# デフォルトでは full.md のみ出力
-bun run link-crawler/src/crawl.ts https://docs.example.com
-# → .context/example-docs/full.md に全ページが結合されて出力
-
-# 必要な時だけ chunks を有効化
-bun run link-crawler/src/crawl.ts https://docs.example.com --chunks
-# → .context/example-docs/full.md + .context/example-docs/chunks/*.md
-```
-
-### 特定パスのみクロール
-
-```bash
-# APIドキュメントのみ対象
-bun run link-crawler/src/crawl.ts https://docs.example.com --include "/api/"
-```
-
-### オプション
+### 主要オプション
 
 | オプション | 短縮 | デフォルト | 説明 |
 |-----------|------|-----------|------|
 | `--depth <num>` | `-d` | `1` | 最大クロール深度 |
-| `--delay <ms>` | | `500` | リクエスト間隔 |
-| `--wait <ms>` | | `2000` | レンダリング待機時間 |
-| `--timeout <sec>` | | `30` | リクエストタイムアウト（秒） |
-| `--headed` | | `false` | ブラウザ表示 |
-| `--output <dir>` | `-o` | `./.context/<サイト名>/` | 出力先（サイト名は自動生成） |
-| `--diff` | | `false` | 差分クロール |
-| `--no-pages` | | | ページ単位出力無効 |
-| `--no-merge` | | | 結合ファイル無効 |
-| `--same-domain` | | `true` | 同一ドメインのみフォロー |
-| `--no-same-domain` | | | クロスドメインリンクもフォロー |
+| `--output <dir>` | `-o` | `./.context/<サイト名>/` | 出力先 |
+| `--diff` | | `false` | 差分クロール（変更のみ更新） |
 | `--chunks` | | `false` | チャンク出力を有効化 |
-| `--include <pattern>` | | | 含めるURL（正規表現） |
-| `--exclude <pattern>` | | | 除外するURL（正規表現） |
-| `--keep-session` | | `false` | デバッグ用: .playwright-cliディレクトリを保持 |
 
-### 出力形式
+**完全なオプション一覧と詳細な使用例は [CLI仕様書](docs/link-crawler/cli-spec.md) を参照してください。**
+
+### 出力構造
 
 ```
 .context/
-└── <サイト名>/    # URLから自動生成（例: nextjs-docs, python-3）
+└── <サイト名>/
     ├── index.json    # メタデータ・ハッシュ
-    ├── full.md       # 全ページ結合 ★ AIコンテキスト用
+    ├── full.md       # 全ページ結合（AIコンテキスト用）
     ├── chunks/       # 見出しベース分割
     └── pages/        # ページ単位
 ```
 
-## 詳細ドキュメント
+## ドキュメント
 
-- [SKILL.md](link-crawler/SKILL.md) - 詳細な使用方法と設定、技術仕様
-- [docs/link-crawler/](docs/link-crawler/) - 設計ドキュメント
+### 各ドキュメントの役割
+
+| ドキュメント | 対象読者 | 内容 |
+|-------------|---------|------|
+| [SKILL.md](link-crawler/SKILL.md) | piユーザー | piスキルとしての使い方 |
+| [CLI仕様書](docs/link-crawler/cli-spec.md) | CLIユーザー | 完全なオプション一覧・使用例 |
+| [設計書](docs/link-crawler/design.md) | 開発者 | アーキテクチャ・データ構造 |
+| [ドキュメント目次](docs/link-crawler/README.md) | すべてのユーザー | ドキュメントナビゲーション |
+
+### もっと詳しく知りたい場合
+
+- **使い方を詳しく知りたい** → [CLI仕様書](docs/link-crawler/cli-spec.md)
+- **piエージェントで使いたい** → [SKILL.md](link-crawler/SKILL.md)
+- **開発に参加したい** → [設計書](docs/link-crawler/design.md)
 
 ## ライセンス
 
