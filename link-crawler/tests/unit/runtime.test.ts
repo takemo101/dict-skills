@@ -143,7 +143,9 @@ describe("BunRuntimeAdapter", () => {
 			const result = await adapter.readFile("/path/to/file.txt");
 
 			expect(result).toBe("file content");
-			expect((globalThis as { Bun?: typeof Bun }).Bun!.file).toHaveBeenCalledWith("/path/to/file.txt");
+			expect((globalThis as { Bun?: typeof Bun }).Bun?.file).toHaveBeenCalledWith(
+				"/path/to/file.txt",
+			);
 
 			// Restore
 			(globalThis as { Bun?: typeof Bun }).Bun = originalBun;
@@ -204,10 +206,10 @@ describe("NodeRuntimeAdapter", () => {
 			const { writeFile, unlink } = await import("node:fs/promises");
 			const { join } = await import("node:path");
 			const { tmpdir } = await import("node:os");
-			
+
 			const testFile = join(tmpdir(), `test-${Date.now()}.txt`);
 			await writeFile(testFile, "test content", "utf-8");
-			
+
 			try {
 				const result = await adapter.readFile(testFile);
 				expect(result).toBe("test content");
