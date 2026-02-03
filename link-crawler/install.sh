@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -eo pipefail
 
 echo "🔧 link-crawler インストールスクリプト"
 echo ""
