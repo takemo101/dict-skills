@@ -31,7 +31,6 @@ function protectCodeBlocks(doc: Document): Map<string, string> {
 	const prioritySelectors = [
 		"[data-rehype-pretty-code-fragment]",
 		"[data-rehype-pretty-code-figure]",
-		"figure[data-rehype-pretty-code-figure]",
 		".code-block",
 		".hljs",
 		".prism-code",
