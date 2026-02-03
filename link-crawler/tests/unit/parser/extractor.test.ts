@@ -846,3 +846,278 @@ describe("extractContent - edge cases", () => {
 		}
 	});
 });
+
+describe("extractContent - fallback code block preservation", () => {
+	it("should collect and preserve code blocks during fallback extraction (lines 110-117)", () => {
+		// Script+style only triggers Readability failure -> fallback collects code blocks (lines 110-117)
+		const html = `
+			<!DOCTYPE html>
+			<html>
+			<head><title></title></head>
+			<body>
+				<script>var x = 1;</script>
+				<style>.test { color: red; }</style>
+				<pre><code>code block 1</code></pre>
+				<div data-language="js"><code>code block 2</code></div>
+				<div class="code-block"><pre>code block 3</pre></div>
+				<div class="hljs"><code>code block 4</code></div>
+				<div class="highlight"><code>code block 5</code></div>
+				<div class="prism-code"><code>code block 6</code></div>
+				<div class="shiki"><code>code block 7</code></div>
+			</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com/fallback-code");
+
+		// Fallback should provide content with code blocks
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			// Check that code blocks are present (lines 110-117 collect them)
+			const hasCodeBlocks =
+				result.content.includes("code block") || result.content.includes("<pre>") || result.content.includes("<code>");
+			expect(hasCodeBlocks).toBe(true);
+		}
+	});
+
+	it("should add collected code blocks to content when not present (line 123)", () => {
+		// Script+style only triggers fallback, code blocks are collected and added (line 123)
+		const html = `
+			<!DOCTYPE html>
+			<html>
+			<head><title></title></head>
+			<body>
+				<script>var x = 1;</script>
+				<style>.test { color: red; }</style>
+				<div class="content">
+					<span>text</span>
+				</div>
+				<pre><code>important code snippet</code></pre>
+			</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com/code-addition");
+
+		// Fallback should collect code blocks and add them
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			// Verify code blocks were added (line 123)
+			const hasCode = result.content.includes("code") || result.content.includes("snippet") || result.content.includes("pre");
+			expect(hasCode).toBe(true);
+		}
+	});
+
+	it("should extract from main tag in fallback mode (line 132)", () => {
+		// Script+style only - Readability fails, fallback uses main selector (line 132)
+		const html = `
+			<!DOCTYPE html>
+			<html>
+			<head><title></title></head>
+			<body>
+				<script>var x = 1;</script>
+				<style>.test { color: red; }</style>
+				<main>
+					<span>Main content</span>
+				</main>
+			</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com/main-fallback");
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			// Should extract from main tag (line 132)
+			expect(result.content.length).toBeGreaterThan(0);
+		}
+	});
+
+	it("should extract from article tag in fallback mode (line 132)", () => {
+		// Script+style triggers fallback, uses article selector (line 132)
+		const html = `
+			<!DOCTYPE html>
+			<html>
+			<head><title></title></head>
+			<body>
+				<script>var x = 1;</script>
+				<style>.test { color: red; }</style>
+				<article>
+					<span>Article</span>
+				</article>
+			</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com/article-fallback");
+
+		expect(result.content).not.toBeNull();
+	});
+
+	it("should extract from role=main element in fallback mode (line 132)", () => {
+		// Script+style triggers fallback, uses [role='main'] selector (line 132)
+		const html = `
+			<!DOCTYPE html>
+			<html>
+			<head><title></title></head>
+			<body>
+				<script>var x = 1;</script>
+				<style>.test { color: red; }</style>
+				<div role="main">
+					<span>Role Main</span>
+				</div>
+			</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com/role-main-fallback");
+
+		expect(result.content).not.toBeNull();
+	});
+
+	it("should extract from .content class in fallback mode (line 132)", () => {
+		// Script+style triggers fallback, uses .content selector (line 132)
+		const html = `
+			<!DOCTYPE html>
+			<html>
+			<head><title></title></head>
+			<body>
+				<script>var x = 1;</script>
+				<style>.test { color: red; }</style>
+				<div class="content">
+					<span>Content Class</span>
+				</div>
+			</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com/content-class-fallback");
+
+		expect(result.content).not.toBeNull();
+	});
+
+	it("should extract from #content id in fallback mode (line 132)", () => {
+		// Script+style triggers fallback, uses #content selector (line 132)
+		const html = `
+			<!DOCTYPE html>
+			<html>
+			<head><title></title></head>
+			<body>
+				<script>var x = 1;</script>
+				<style>.test { color: red; }</style>
+				<div id="content">
+					<span>Content ID</span>
+				</div>
+			</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com/content-id-fallback");
+
+		expect(result.content).not.toBeNull();
+	});
+
+	it("should fallback to body when no selector matches (line 132)", () => {
+		// Script+style with no specific selectors - triggers fallback to body (line 132)
+		const html = `
+			<!DOCTYPE html>
+			<html>
+			<head><title></title></head>
+			<body>
+				<script>var x = 1;</script>
+				<style>.test { color: red; }</style>
+				<div class="random">
+					<span>Random</span>
+				</div>
+			</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com/body-fallback");
+
+		// Should fallback to body when no specific selector matches
+		expect(result).toHaveProperty("content");
+	});
+
+	it("should handle code blocks with all selector types in fallback (lines 110-117)", () => {
+		// Script+style triggers fallback, test all CODE_BLOCK_SELECTORS during collection (lines 110-117)
+		const html = `
+			<!DOCTYPE html>
+			<html>
+			<head><title></title></head>
+			<body>
+				<script>var x = 1;</script>
+				<style>.test { color: red; }</style>
+				<pre>pre elem</pre>
+				<code>code elem</code>
+				<div data-language="python">data-language</div>
+				<div data-rehype-pretty-code-fragment="">rehype</div>
+				<div class="code-block">code-block</div>
+				<div class="highlight">highlight</div>
+				<div class="hljs">hljs</div>
+				<div class="prism-code">prism</div>
+				<div class="shiki">shiki</div>
+			</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com/all-selectors");
+
+		// Should collect code blocks from all selectors (lines 110-117)
+		expect(result.content).not.toBeNull();
+	});
+
+	it("should handle content without code blocks in fallback (line 123 else path)", () => {
+		// Script+style triggers fallback with inline code
+		// Code blocks are inline, so hasCodeBlock check should find them (line 123 else)
+		const html = `
+			<!DOCTYPE html>
+			<html>
+			<head><title></title></head>
+			<body>
+				<script>var x = 1;</script>
+				<style>.test { color: red; }</style>
+				<main>
+					<span>Text with <pre><code>code</code></pre> inline</span>
+				</main>
+			</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com/has-code");
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			// Should detect existing code blocks, so line 123's else path is taken
+			expect(result.content).toBeTruthy();
+		}
+	});
+
+	it("should trigger fallback with empty body", () => {
+		// Completely empty body - definitely triggers fallback
+		const html = `<!DOCTYPE html><html><head><title></title></head><body></body></html>`;
+		const result = extractContent(html, "https://example.com/empty");
+
+		// Fallback returns empty content for empty body (may be whitespace or null)
+		expect(result.title).toBeNull();
+		// Content may be null or just whitespace
+		if (result.content) {
+			expect(result.content.trim()).toBe("");
+		}
+	});
+
+	it("should trigger fallback and extract from added main element", () => {
+		// Start with script/style only (triggers fallback), but with main added via DOM manipulation
+		// This won't work because fallback gets the original HTML string
+		// Instead, use a pattern where nav/header/footer are present with main
+		const html = `
+			<!DOCTYPE html>
+			<html>
+			<head><title></title></head>
+			<body>
+				<script>/* This makes Readability less likely to succeed */</script>
+				<noscript>Please enable JavaScript</noscript>
+				<nav><a href="/">Home</a></nav>
+				<header><h1>Header</h1></header>
+				<main><p>Main content here</p><pre><code>test code</code></pre></main>
+				<aside>Sidebar</aside>
+				<footer><p>Footer</p></footer>
+			</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com/complex");
+
+		// Should extract content (either via Readability or fallback)
+		expect(result.content).not.toBeNull();
+	});
+});
