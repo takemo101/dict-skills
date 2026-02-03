@@ -162,7 +162,10 @@ export class PlaywrightFetcher implements Fetcher {
 			const timeoutPromise = new Promise<never>((_, reject) => {
 				setTimeout(() => {
 					reject(
-						new TimeoutError(`Request timeout after ${this.config.timeout}ms`, this.config.timeout),
+						new TimeoutError(
+							`Request timeout after ${this.config.timeout}ms`,
+							this.config.timeout,
+						),
 					);
 				}, this.config.timeout);
 			});
