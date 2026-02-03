@@ -66,14 +66,18 @@ Next.jsのドキュメントをクロールして
 ### 基本的なクロール
 
 ```bash
-# 深度2で指定URLをクロール
-bun run link-crawler/src/crawl.ts https://docs.example.com -d 2
+# 深度2で指定URLをクロール（自動的に .context/<サイト名>/ に出力）
+bun run link-crawler/src/crawl.ts https://nextjs.org/docs -d 2
+# → .context/nextjs-docs/ に出力
+
+bun run link-crawler/src/crawl.ts https://docs.python.org/3/ -d 2
+# → .context/python-3/ に出力
 ```
 
 ### 出力先を指定
 
 ```bash
-# 出力ディレクトリを指定してクロール
+# カスタムディレクトリを指定してクロール
 bun run link-crawler/src/crawl.ts https://docs.example.com -o ./my-docs -d 3
 ```
 
@@ -92,11 +96,11 @@ bun run link-crawler/src/crawl.ts https://docs.example.com -o ./docs -d 3 --diff
 ```bash
 # デフォルトでは full.md のみ出力
 bun run link-crawler/src/crawl.ts https://docs.example.com
-# → .context/full.md に全ページが結合されて出力
+# → .context/example-docs/full.md に全ページが結合されて出力
 
 # 必要な時だけ chunks を有効化
 bun run link-crawler/src/crawl.ts https://docs.example.com --chunks
-# → .context/full.md + .context/chunks/*.md
+# → .context/example-docs/full.md + .context/example-docs/chunks/*.md
 ```
 
 ### 特定パスのみクロール
@@ -115,7 +119,7 @@ bun run link-crawler/src/crawl.ts https://docs.example.com --include "/api/"
 | `--wait <ms>` | | `2000` | レンダリング待機時間 |
 | `--timeout <sec>` | | `30` | リクエストタイムアウト（秒） |
 | `--headed` | | `false` | ブラウザ表示 |
-| `--output <dir>` | `-o` | `./.context` | 出力先 |
+| `--output <dir>` | `-o` | `./.context/<サイト名>/` | 出力先（サイト名は自動生成） |
 | `--diff` | | `false` | 差分クロール |
 | `--no-pages` | | | ページ単位出力無効 |
 | `--no-merge` | | | 結合ファイル無効 |
@@ -130,10 +134,11 @@ bun run link-crawler/src/crawl.ts https://docs.example.com --include "/api/"
 
 ```
 .context/
-├── index.json    # メタデータ・ハッシュ
-├── full.md       # 全ページ結合 ★ AIコンテキスト用
-├── chunks/       # 見出しベース分割
-└── pages/        # ページ単位
+└── <サイト名>/    # URLから自動生成（例: nextjs-docs, python-3）
+    ├── index.json    # メタデータ・ハッシュ
+    ├── full.md       # 全ページ結合 ★ AIコンテキスト用
+    ├── chunks/       # 見出しベース分割
+    └── pages/        # ページ単位
 ```
 
 ## 詳細ドキュメント
