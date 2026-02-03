@@ -59,7 +59,6 @@ bun run link-crawler/src/crawl.ts <url> [options]
 | `--wait <ms>` | | `2000` | レンダリング待機時間 |
 | `--headed` | | `false` | ブラウザ表示 |
 | `--timeout <sec>` | | `30` | リクエストタイムアウト |
-| `--keep-session` | | `false` | デバッグ用: .playwright-cliディレクトリを保持 |
 
 ### スコープ制御
 
