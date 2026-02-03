@@ -274,10 +274,10 @@
 **概要**: CrawlerEngine全体の統合テスト
 
 **タスク**:
-- [ ] `tests/integration/crawler.test.ts` を作成
-- [ ] モックFetcherを使用したE2E風テスト
-- [ ] 差分クロールの動作確認テスト
-- [ ] 出力ファイル生成確認テスト
+- [x] `tests/integration/crawler.test.ts` を作成
+- [x] モックFetcherを使用したE2E風テスト
+- [x] 差分クロールの動作確認テスト
+- [x] 出力ファイル生成確認テスト
 
 **依存**: Phase 1-4 完了後
 
@@ -291,10 +291,10 @@
 **概要**: 実装完了後のドキュメント微調整
 
 **タスク**:
-- [ ] SKILL.mdの `<skill-path>` を実際のパスに確認
-- [ ] 使用例の動作確認
-- [ ] ヘルプ出力の確認
-- [ ] READMEの更新
+- [x] SKILL.mdの `<skill-path>` を実際のパスに確認
+- [x] 使用例の動作確認
+- [x] ヘルプ出力の確認
+- [x] READMEの更新
 
 **依存**: Issue #1-12 全て完了後
 
