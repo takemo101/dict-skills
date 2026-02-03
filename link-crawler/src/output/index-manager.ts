@@ -3,6 +3,20 @@ import { join } from "node:path";
 import type { CrawledPage, CrawlResult, PageMetadata } from "../types.js";
 
 /**
+ * CrawlResult型の型ガード関数
+ * @param value 検証する値
+ * @returns valueがCrawlResult型であればtrue
+ */
+function isValidCrawlResult(value: unknown): value is CrawlResult {
+	return (
+		typeof value === "object" &&
+		value !== null &&
+		"pages" in value &&
+		Array.isArray((value as Record<string, unknown>).pages)
+	);
+}
+
+/**
  * インデックス管理クラス
  * index.jsonの読み込み・保存・管理を担当
  */
@@ -38,15 +52,26 @@ export class IndexManager {
 	 */
 	private loadExistingIndex(): void {
 		const indexPath = join(this.outputDir, "index.json");
-		if (existsSync(indexPath)) {
-			try {
-				const existingResult = JSON.parse(readFileSync(indexPath, "utf-8")) as CrawlResult;
-				for (const page of existingResult.pages) {
+		if (!existsSync(indexPath)) {
+			return;
+		}
+
+		try {
+			const content = readFileSync(indexPath, "utf-8");
+			const parsed = JSON.parse(content);
+
+			// 型ガードによる検証
+			if (isValidCrawlResult(parsed)) {
+				for (const page of parsed.pages) {
 					this.existingPages.set(page.url, page);
 				}
-			} catch {
-				// 読み込み失敗時は無視
+			} else {
+				console.warn(`[WARN] Invalid index.json format at ${indexPath}`);
 			}
+		} catch (error) {
+			console.warn(
+				`[WARN] Failed to load index.json: ${error instanceof Error ? error.message : String(error)}`,
+			);
 		}
 	}
 
