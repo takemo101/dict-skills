@@ -79,7 +79,7 @@ export class Crawler {
 			return;
 		}
 
-		this.visited.add(url);
+		this.visited.add(url); // URL単位で訪問済みを管理（深度は無関係）
 		this.logger.logCrawlStart(url, depth);
 
 		const result = await this.fetcher.fetch(url);

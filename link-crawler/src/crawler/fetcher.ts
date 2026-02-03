@@ -163,7 +163,7 @@ export class PlaywrightFetcher implements Fetcher {
 				setTimeout(() => {
 					reject(
 						new TimeoutError(
-							`Request timeout after ${this.config.timeout}ms`,
+							`Request timeout after ${this.config.timeout / 1000}s (${this.config.timeout}ms)`,
 							this.config.timeout,
 						),
 					);
