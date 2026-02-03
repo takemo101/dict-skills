@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { computeHash } from "../diff/hasher.js";
 import { FILENAME, SPEC_PATTERNS } from "../constants.js";
+import { computeHash } from "../diff/hasher.js";
 import type { CrawlConfig, CrawledPage, PageMetadata } from "../types.js";
 import { IndexManager } from "./index-manager.js";
 
