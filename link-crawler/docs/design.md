@@ -608,9 +608,36 @@ class Merger {
       .join("\n\n");
   }
 
-  private stripTitle(markdown: string): string {
-    // 先頭の # タイトル行を除去（重複防止）
-    return markdown.replace(/^#\s+.+\n+/, "");
+  /**
+   * Markdownから先頭のH1タイトルを除去
+   * frontmatterがある場合は考慮する
+   * 
+   * Note: publicメソッドとして実装（テストで使用されている）
+   * 
+   * @param markdown Markdown文字列
+   * @returns タイトル除去後のMarkdown
+   */
+  stripTitle(markdown: string): string {
+    // frontmatterをスキップ
+    let content = markdown;
+    if (content.startsWith("---")) {
+      const endIndex = content.indexOf("---", 3);
+      if (endIndex !== -1) {
+        content = content.slice(endIndex + 3).trimStart();
+      }
+    }
+
+    // 先頭のH1を除去
+    const lines = content.split("\n");
+    if (lines.length > 0 && lines[0].startsWith("# ")) {
+      lines.shift();
+      // タイトル後の空行も除去
+      while (lines.length > 0 && lines[0].trim() === "") {
+        lines.shift();
+      }
+    }
+
+    return lines.join("\n");
   }
 }
 ```
@@ -669,20 +696,20 @@ class Chunker {
 
 ## 12. スキル統合
 
-### 11.1 SKILL.md配置
+### 12.1 SKILL.md配置
 
 ```
 link-crawler/
 └── SKILL.md    # piエージェント向けスキル定義
 ```
 
-### 11.2 グローバル登録
+### 12.2 グローバル登録
 
 ```bash
 ln -s /path/to/link-crawler ~/.pi/agent/skills/link-crawler
 ```
 
-### 11.3 利用イメージ
+### 12.3 利用イメージ
 
 ```
 pi> Next.jsのドキュメントをクロールして設計の参考にしたい

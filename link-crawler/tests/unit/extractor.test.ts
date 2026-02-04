@@ -1,6 +1,6 @@
 import { JSDOM } from "jsdom";
 import { describe, expect, it } from "vitest";
-import { extractContent, extractMetadata } from "../../../src/parser/extractor.js";
+import { extractContent, extractMetadata } from "../../src/parser/extractor.js";
 
 describe("extractMetadata", () => {
 	it("should extract title from title tag", () => {
