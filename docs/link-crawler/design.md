@@ -571,20 +571,20 @@ class Chunker {
 
 ## 12. スキル統合
 
-### 11.1 SKILL.md配置
+### 12.1 SKILL.md配置
 
 ```
 link-crawler/
 └── SKILL.md    # piエージェント向けスキル定義
 ```
 
-### 11.2 グローバル登録
+### 12.2 グローバル登録
 
 ```bash
 ln -s /path/to/link-crawler ~/.pi/agent/skills/link-crawler
 ```
 
-### 11.3 利用イメージ
+### 12.3 利用イメージ
 
 ```
 pi> Next.jsのドキュメントをクロールして設計の参考にしたい
