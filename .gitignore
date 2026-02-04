@@ -25,3 +25,6 @@ dist/
 
 # Coverage
 coverage/
+
+# Test fixture directories
+link-crawler/tests/**/.test-*/
