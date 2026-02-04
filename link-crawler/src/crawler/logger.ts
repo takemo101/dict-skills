@@ -6,8 +6,11 @@ import type { CrawlConfig } from "../types.js";
  */
 export class CrawlLogger {
 	private skippedCount = 0;
+	private debug: boolean;
 
-	constructor(private config: CrawlConfig) {}
+	constructor(private config: CrawlConfig) {
+		this.debug = process.env.DEBUG === "1";
+	}
 
 	/** クロール開始ログ */
 	logStart(): void {
@@ -21,6 +24,9 @@ export class CrawlLogger {
 		console.log(`   Pages: ${this.config.pages ? "yes" : "no"}`);
 		console.log(`   Merge: ${this.config.merge ? "yes" : "no"}`);
 		console.log(`   Chunks: ${this.config.chunks ? "yes" : "no"}`);
+		if (this.debug) {
+			console.log(`   Debug: enabled`);
+		}
 		console.log("");
 	}
 
@@ -120,5 +126,16 @@ export class CrawlLogger {
 	/** スキップカウントを取得 */
 	getSkippedCount(): number {
 		return this.skippedCount;
+	}
+
+	/** デバッグログ（DEBUG=1時のみ） */
+	logDebug(message: string, data?: unknown): void {
+		if (this.debug) {
+			const timestamp = new Date().toISOString();
+			console.log(`[DEBUG ${timestamp}] ${message}`);
+			if (data !== undefined) {
+				console.log(JSON.stringify(data, null, 2));
+			}
+		}
 	}
 }
