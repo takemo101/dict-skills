@@ -295,18 +295,28 @@ interface DetectedSpec {
 
 ### 5.3 full.md 形式
 
-ページを `# タイトル` で区切り、1ファイルに結合:
+ページを `# タイトル` で区切り、Source URL付きで1ファイルに結合:
 
 ```markdown
 # Getting Started
 
+> Source: https://docs.example.com/getting-started
+
 導入部分の内容...
+
+---
 
 # Installation
 
+> Source: https://docs.example.com/installation
+
 インストール手順...
 
+---
+
 # Configuration
+
+> Source: https://docs.example.com/configuration
 
 設定方法...
 ```
