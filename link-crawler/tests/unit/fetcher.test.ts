@@ -4,24 +4,18 @@ import { DependencyError, FetchError, TimeoutError } from "../../src/errors.js";
 import type { CrawlConfig } from "../../src/types.js";
 import type { RuntimeAdapter, SpawnResult } from "../../src/utils/runtime.js";
 
-// Mock node:fs with fallback to actual implementation
-const mockExistsSync = vi.fn();
-const mockRmSync = vi.fn();
+// Create mock functions using vi.hoisted() for proper hoisting in Vitest
+// This is also Bun-compatible as Bun supports vi.fn()
+const { mockExistsSync, mockRmSync } = vi.hoisted(() => ({
+	mockExistsSync: vi.fn(),
+	mockRmSync: vi.fn(),
+}));
 
-vi.mock("node:fs", async () => {
-	const actual = await vi.importActual<typeof import("node:fs")>("node:fs");
-	return {
-		...actual,
-		existsSync: (...args: Parameters<typeof actual.existsSync>) =>
-			mockExistsSync.getMockImplementation()
-				? mockExistsSync(...args)
-				: actual.existsSync(...(args as [import("node:fs").PathLike])),
-		rmSync: (...args: Parameters<typeof actual.rmSync>) =>
-			mockRmSync.getMockImplementation()
-				? mockRmSync(...args)
-				: actual.rmSync(...(args as [import("node:fs").PathLike, import("node:fs").RmOptions?])),
-	};
-});
+// Mock node:fs - using hoisted mocks (Bun-compatible, no vi.importActual)
+vi.mock("node:fs", () => ({
+	existsSync: mockExistsSync,
+	rmSync: mockRmSync,
+}));
 
 const createMockConfig = (overrides: Partial<CrawlConfig> = {}): CrawlConfig => ({
 	startUrl: "https://example.com",
