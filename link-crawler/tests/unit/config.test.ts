@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseConfig } from "../../src/config.js";
+import { ConfigError } from "../../src/errors.js";
 
 describe("parseConfig", () => {
 	it("should parse config with default values", () => {
@@ -89,5 +90,35 @@ describe("parseConfig", () => {
 	it("should allow legacy ./.context directory to be specified explicitly", () => {
 		const config = parseConfig({ output: "./.context" }, "https://nextjs.org/docs");
 		expect(config.outputDir).toBe("./.context");
+	});
+});
+
+describe("parseConfig error handling", () => {
+	it("should throw ConfigError for invalid include pattern", () => {
+		expect(() => parseConfig({ include: "[invalid" }, "https://example.com")).toThrow(ConfigError);
+	});
+
+	it("should throw ConfigError for invalid exclude pattern", () => {
+		expect(() => parseConfig({ exclude: "(unclosed" }, "https://example.com")).toThrow(ConfigError);
+	});
+
+	it("should include pattern name in error message for include", () => {
+		try {
+			parseConfig({ include: "[" }, "https://example.com");
+			throw new Error("Expected ConfigError to be thrown");
+		} catch (e) {
+			expect(e).toBeInstanceOf(ConfigError);
+			expect((e as ConfigError).configKey).toBe("include");
+		}
+	});
+
+	it("should include pattern name in error message for exclude", () => {
+		try {
+			parseConfig({ exclude: "(" }, "https://example.com");
+			throw new Error("Expected ConfigError to be thrown");
+		} catch (e) {
+			expect(e).toBeInstanceOf(ConfigError);
+			expect((e as ConfigError).configKey).toBe("exclude");
+		}
 	});
 });
