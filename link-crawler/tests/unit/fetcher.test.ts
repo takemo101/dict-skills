@@ -1,21 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import * as fs from "node:fs";
 import { PlaywrightFetcher, parseCliOutput } from "../../src/crawler/fetcher.js";
 import { DependencyError, FetchError, TimeoutError } from "../../src/errors.js";
 import type { CrawlConfig } from "../../src/types.js";
 import type { RuntimeAdapter, SpawnResult } from "../../src/utils/runtime.js";
 
-// Create mock functions using vi.hoisted() for proper hoisting in Vitest
-// This is also Bun-compatible as Bun supports vi.fn()
-const { mockExistsSync, mockRmSync } = vi.hoisted(() => ({
-	mockExistsSync: vi.fn(),
-	mockRmSync: vi.fn(),
+// Mock node:fs - using simple inline mocks (Bun + Vitest compatible, no vi.importActual)
+vi.mock("node:fs", () => ({
+	existsSync: vi.fn(),
+	rmSync: vi.fn(),
 }));
 
-// Mock node:fs - using hoisted mocks (Bun-compatible, no vi.importActual)
-vi.mock("node:fs", () => ({
-	existsSync: mockExistsSync,
-	rmSync: mockRmSync,
-}));
+// Get typed references to the mocked functions
+const mockExistsSync = fs.existsSync as ReturnType<typeof vi.fn>;
+const mockRmSync = fs.rmSync as ReturnType<typeof vi.fn>;
 
 const createMockConfig = (overrides: Partial<CrawlConfig> = {}): CrawlConfig => ({
 	startUrl: "https://example.com",
