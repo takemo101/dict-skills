@@ -71,9 +71,7 @@ export class IndexManager {
 				this.logger?.logIndexFormatError(indexPath);
 			}
 		} catch (error) {
-			this.logger?.logIndexLoadError(
-				error instanceof Error ? error.message : String(error),
-			);
+			this.logger?.logIndexLoadError(error instanceof Error ? error.message : String(error));
 		}
 	}
 

@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { CrawlLogger } from "../../src/crawler/logger.js";
 import { IndexManager } from "../../src/output/index-manager.js";
 import type { PageMetadata } from "../../src/types.js";
 
@@ -77,7 +78,7 @@ describe("IndexManager", () => {
 		it("should handle invalid JSON", async () => {
 			const mockLogger = {
 				logIndexLoadError: vi.fn(),
-			} as any;
+			} as Partial<CrawlLogger>;
 			await writeFile(join(testDir, "index.json"), "{ invalid json }");
 
 			const manager = new IndexManager(
@@ -117,7 +118,7 @@ describe("IndexManager", () => {
 		it("should handle pages property not being an array", async () => {
 			const mockLogger = {
 				logIndexFormatError: vi.fn(),
-			} as any;
+			} as Partial<CrawlLogger>;
 			const indexData = {
 				crawledAt: "2025-01-01T00:00:00.000Z",
 				baseUrl: "https://example.com",
@@ -147,7 +148,7 @@ describe("IndexManager", () => {
 		it("should handle missing pages property", async () => {
 			const mockLogger = {
 				logIndexFormatError: vi.fn(),
-			} as any;
+			} as Partial<CrawlLogger>;
 			const indexData = {
 				crawledAt: "2025-01-01T00:00:00.000Z",
 				baseUrl: "https://example.com",
@@ -176,7 +177,7 @@ describe("IndexManager", () => {
 		it("should handle null value", async () => {
 			const mockLogger = {
 				logIndexFormatError: vi.fn(),
-			} as any;
+			} as Partial<CrawlLogger>;
 			await writeFile(join(testDir, "index.json"), "null");
 
 			const manager = new IndexManager(
@@ -198,7 +199,7 @@ describe("IndexManager", () => {
 		it("should handle primitive value", async () => {
 			const mockLogger = {
 				logIndexFormatError: vi.fn(),
-			} as any;
+			} as Partial<CrawlLogger>;
 			await writeFile(join(testDir, "index.json"), "123");
 
 			const manager = new IndexManager(
