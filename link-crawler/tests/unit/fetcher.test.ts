@@ -4,24 +4,15 @@ import { DependencyError, FetchError, TimeoutError } from "../../src/errors.js";
 import type { CrawlConfig } from "../../src/types.js";
 import type { RuntimeAdapter, SpawnResult } from "../../src/utils/runtime.js";
 
-// Mock node:fs with fallback to actual implementation
+// Create mock functions outside of vi.mock() for Bun compatibility
 const mockExistsSync = vi.fn();
 const mockRmSync = vi.fn();
 
-vi.mock("node:fs", async () => {
-	const actual = await vi.importActual<typeof import("node:fs")>("node:fs");
-	return {
-		...actual,
-		existsSync: (...args: Parameters<typeof actual.existsSync>) =>
-			mockExistsSync.getMockImplementation()
-				? mockExistsSync(...args)
-				: actual.existsSync(...(args as [import("node:fs").PathLike])),
-		rmSync: (...args: Parameters<typeof actual.rmSync>) =>
-			mockRmSync.getMockImplementation()
-				? mockRmSync(...args)
-				: actual.rmSync(...(args as [import("node:fs").PathLike, import("node:fs").RmOptions?])),
-	};
-});
+// Mock node:fs - using hoisted mocks (Bun-compatible, no vi.importActual or vi.mocked)
+vi.mock("node:fs", () => ({
+	existsSync: mockExistsSync,
+	rmSync: mockRmSync,
+}));
 
 const createMockConfig = (overrides: Partial<CrawlConfig> = {}): CrawlConfig => ({
 	startUrl: "https://example.com",
