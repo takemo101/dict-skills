@@ -108,7 +108,10 @@ export class Chunker {
 		try {
 			const content = readFileSync(fullMdPath, "utf-8");
 			return this.chunkAndWrite(content);
-		} catch {
+		} catch (error) {
+			console.warn(
+				`[WARN] Failed to read full.md: ${error instanceof Error ? error.message : String(error)}`,
+			);
 			return [];
 		}
 	}

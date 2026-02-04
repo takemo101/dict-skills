@@ -75,6 +75,7 @@ describe("PostProcessor", () => {
 			logChunkerComplete: vi.fn(),
 			logComplete: vi.fn(),
 			getSkippedCount: vi.fn().mockReturnValue(0),
+			logDebug: vi.fn(),
 		} as unknown as CrawlLogger;
 	});
 
