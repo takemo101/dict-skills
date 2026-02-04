@@ -411,7 +411,7 @@ class PlaywrightFetcher {
     // コンテンツ取得
     const html = await $`playwright-cli eval "document.documentElement.outerHTML" --session ${this.sessionId}`;
 
-    return { html: html.text(), finalUrl: url };
+    return { html: html.text(), finalUrl: url, contentType: "text/html" };
   }
 
   async close(): Promise<void> {
@@ -510,9 +510,36 @@ class Merger {
       .join("\n\n");
   }
 
-  private stripTitle(markdown: string): string {
-    // 先頭の # タイトル行を除去（重複防止）
-    return markdown.replace(/^#\s+.+\n+/, "");
+  /**
+   * Markdownから先頭のH1タイトルを除去
+   * frontmatterがある場合は考慮する
+   * 
+   * Note: publicメソッドとして実装（テストで使用されている）
+   * 
+   * @param markdown Markdown文字列
+   * @returns タイトル除去後のMarkdown
+   */
+  stripTitle(markdown: string): string {
+    // frontmatterをスキップ
+    let content = markdown;
+    if (content.startsWith("---")) {
+      const endIndex = content.indexOf("---", 3);
+      if (endIndex !== -1) {
+        content = content.slice(endIndex + 3).trimStart();
+      }
+    }
+
+    // 先頭のH1を除去
+    const lines = content.split("\n");
+    if (lines.length > 0 && lines[0].startsWith("# ")) {
+      lines.shift();
+      // タイトル後の空行も除去
+      while (lines.length > 0 && lines[0].trim() === "") {
+        lines.shift();
+      }
+    }
+
+    return lines.join("\n");
   }
 }
 ```
