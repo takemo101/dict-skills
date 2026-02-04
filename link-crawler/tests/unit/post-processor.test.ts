@@ -269,7 +269,9 @@ describe("PostProcessor", () => {
 			const pages = [createPage("https://example.com/page1", "Page 1", "pages/nonexistent.md")];
 
 			// Should not throw even though file doesn't exist
-			await expect(processor.process(pages)).resolves.not.toThrow();
+			await processor.process(pages);
+			// If we get here without throwing, the test passes
+			expect(mockLogger.logPostProcessingStart).toHaveBeenCalled();
 		});
 
 		it("should handle when full.md read fails but chunker can still run with pages content", async () => {
