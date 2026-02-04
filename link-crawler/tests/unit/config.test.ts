@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseConfig } from "../../src/config.js";
+import { ConfigError } from "../../src/errors.js";
 
 describe("parseConfig", () => {
 	it("should parse config with default values", () => {
@@ -89,5 +90,66 @@ describe("parseConfig", () => {
 	it("should allow legacy ./.context directory to be specified explicitly", () => {
 		const config = parseConfig({ output: "./.context" }, "https://nextjs.org/docs");
 		expect(config.outputDir).toBe("./.context");
+	});
+});
+
+describe("parseConfig - regex pattern validation", () => {
+	it("should throw ConfigError for invalid include pattern", () => {
+		expect(() => {
+			parseConfig({ include: "[invalid" }, "https://example.com");
+		}).toThrow(ConfigError);
+
+		expect(() => {
+			parseConfig({ include: "[invalid" }, "https://example.com");
+		}).toThrowError(/Invalid include pattern/);
+	});
+
+	it("should throw ConfigError for invalid exclude pattern", () => {
+		expect(() => {
+			parseConfig({ exclude: "(unclosed" }, "https://example.com");
+		}).toThrow(ConfigError);
+
+		expect(() => {
+			parseConfig({ exclude: "(unclosed" }, "https://example.com");
+		}).toThrowError(/Invalid exclude pattern/);
+	});
+
+	it("should include original regex error in message", () => {
+		expect(() => {
+			parseConfig({ include: "[invalid" }, "https://example.com");
+		}).toThrowError(/missing terminating/);
+	});
+
+	it("should continue to work with valid patterns after error fix", () => {
+		const config = parseConfig(
+			{
+				include: "^/docs",
+				exclude: "\\.pdf$",
+			},
+			"https://example.com",
+		);
+
+		expect(config.includePattern).toBeInstanceOf(RegExp);
+		expect(config.excludePattern).toBeInstanceOf(RegExp);
+		expect(config.includePattern?.test("/docs/guide")).toBe(true);
+		expect(config.excludePattern?.test("file.pdf")).toBe(true);
+	});
+
+	it("should set configKey in ConfigError", () => {
+		try {
+			parseConfig({ include: "[invalid" }, "https://example.com");
+			expect.fail("Should have thrown ConfigError");
+		} catch (error) {
+			expect(error).toBeInstanceOf(ConfigError);
+			expect((error as ConfigError).configKey).toBe("include");
+		}
+
+		try {
+			parseConfig({ exclude: "(unclosed" }, "https://example.com");
+			expect.fail("Should have thrown ConfigError");
+		} catch (error) {
+			expect(error).toBeInstanceOf(ConfigError);
+			expect((error as ConfigError).configKey).toBe("exclude");
+		}
 	});
 });
