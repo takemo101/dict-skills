@@ -4,17 +4,18 @@
 !.pi/skills/delete-environment/
 !.pi/skills/delete-environment/**
 
-# pi-issue-runner
-.worktrees/
+# Development artifacts
 .improve-logs/
+.worktrees/
+test-output-*/
+.playwright-cli/
+
+# pi-issue-runner
 .pi-runner.yaml.local
 .pi-prompt.md
 *.swp
 docs/plans/*.md
 !docs/plans/README.md
-
-# Playwright cli
-.playwright-cli/
 .context/
 
 # Dependencies
