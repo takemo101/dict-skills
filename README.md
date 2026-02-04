@@ -46,8 +46,8 @@ bun run link-crawler/src/crawl.ts https://nextjs.org/docs -d 2
 | Document | Target Audience | Content |
 |----------|----------------|---------|
 | [SKILL.md](link-crawler/SKILL.md) | **pi users** | Concise usage as a pi skill |
-| [CLI Specification](docs/link-crawler/cli-spec.md) | **CLI users** | Complete option list, examples, output format specifications |
-| [Design Document](docs/link-crawler/design.md) | **Developers** | Architecture, data structures, technical specifications |
+| [CLI Specification](link-crawler/docs/cli-spec.md) | **CLI users** | Complete option list, examples, output format specifications |
+| [Design Document](link-crawler/docs/design.md) | **Developers** | Architecture, data structures, technical specifications |
 
 ### Contributing
 
