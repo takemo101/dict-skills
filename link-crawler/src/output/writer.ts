@@ -1,6 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { FILENAME, SPEC_PATTERNS } from "../constants.js";
+import type { CrawlLogger } from "../crawler/logger.js";
 import { computeHash } from "../diff/hasher.js";
 import type { CrawlConfig, CrawledPage, PageMetadata } from "../types.js";
 import { IndexManager } from "./index-manager.js";
@@ -26,11 +27,19 @@ function slugify(text: string | null | undefined, maxLength = 50): string {
 export class OutputWriter {
 	private indexManager: IndexManager;
 
-	constructor(private config: CrawlConfig) {
-		this.indexManager = new IndexManager(config.outputDir, config.startUrl, {
-			maxDepth: config.maxDepth,
-			sameDomain: config.sameDomain,
-		});
+	constructor(
+		private config: CrawlConfig,
+		private logger?: CrawlLogger,
+	) {
+		this.indexManager = new IndexManager(
+			config.outputDir,
+			config.startUrl,
+			{
+				maxDepth: config.maxDepth,
+				sameDomain: config.sameDomain,
+			},
+			this.logger,
+		);
 
 		// ディレクトリ作成
 		mkdirSync(join(config.outputDir, FILENAME.PAGES_DIR), { recursive: true });

@@ -75,19 +75,24 @@ describe("IndexManager", () => {
 		});
 
 		it("should handle invalid JSON", async () => {
-			const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+			const mockLogger = {
+				logIndexLoadError: vi.fn(),
+			} as any;
 			await writeFile(join(testDir, "index.json"), "{ invalid json }");
 
-			const manager = new IndexManager(testDir, "https://example.com", {
-				maxDepth: 2,
-				sameDomain: true,
-			});
+			const manager = new IndexManager(
+				testDir,
+				"https://example.com",
+				{
+					maxDepth: 2,
+					sameDomain: true,
+				},
+				mockLogger,
+			);
 
 			expect(manager.getExistingPageCount()).toBe(0);
-			expect(consoleSpy).toHaveBeenCalledWith(
-				expect.stringContaining("[WARN] Failed to load index.json:"),
-			);
-			consoleSpy.mockRestore();
+			expect(mockLogger.logIndexLoadError).toHaveBeenCalledTimes(1);
+			expect(mockLogger.logIndexLoadError).toHaveBeenCalledWith(expect.any(String));
 		});
 
 		it("should handle empty pages array", async () => {
@@ -110,7 +115,9 @@ describe("IndexManager", () => {
 		});
 
 		it("should handle pages property not being an array", async () => {
-			const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+			const mockLogger = {
+				logIndexFormatError: vi.fn(),
+			} as any;
 			const indexData = {
 				crawledAt: "2025-01-01T00:00:00.000Z",
 				baseUrl: "https://example.com",
@@ -121,20 +128,26 @@ describe("IndexManager", () => {
 			};
 			await writeFile(join(testDir, "index.json"), JSON.stringify(indexData));
 
-			const manager = new IndexManager(testDir, "https://example.com", {
-				maxDepth: 2,
-				sameDomain: true,
-			});
+			const manager = new IndexManager(
+				testDir,
+				"https://example.com",
+				{
+					maxDepth: 2,
+					sameDomain: true,
+				},
+				mockLogger,
+			);
 
 			expect(manager.getExistingPageCount()).toBe(0);
-			expect(consoleSpy).toHaveBeenCalledWith(
-				expect.stringContaining("[WARN] Invalid index.json format at"),
+			expect(mockLogger.logIndexFormatError).toHaveBeenCalledWith(
+				expect.stringContaining(join(testDir, "index.json")),
 			);
-			consoleSpy.mockRestore();
 		});
 
 		it("should handle missing pages property", async () => {
-			const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+			const mockLogger = {
+				logIndexFormatError: vi.fn(),
+			} as any;
 			const indexData = {
 				crawledAt: "2025-01-01T00:00:00.000Z",
 				baseUrl: "https://example.com",
@@ -144,48 +157,64 @@ describe("IndexManager", () => {
 			};
 			await writeFile(join(testDir, "index.json"), JSON.stringify(indexData));
 
-			const manager = new IndexManager(testDir, "https://example.com", {
-				maxDepth: 2,
-				sameDomain: true,
-			});
+			const manager = new IndexManager(
+				testDir,
+				"https://example.com",
+				{
+					maxDepth: 2,
+					sameDomain: true,
+				},
+				mockLogger,
+			);
 
 			expect(manager.getExistingPageCount()).toBe(0);
-			expect(consoleSpy).toHaveBeenCalledWith(
-				expect.stringContaining("[WARN] Invalid index.json format at"),
+			expect(mockLogger.logIndexFormatError).toHaveBeenCalledWith(
+				expect.stringContaining(join(testDir, "index.json")),
 			);
-			consoleSpy.mockRestore();
 		});
 
 		it("should handle null value", async () => {
-			const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+			const mockLogger = {
+				logIndexFormatError: vi.fn(),
+			} as any;
 			await writeFile(join(testDir, "index.json"), "null");
 
-			const manager = new IndexManager(testDir, "https://example.com", {
-				maxDepth: 2,
-				sameDomain: true,
-			});
+			const manager = new IndexManager(
+				testDir,
+				"https://example.com",
+				{
+					maxDepth: 2,
+					sameDomain: true,
+				},
+				mockLogger,
+			);
 
 			expect(manager.getExistingPageCount()).toBe(0);
-			expect(consoleSpy).toHaveBeenCalledWith(
-				expect.stringContaining("[WARN] Invalid index.json format at"),
+			expect(mockLogger.logIndexFormatError).toHaveBeenCalledWith(
+				expect.stringContaining(join(testDir, "index.json")),
 			);
-			consoleSpy.mockRestore();
 		});
 
 		it("should handle primitive value", async () => {
-			const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+			const mockLogger = {
+				logIndexFormatError: vi.fn(),
+			} as any;
 			await writeFile(join(testDir, "index.json"), "123");
 
-			const manager = new IndexManager(testDir, "https://example.com", {
-				maxDepth: 2,
-				sameDomain: true,
-			});
+			const manager = new IndexManager(
+				testDir,
+				"https://example.com",
+				{
+					maxDepth: 2,
+					sameDomain: true,
+				},
+				mockLogger,
+			);
 
 			expect(manager.getExistingPageCount()).toBe(0);
-			expect(consoleSpy).toHaveBeenCalledWith(
-				expect.stringContaining("[WARN] Invalid index.json format at"),
+			expect(mockLogger.logIndexFormatError).toHaveBeenCalledWith(
+				expect.stringContaining(join(testDir, "index.json")),
 			);
-			consoleSpy.mockRestore();
 		});
 	});
 

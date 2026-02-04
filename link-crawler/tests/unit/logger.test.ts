@@ -239,6 +239,28 @@ describe("CrawlLogger", () => {
 			);
 		});
 
+		it("should log index format error", () => {
+			const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+			const logger = new CrawlLogger(baseConfig);
+			logger.logIndexFormatError("/path/to/index.json");
+
+			expect(consoleWarnSpy).toHaveBeenCalledWith(
+				"[WARN] Invalid index.json format at /path/to/index.json",
+			);
+			consoleWarnSpy.mockRestore();
+		});
+
+		it("should log index load error with message", () => {
+			const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+			const logger = new CrawlLogger(baseConfig);
+			logger.logIndexLoadError("File not found");
+
+			expect(consoleWarnSpy).toHaveBeenCalledWith(
+				"[WARN] Failed to load index.json: File not found",
+			);
+			consoleWarnSpy.mockRestore();
+		});
+
 		it("should log crawl start with correct indentation", () => {
 			const logger = new CrawlLogger(baseConfig);
 			logger.logCrawlStart("https://example.com/page", 1);
