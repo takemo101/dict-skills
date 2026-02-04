@@ -111,7 +111,10 @@ export class Crawler {
 		// メタデータ抽出
 		const dom = new JSDOM(html, { url });
 		const metadata = extractMetadata(dom);
-		this.logger.logDebug("Metadata extracted", { title: metadata.title, description: metadata.description?.substring(0, 100) });
+		this.logger.logDebug("Metadata extracted", {
+			title: metadata.title,
+			description: metadata.description?.substring(0, 100),
+		});
 
 		// コンテンツ抽出
 		const { title, content } = extractContent(html, url);
@@ -127,15 +130,21 @@ export class Crawler {
 
 		// ハッシュ計算
 		const hash = computeHash(markdown);
-		this.logger.logDebug("Content hash computed", { hash: hash.substring(0, 16) + "..." });
+		this.logger.logDebug("Content hash computed", { hash: `${hash.substring(0, 16)}...` });
 
 		// 差分モード時：変更がなければスキップ
 		if (this.config.diff && this.hasher && !this.hasher.isChanged(url, hash)) {
-			this.logger.logDebug("Page unchanged (skipping)", { url, hash: hash.substring(0, 16) + "..." });
+			this.logger.logDebug("Page unchanged (skipping)", {
+				url,
+				hash: `${hash.substring(0, 16)}...`,
+			});
 			this.logger.logSkipped(depth);
 		} else {
 			if (this.config.diff && this.hasher) {
-				this.logger.logDebug("Page changed (processing)", { url, hash: hash.substring(0, 16) + "..." });
+				this.logger.logDebug("Page changed (processing)", {
+					url,
+					hash: `${hash.substring(0, 16)}...`,
+				});
 			}
 			// ページ出力 (--no-pages時はスキップ)
 			if (this.config.pages) {
