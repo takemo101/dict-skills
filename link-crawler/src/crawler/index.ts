@@ -37,8 +37,10 @@ export class Crawler {
 	/** Fetcherの初期化 */
 	private async initFetcher(): Promise<Fetcher> {
 		if (!this.fetcher && this.fetcherPromise) {
+			this.logger.logDebug("Initializing Fetcher (playwright-cli)");
 			this.fetcher = await this.fetcherPromise;
 			this.fetcherPromise = undefined;
+			this.logger.logDebug("Fetcher initialized successfully");
 		}
 		return this.fetcher;
 	}
@@ -55,6 +57,7 @@ export class Crawler {
 			const existingHashes = this.writer.getIndexManager().getExistingHashes();
 			this.hasher = new Hasher(existingHashes);
 			this.logger.logLoadedHashes(this.hasher.size);
+			this.logger.logDebug("Diff mode enabled", { hashCount: this.hasher.size });
 		}
 
 		try {
@@ -83,9 +86,18 @@ export class Crawler {
 		this.logger.logCrawlStart(url, depth);
 
 		const result = await this.fetcher.fetch(url);
-		if (!result) return;
+		if (!result) {
+			this.logger.logDebug("Fetch failed", { url, depth });
+			return;
+		}
 
 		const { html, contentType } = result;
+		this.logger.logDebug("Page fetched", {
+			url,
+			depth,
+			contentType,
+			htmlLength: html.length,
+		});
 
 		// API仕様ファイルの場合
 		if (!contentType.includes("text/html")) {
@@ -99,23 +111,41 @@ export class Crawler {
 		// メタデータ抽出
 		const dom = new JSDOM(html, { url });
 		const metadata = extractMetadata(dom);
+		this.logger.logDebug("Metadata extracted", {
+			title: metadata.title,
+			description: metadata.description?.substring(0, 100),
+		});
 
 		// コンテンツ抽出
 		const { title, content } = extractContent(html, url);
+		this.logger.logDebug("Content extracted", { title, contentLength: content?.length || 0 });
 
 		// リンク抽出
 		const links = extractLinks(html, url, this.visited, this.config);
+		this.logger.logDebug("Links extracted", { linkCount: links.length, links: links.slice(0, 5) });
 
 		// Markdown変換
 		const markdown = content ? htmlToMarkdown(content) : "";
+		this.logger.logDebug("HTML converted to Markdown", { markdownLength: markdown.length });
 
 		// ハッシュ計算
 		const hash = computeHash(markdown);
+		this.logger.logDebug("Content hash computed", { hash: `${hash.substring(0, 16)}...` });
 
 		// 差分モード時：変更がなければスキップ
 		if (this.config.diff && this.hasher && !this.hasher.isChanged(url, hash)) {
+			this.logger.logDebug("Page unchanged (skipping)", {
+				url,
+				hash: `${hash.substring(0, 16)}...`,
+			});
 			this.logger.logSkipped(depth);
 		} else {
+			if (this.config.diff && this.hasher) {
+				this.logger.logDebug("Page changed (processing)", {
+					url,
+					hash: `${hash.substring(0, 16)}...`,
+				});
+			}
 			// ページ出力 (--no-pages時はスキップ)
 			if (this.config.pages) {
 				const pageFile = this.writer.savePage(url, markdown, depth, links, metadata, title, hash);
