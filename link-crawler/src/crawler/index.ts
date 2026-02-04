@@ -5,6 +5,8 @@ import { htmlToMarkdown } from "../parser/converter.js";
 import { extractContent, extractMetadata } from "../parser/extractor.js";
 import { extractLinks } from "../parser/links.js";
 import type { CrawlConfig, Fetcher } from "../types.js";
+import type { RuntimeAdapter } from "../utils/runtime.js";
+import { createRuntimeAdapter } from "../utils/runtime.js";
 import { CrawlLogger } from "./logger.js";
 import { PostProcessor } from "./post-processor.js";
 
@@ -15,6 +17,7 @@ export class Crawler {
 	private hasher: Hasher | null = null;
 	private logger: CrawlLogger;
 	private postProcessor: PostProcessor;
+	private runtime: RuntimeAdapter;
 	private visited = new Set<string>();
 	/** メモリ内のページ内容 (--no-pages時に使用) */
 	private pageContents = new Map<string, string>();
@@ -27,6 +30,7 @@ export class Crawler {
 		this.logger = new CrawlLogger(config);
 		this.writer = new OutputWriter(config, this.logger);
 		this.postProcessor = new PostProcessor(config, this.logger);
+		this.runtime = createRuntimeAdapter();
 		if (fetcher) {
 			this.fetcher = fetcher;
 		} else {
@@ -177,7 +181,7 @@ export class Crawler {
 		if (depth < this.config.maxDepth) {
 			for (const link of links) {
 				if (!this.visited.has(link)) {
-					await sleep(this.config.delay);
+					await this.runtime.sleep(this.config.delay);
 					await this.crawl(link, depth + 1);
 				}
 			}
@@ -190,9 +194,4 @@ async function createPlaywrightFetcher(config: CrawlConfig): Promise<Fetcher> {
 	// 動的インポートを使用してBun依存のモジュールを遅延ロード
 	const mod = await import("./fetcher.js");
 	return new mod.PlaywrightFetcher(config);
-}
-
-/** スリープ関数 */
-function sleep(ms: number): Promise<void> {
-	return new Promise((resolve) => setTimeout(resolve, ms));
 }
