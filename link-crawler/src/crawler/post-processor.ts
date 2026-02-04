@@ -52,7 +52,8 @@ export class PostProcessor {
 			// Chunker用に内容を読み込み
 			try {
 				fullMdContent = readFileSync(fullPath, "utf-8");
-			} catch {
+			} catch (error) {
+				this.logger.logDebug("Failed to read full.md", { path: fullPath, error: String(error) });
 				fullMdContent = "";
 			}
 		} else if (this.config.chunks) {
