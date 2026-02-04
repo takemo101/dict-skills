@@ -295,18 +295,28 @@ interface DetectedSpec {
 
 ### 5.3 full.md 形式
 
-ページを `# タイトル` で区切り、1ファイルに結合:
+ページを `# タイトル` で区切り、Source URL付きで1ファイルに結合:
 
 ```markdown
 # Getting Started
 
+> Source: https://docs.example.com/getting-started
+
 導入部分の内容...
+
+---
 
 # Installation
 
+> Source: https://docs.example.com/installation
+
 インストール手順...
 
+---
+
 # Configuration
+
+> Source: https://docs.example.com/configuration
 
 設定方法...
 ```
@@ -385,49 +395,137 @@ interface DetectedSpec {
 
 ### 6.2 実装イメージ
 
+#### RuntimeAdapterパターン
+
+実装では、Bun/Node.js両対応を実現するため **RuntimeAdapterパターン** を採用しています。
+
+**設計意図：**
+- **クロスランタイム対応**: BunとNode.jsで同じコードが動作
+- **テスタビリティ**: モックRuntimeAdapterを注入してテスト可能
+- **保守性**: プロセス実行ロジックを一箇所に集約
+
+**RuntimeAdapterインターフェース：**
 ```typescript
-class PlaywrightFetcher {
+interface RuntimeAdapter {
+  spawn(command: string, args: string[]): Promise<SpawnResult>;
+  sleep(ms: number): Promise<void>;
+  readFile(path: string): Promise<string>;
+}
+```
+
+`createRuntimeAdapter()` 関数がランタイムを自動検出し、適切なアダプターを返します：
+- Bun環境: `BunRuntimeAdapter` (Bun.spawnを使用)
+- Node.js環境: `NodeRuntimeAdapter` (child_process.spawnを使用)
+
+#### PlaywrightFetcherの実装
+
+```typescript
+class PlaywrightFetcher implements Fetcher {
   private sessionId: string;
   private initialized = false;
+  private nodePath: string = "node";
+  private playwrightPath: string = "playwright-cli";
+  private runtime: RuntimeAdapter;
 
-  constructor(private config: CrawlConfig) {
+  constructor(
+    private config: CrawlConfig,
+    runtime?: RuntimeAdapter,
+  ) {
     this.sessionId = `crawl-${Date.now()}`;
+    this.runtime = runtime ?? createRuntimeAdapter();
+  }
+
+  /** CLIコマンドを実行（内部ヘルパー） */
+  private async runCli(args: string[]): Promise<SpawnResult> {
+    return this.runtime.spawn(this.nodePath, [this.playwrightPath, ...args]);
   }
 
   async fetch(url: string): Promise<FetchResult | null> {
     if (!this.initialized) {
-      await this.ensurePlaywrightCli();
+      const hasPlaywright = await this.checkPlaywrightCli();
+      if (!hasPlaywright) {
+        throw new DependencyError(
+          "playwright-cli not found. Install with: npm install -g @playwright/cli",
+          "playwright-cli",
+        );
+      }
       this.initialized = true;
     }
 
-    const headedFlag = this.config.headed ? "--headed" : "";
+    // タイムアウト処理
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        reject(new TimeoutError(`Request timeout after ${this.config.timeout}ms`, this.config.timeout));
+      }, this.config.timeout);
+    });
+
+    return Promise.race([this.executeFetch(url), timeoutPromise]);
+  }
+
+  private async executeFetch(url: string): Promise<FetchResult | null> {
+    const openArgs = ["open", url, "--session", this.sessionId];
+    if (this.config.headed) {
+      openArgs.push("--headed");
+    }
 
     // ページを開く
-    await $`playwright-cli open ${url} --session ${this.sessionId} ${headedFlag}`;
+    const openResult = await this.runCli(openArgs);
+
+    // エラーページやHTTP 404等の場合はnullを返してスキップ
+    if (!openResult.success || openResult.stdout.includes("chrome-error://")) {
+      return null;
+    }
+
+    // HTTPステータスコード確認（200以外はスキップ）
+    const statusCode = await this.getHttpStatusCode();
+    if (statusCode !== null && statusCode !== 200) {
+      return null;
+    }
 
     // レンダリング待機
-    await Bun.sleep(this.config.spaWait);
+    await this.runtime.sleep(this.config.spaWait);
 
     // コンテンツ取得
-    const html = await $`playwright-cli eval "document.documentElement.outerHTML" --session ${this.sessionId}`;
+    const result = await this.runCli([
+      "eval",
+      "document.documentElement.outerHTML",
+      "--session",
+      this.sessionId,
+    ]);
 
-    return { html: html.text(), finalUrl: url, contentType: "text/html" };
+    if (!result.success) {
+      throw new FetchError(`Failed to get content: ${result.stderr}`, url);
+    }
+
+    return {
+      html: parseCliOutput(result.stdout),
+      finalUrl: url,
+      contentType: "text/html",
+    };
   }
 
   async close(): Promise<void> {
-    await $`playwright-cli close --session ${this.sessionId}`.quiet();
-  }
+    await this.runCli(["close", "--session", this.sessionId]);
 
-  private async ensurePlaywrightCli(): Promise<void> {
-    try {
-      await $`which playwright-cli`.quiet();
-    } catch {
-      console.error("playwright-cli not found. Install: npm i -g @playwright/cli");
-      process.exit(3);
+    // セッションクリーンアップ（--keep-sessionオプションで制御）
+    if (!this.config.keepSession) {
+      const cliDir = join(process.cwd(), ".playwright-cli");
+      if (existsSync(cliDir)) {
+        rmSync(cliDir, { recursive: true, force: true });
+      }
     }
   }
 }
 ```
+
+**実装の主な特徴：**
+- `runtime.spawn()` によるコマンド実行（stdout/stderrを分離取得）
+- タイムアウト処理（`Promise.race` による競合）
+- HTTPステータスコード確認（200以外をスキップ）
+- エラーページ検出（chrome-error://をスキップ）
+- セッション後のクリーンアップ（`.playwright-cli` ディレクトリ削除）
+
+詳細な実装は `src/crawler/fetcher.ts` および `src/utils/runtime.ts` を参照してください。
 
 ---
 
