@@ -32,10 +32,14 @@ link-crawler/
 │   ├── crawl.ts                # エントリーポイント
 │   ├── config.ts               # 設定パース
 │   ├── types.ts                # 型定義
+│   ├── constants.ts            # 定数定義
+│   ├── errors.ts               # エラークラス
 │   │
 │   ├── crawler/
 │   │   ├── index.ts            # CrawlerEngine
-│   │   └── fetcher.ts          # PlaywrightFetcher
+│   │   ├── fetcher.ts          # PlaywrightFetcher
+│   │   ├── logger.ts           # ログ出力
+│   │   └── post-processor.ts   # 後処理
 │   │
 │   ├── parser/
 │   │   ├── extractor.ts        # HTML → 本文抽出
@@ -43,22 +47,43 @@ link-crawler/
 │   │   └── links.ts            # リンク抽出・正規化
 │   │
 │   ├── diff/
+│   │   ├── index.ts            # バレルエクスポート
 │   │   └── hasher.ts           # SHA256ハッシュ・差分検知
 │   │
-│   └── output/
-│       ├── writer.ts           # ページ書き込み + index.json 生成
-│       ├── merger.ts           # full.md 生成
-│       └── chunker.ts          # chunks/*.md 生成
+│   ├── output/
+│   │   ├── writer.ts           # ページ書き込み
+│   │   ├── merger.ts           # full.md 生成
+│   │   ├── chunker.ts          # chunks/*.md 生成
+│   │   └── index-manager.ts    # index.json管理
+│   │
+│   ├── types/
+│   │   └── turndown-plugin-gfm.d.ts  # Turndown型定義
+│   │
+│   └── utils/
+│       ├── runtime.ts          # ランタイムアダプター
+│       └── site-name.ts        # サイト名生成
 │
 ├── tests/                       # テストファイル
 │   ├── unit/                    # ユニットテスト
-│   │   ├── hasher.test.ts
-│   │   ├── merger.test.ts
 │   │   ├── chunker.test.ts
+│   │   ├── config.test.ts
 │   │   ├── converter.test.ts
-│   │   └── links.test.ts
+│   │   ├── crawler.test.ts
+│   │   ├── errors.test.ts
+│   │   ├── fetcher.test.ts
+│   │   ├── hasher.test.ts
+│   │   ├── index-manager.test.ts
+│   │   ├── logger.test.ts
+│   │   ├── merger.test.ts
+│   │   ├── post-processor.test.ts
+│   │   ├── runtime.test.ts
+│   │   ├── site-name.test.ts
+│   │   ├── writer.test.ts
+│   │   └── parser/
+│   │       ├── extractor.test.ts
+│   │       └── links.test.ts
 │   └── integration/             # 統合テスト
-│       └── crawler.test.ts      # 13テスト
+│       └── crawler.test.ts
 │
 ├── vitest.config.ts             # Vitest設定
 ├── package.json
