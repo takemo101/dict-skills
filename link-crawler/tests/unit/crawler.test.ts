@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -378,10 +378,12 @@ info:
 			await crawler.run();
 
 			const pagesDir = join(testDir, "pages");
-			// Directory should exist but be empty or not contain page files
-			const _hasPageFiles =
-				existsSync(pagesDir) &&
-				(await readFile(join(testDir, "index.json"), "utf-8")).includes("page-001.md");
+			// pages: false の場合、ページディレクトリが存在しても page-*.md ファイルは作成されない
+			if (existsSync(pagesDir)) {
+				const files = await readdir(pagesDir);
+				const pageFiles = files.filter((f) => f.startsWith("page-") && f.endsWith(".md"));
+				expect(pageFiles).toHaveLength(0);
+			}
 
 			// Index should still be updated
 			const indexPath = join(testDir, "index.json");
