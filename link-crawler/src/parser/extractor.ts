@@ -177,7 +177,7 @@ export function extractContent(
 	if (article?.content) {
 		// コードブロックを復元
 		const restoredContent = restoreCodeBlocks(article.content, codeBlockMap);
-		return { title: article.title, content: restoredContent };
+		return { title: article.title ?? null, content: restoredContent };
 	}
 
 	// フォールバック: main タグなどから抽出（コードブロックも保持）
