@@ -4,8 +4,8 @@ import {
 	isSameDomain,
 	normalizeUrl,
 	shouldCrawl,
-} from "../../../src/parser/links.js";
-import type { CrawlConfig } from "../../../src/types.js";
+} from "../../src/parser/links.js";
+import type { CrawlConfig } from "../../src/types.js";
 
 describe("normalizeUrl", () => {
 	it("should normalize absolute URL", () => {
