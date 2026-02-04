@@ -24,11 +24,20 @@ export interface RuntimeAdapter {
 	readFile(path: string): Promise<string>;
 }
 
+/** Bun APIのサブセット（テスト用モック可能にするため） */
+export interface BunAPI {
+	spawn: typeof Bun.spawn;
+	sleep: typeof Bun.sleep;
+	file: typeof Bun.file;
+}
+
 /** Bunランタイムアダプター */
 export class BunRuntimeAdapter implements RuntimeAdapter {
+	constructor(private bunApi: BunAPI = globalThis.Bun) {}
+
 	async spawn(command: string, args: string[]): Promise<SpawnResult> {
 		try {
-			const proc = Bun.spawn([command, ...args], {
+			const proc = this.bunApi.spawn([command, ...args], {
 				stdout: "pipe",
 				stderr: "pipe",
 			});
@@ -47,11 +56,11 @@ export class BunRuntimeAdapter implements RuntimeAdapter {
 	}
 
 	async sleep(ms: number): Promise<void> {
-		return Bun.sleep(ms);
+		return this.bunApi.sleep(ms);
 	}
 
 	async readFile(path: string): Promise<string> {
-		const file = Bun.file(path);
+		const file = this.bunApi.file(path);
 		return file.text();
 	}
 }
