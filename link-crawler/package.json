@@ -26,6 +26,7 @@
 		"dev": "bun run src/crawl.ts",
 		"build": "bun build src/crawl.ts --outdir dist --target node",
 		"check": "biome check .",
+		"lint": "biome check .",
 		"fix": "biome check --write .",
 		"typecheck": "tsc --noEmit",
 		"test": "bun x vitest run",

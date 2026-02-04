@@ -29,7 +29,9 @@ description: 技術ドキュメントサイトをクロールし、AIコンテ�
 bun install
 ```
 
-**前提条件**: [playwright-cli](https://www.npmjs.com/package/@playwright/cli) が必要: `npm install -g @playwright/cli`
+**前提条件**: [playwright-cli](https://www.npmjs.com/package/@playwright/cli) が必要です
+- インストール: `npm install -g @playwright/cli`
+- または、`install.sh` を実行すると自動的にインストールされます
 
 ## 基本的な使い方
 
