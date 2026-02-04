@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import type { CrawlLogger } from "../crawler/logger.js";
 import type { CrawledPage, CrawlResult, PageMetadata } from "../types.js";
 
 /**
@@ -30,6 +31,7 @@ export class IndexManager {
 		private outputDir: string,
 		private baseUrl: string,
 		private config: { maxDepth: number; sameDomain: boolean },
+		private logger?: CrawlLogger,
 	) {
 		// 既存のindex.jsonを読み込み
 		this.loadExistingIndex();
@@ -66,12 +68,10 @@ export class IndexManager {
 					this.existingPages.set(page.url, page);
 				}
 			} else {
-				console.warn(`[WARN] Invalid index.json format at ${indexPath}`);
+				this.logger?.logIndexFormatError(indexPath);
 			}
 		} catch (error) {
-			console.warn(
-				`[WARN] Failed to load index.json: ${error instanceof Error ? error.message : String(error)}`,
-			);
+			this.logger?.logIndexLoadError(error instanceof Error ? error.message : String(error));
 		}
 	}
 

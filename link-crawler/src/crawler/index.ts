@@ -24,8 +24,8 @@ export class Crawler {
 		private config: CrawlConfig,
 		fetcher?: Fetcher,
 	) {
-		this.writer = new OutputWriter(config);
 		this.logger = new CrawlLogger(config);
+		this.writer = new OutputWriter(config, this.logger);
 		this.postProcessor = new PostProcessor(config, this.logger);
 		if (fetcher) {
 			this.fetcher = fetcher;

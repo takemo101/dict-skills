@@ -47,6 +47,16 @@ export class CrawlLogger {
 		console.log("  ⚠️ Failed to load existing index.json (will create new)");
 	}
 
+	/** index.json形式エラーログ */
+	logIndexFormatError(indexPath: string): void {
+		console.warn(`[WARN] Invalid index.json format at ${indexPath}`);
+	}
+
+	/** index.json読み込みエラーログ（詳細付き） */
+	logIndexLoadError(error: string): void {
+		console.warn(`[WARN] Failed to load index.json: ${error}`);
+	}
+
 	/** ページクロール開始ログ */
 	logCrawlStart(url: string, depth: number): void {
 		const indent = "  ".repeat(depth);

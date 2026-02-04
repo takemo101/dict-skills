@@ -117,7 +117,7 @@ describe("parseConfig - regex pattern validation", () => {
 	it("should include original regex error in message", () => {
 		expect(() => {
 			parseConfig({ include: "[invalid" }, "https://example.com");
-		}).toThrowError(/missing terminating/);
+		}).toThrowError(/(?:missing terminating|Unterminated character class)/);
 	});
 
 	it("should continue to work with valid patterns after error fix", () => {
