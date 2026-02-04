@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as fs from "node:fs";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PlaywrightFetcher, parseCliOutput } from "../../src/crawler/fetcher.js";
 import { DependencyError, FetchError, TimeoutError } from "../../src/errors.js";
 import type { CrawlConfig } from "../../src/types.js";
