@@ -33,8 +33,10 @@ bun install
 
 ## 基本的な使い方
 
+スキルディレクトリ内で実行：
+
 ```bash
-bun run link-crawler/src/crawl.ts <url> [options]
+bun run src/crawl.ts <url> [options]
 ```
 
 ### オプション一覧
