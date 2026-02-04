@@ -874,7 +874,9 @@ describe("extractContent - fallback code block preservation", () => {
 		if (result.content) {
 			// Check that code blocks are present (lines 110-117 collect them)
 			const hasCodeBlocks =
-				result.content.includes("code block") || result.content.includes("<pre>") || result.content.includes("<code>");
+				result.content.includes("code block") ||
+				result.content.includes("<pre>") ||
+				result.content.includes("<code>");
 			expect(hasCodeBlocks).toBe(true);
 		}
 	});
@@ -901,7 +903,10 @@ describe("extractContent - fallback code block preservation", () => {
 		expect(result.content).not.toBeNull();
 		if (result.content) {
 			// Verify code blocks were added (line 123)
-			const hasCode = result.content.includes("code") || result.content.includes("snippet") || result.content.includes("pre");
+			const hasCode =
+				result.content.includes("code") ||
+				result.content.includes("snippet") ||
+				result.content.includes("pre");
 			expect(hasCode).toBe(true);
 		}
 	});
