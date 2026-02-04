@@ -93,32 +93,63 @@ describe("parseConfig", () => {
 	});
 });
 
-describe("parseConfig error handling", () => {
+describe("parseConfig - regex pattern validation", () => {
 	it("should throw ConfigError for invalid include pattern", () => {
-		expect(() => parseConfig({ include: "[invalid" }, "https://example.com")).toThrow(ConfigError);
+		expect(() => {
+			parseConfig({ include: "[invalid" }, "https://example.com");
+		}).toThrow(ConfigError);
+
+		expect(() => {
+			parseConfig({ include: "[invalid" }, "https://example.com");
+		}).toThrowError(/Invalid include pattern/);
 	});
 
 	it("should throw ConfigError for invalid exclude pattern", () => {
-		expect(() => parseConfig({ exclude: "(unclosed" }, "https://example.com")).toThrow(ConfigError);
+		expect(() => {
+			parseConfig({ exclude: "(unclosed" }, "https://example.com");
+		}).toThrow(ConfigError);
+
+		expect(() => {
+			parseConfig({ exclude: "(unclosed" }, "https://example.com");
+		}).toThrowError(/Invalid exclude pattern/);
 	});
 
-	it("should include pattern name in error message for include", () => {
+	it("should include original regex error in message", () => {
+		expect(() => {
+			parseConfig({ include: "[invalid" }, "https://example.com");
+		}).toThrowError(/missing terminating/);
+	});
+
+	it("should continue to work with valid patterns after error fix", () => {
+		const config = parseConfig(
+			{
+				include: "^/docs",
+				exclude: "\\.pdf$",
+			},
+			"https://example.com",
+		);
+
+		expect(config.includePattern).toBeInstanceOf(RegExp);
+		expect(config.excludePattern).toBeInstanceOf(RegExp);
+		expect(config.includePattern?.test("/docs/guide")).toBe(true);
+		expect(config.excludePattern?.test("file.pdf")).toBe(true);
+	});
+
+	it("should set configKey in ConfigError", () => {
 		try {
-			parseConfig({ include: "[" }, "https://example.com");
-			throw new Error("Expected ConfigError to be thrown");
-		} catch (e) {
-			expect(e).toBeInstanceOf(ConfigError);
-			expect((e as ConfigError).configKey).toBe("include");
+			parseConfig({ include: "[invalid" }, "https://example.com");
+			expect.fail("Should have thrown ConfigError");
+		} catch (error) {
+			expect(error).toBeInstanceOf(ConfigError);
+			expect((error as ConfigError).configKey).toBe("include");
 		}
-	});
 
-	it("should include pattern name in error message for exclude", () => {
 		try {
-			parseConfig({ exclude: "(" }, "https://example.com");
-			throw new Error("Expected ConfigError to be thrown");
-		} catch (e) {
-			expect(e).toBeInstanceOf(ConfigError);
-			expect((e as ConfigError).configKey).toBe("exclude");
+			parseConfig({ exclude: "(unclosed" }, "https://example.com");
+			expect.fail("Should have thrown ConfigError");
+		} catch (error) {
+			expect(error).toBeInstanceOf(ConfigError);
+			expect((error as ConfigError).configKey).toBe("exclude");
 		}
 	});
 });
