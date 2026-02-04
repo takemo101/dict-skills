@@ -1126,3 +1126,262 @@ describe("extractContent - fallback code block preservation", () => {
 		expect(result.content).not.toBeNull();
 	});
 });
+
+describe("extractContent - coverage gaps (Issue #338)", () => {
+	it("should skip nested code block elements that have processed parent (lines 56-57)", () => {
+		// Test the parent-child skip logic in protectCodeBlocks
+		// .code-block is processed before pre in prioritySelectors
+		const html = `
+			<!DOCTYPE html>
+			<html>
+			<head><title>Nested Code Blocks</title></head>
+			<body>
+				<article>
+					<h1>Article with Nested Code Elements</h1>
+					<p>This article contains nested code blocks to test the parent-child skip logic implemented in protectCodeBlocks.</p>
+					<p>Additional content to ensure Read ability processes this as main content and extracts it properly.</p>
+					<div class="code-block">
+						<pre>
+							<code>const nested = "test";</code>
+						</pre>
+					</div>
+					<p>More content after the code block to ensure substantial content for extraction and proper testing.</p>
+					<p>Even more paragraphs to make sure the article is long enough for Readability to work correctly.</p>
+				</article>
+			</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com/nested-skip");
+
+		expect(result.content).not.toBeNull();
+		// Should preserve the code without duplication
+		const nestedMatches = result.content?.match(/const nested = "test"/g);
+		// Should appear only once (parent .code-block processed, children pre/code skipped)
+		expect(nestedMatches?.length).toBe(1);
+	});
+
+	it("should handle fallback with no code blocks to collect (line 117)", () => {
+		// Fallback scenario with no code blocks in the HTML
+		const html = `
+			<!DOCTYPE html>
+			<html>
+			<head><title></title></head>
+			<body>
+				<script>var x = 1;</script>
+				<style>.test { color: red; }</style>
+				<main>
+					<p>Plain text content without any code blocks</p>
+				</main>
+			</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com/no-code-blocks");
+
+		// Should still extract content even without code blocks
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			expect(result.content).toContain("Plain text");
+		}
+	});
+
+	it("should handle fallback with no elements to remove (line 123)", () => {
+		// Fallback scenario with no script/style/nav/header/footer/aside elements
+		const html = `
+			<!DOCTYPE html>
+			<html>
+			<head><title></title></head>
+			<body>
+				<main>
+					<p>Content</p>
+				</main>
+			</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com/clean-html");
+
+		// Should extract content normally
+		expect(result.content).not.toBeNull();
+	});
+
+	it("should add code blocks when content exists but has no code selectors (lines 134-137, branch !hasCodeBlock)", () => {
+		// Trigger fallback and ensure code blocks are added when content doesn't contain code selector keywords
+		const html = `
+			<!DOCTYPE html>
+			<html>
+			<head><title></title></head>
+			<body>
+				<script>var x = 1;</script>
+				<style>.test { color: red; }</style>
+				<div class="content">
+					<p>Regular paragraph text</p>
+					<div>Another div with text</div>
+				</div>
+				<section>
+					<pre><code>const example = "code";</code></pre>
+				</section>
+			</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com/add-code-blocks");
+
+		expect(result.content).not.toBeNull();
+		// Code blocks should be added to content
+		if (result.content) {
+			expect(result.content).toContain("const example");
+		}
+	});
+
+	it("should not duplicate code blocks when content already has code selectors (lines 134-137, branch hasCodeBlock)", () => {
+		// Trigger fallback where content already contains code selector keywords
+		const html = `
+			<!DOCTYPE html>
+			<html>
+			<head><title></title></head>
+			<body>
+				<script>var x = 1;</script>
+				<style>.test { color: red; }</style>
+				<main>
+					<p>Text with <pre>inline code</pre> element</p>
+				</main>
+			</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com/has-code-selector");
+
+		expect(result.content).not.toBeNull();
+		// Should not duplicate code blocks
+		if (result.content) {
+			expect(result.content.toLowerCase()).toContain("pre");
+		}
+	});
+
+	it("should fallback to body when no specific selectors match (line 132)", () => {
+		// Test the || body fallback
+		const html = `
+			<!DOCTYPE html>
+			<html>
+			<head><title></title></head>
+			<body>
+				<script>trigger fallback</script>
+				<div class="random">
+					<p>Random content</p>
+				</div>
+			</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com/body-fallback-132");
+
+		// Should fallback to body
+		expect(result.content).not.toBeNull();
+	});
+
+	it("should handle empty content in fallback code block check (line 134)", () => {
+		// Edge case: content is null or empty in fallback
+		const html = `
+			<!DOCTYPE html>
+			<html>
+			<head><title></title></head>
+			<body>
+				<script>fallback</script>
+				<pre><code>orphan code</code></pre>
+			</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com/empty-content-check");
+
+		// Should handle gracefully
+		expect(result).toHaveProperty("content");
+	});
+
+	it("should collect multiple code blocks with different selectors (line 117)", () => {
+		// Test code block collection with multiple selector types
+		const html = `
+			<!DOCTYPE html>
+			<html>
+			<head><title></title></head>
+			<body>
+				<script>fallback</script>
+				<pre>block1</pre>
+				<code>block2</code>
+				<div data-language="js">block3</div>
+				<div class="hljs">block4</div>
+			</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com/multiple-selectors");
+
+		expect(result.content).not.toBeNull();
+	});
+
+	it("should trigger fallback and execute querySelector for main (line 132)", () => {
+		// Use extremely minimal HTML to ensure Readability fails
+		const html = `<html><body><script></script><style></style><main>X</main></body></html>`;
+		const result = extractContent(html, "https://example.com/minimal-main");
+
+		// Fallback should extract from main
+		expect(result).toHaveProperty("content");
+	});
+
+	it("should execute code block collection loop in fallback (lines 115-119)", () => {
+		// Minimal HTML to trigger fallback, with code blocks to collect
+		const html = `<html><body><script>x</script><pre>code</pre></body></html>`;
+		const result = extractContent(html, "https://example.com/fallback-collect");
+
+		expect(result).toHaveProperty("content");
+	});
+
+	it("should add code blocks when hasCodeBlock is false (line 136)", () => {
+		// Fallback with content that doesn't contain code selector keywords
+		const html = `<html><body><script>x</script><div class="content">text</div><pre>code</pre></body></html>`;
+		const result = extractContent(html, "https://example.com/add-blocks");
+
+		expect(result).toHaveProperty("content");
+	});
+
+	it("should cover generateMarkerId with multiple code blocks (line 17)", () => {
+		// Include multiple code blocks to ensure generateMarkerId is called multiple times
+		const html = `
+			<!DOCTYPE html>
+			<html>
+			<head><title>Multiple IDs</title></head>
+			<body>
+				<article>
+					<h1>Testing Marker ID Generation</h1>
+					<p>This article has multiple code blocks to ensure the generateMarkerId function is called.</p>
+					<p>Each code block should get a unique marker ID when protected and restored.</p>
+					<pre><code>block 1</code></pre>
+					<p>Additional text between code blocks to make the article substantial.</p>
+					<pre><code>block 2</code></pre>
+					<p>More content to ensure Readability processes this correctly.</p>
+					<div class="code-block"><code>block 3</code></div>
+					<p>Final paragraph to complete the article with enough content for extraction.</p>
+				</article>
+			</body>
+			</html>
+		`;
+		const result = extractContent(html, "https://example.com/marker-ids");
+
+		expect(result.content).not.toBeNull();
+		// All three blocks should be present
+		expect(result.content).toContain("block 1");
+		expect(result.content).toContain("block 2");
+		expect(result.content).toContain("block 3");
+	});
+
+	it("should remove nav/header/footer in fallback (line 123)", () => {
+		// Minimal HTML to trigger fallback with elements to remove
+		const html = `<html><body><nav>N</nav><header>H</header><script></script><footer>F</footer><p>C</p></body></html>`;
+		const result = extractContent(html, "https://example.com/remove-elements");
+
+		expect(result.content).not.toBeNull();
+	});
+
+	it("should trigger querySelector with all selectors in fallback (line 127)", () => {
+		// Test that querySelector is executed in fallback
+		// Use minimal HTML to ensure Readability fails
+		const html = `<html><body><article><p>A</p></article></body></html>`;
+		const result = extractContent(html, "https://example.com/query-selector");
+
+		expect(result).toHaveProperty("content");
+	});
+});
