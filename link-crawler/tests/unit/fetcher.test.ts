@@ -8,10 +8,14 @@ import type { RuntimeAdapter, SpawnResult } from "../../src/utils/runtime.js";
 const mockExistsSync = vi.fn();
 const mockRmSync = vi.fn();
 
-vi.mock("node:fs", () => ({
-	existsSync: (...args: unknown[]) => mockExistsSync(...args),
-	rmSync: (...args: unknown[]) => mockRmSync(...args),
-}));
+vi.mock("node:fs", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("node:fs")>();
+	return {
+		...actual,
+		existsSync: (...args: unknown[]) => mockExistsSync(...args),
+		rmSync: (...args: unknown[]) => mockRmSync(...args),
+	};
+});
 
 const createMockConfig = (overrides: Partial<CrawlConfig> = {}): CrawlConfig => ({
 	startUrl: "https://example.com",
