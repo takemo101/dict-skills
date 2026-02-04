@@ -1,5 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+	type BunAPI,
 	BunRuntimeAdapter,
 	createRuntimeAdapter,
 	NodeRuntimeAdapter,
@@ -28,13 +29,13 @@ describe("BunRuntimeAdapter", () => {
 				exited: Promise.resolve(0),
 			};
 
-			const mockBunApi = {
+			const mockBunApi: BunAPI = {
 				spawn: vi.fn().mockReturnValue(mockProc),
 				sleep: vi.fn(),
 				file: vi.fn(),
-			};
+			} as BunAPI;
 
-			const adapter = new BunRuntimeAdapter(mockBunApi as any);
+			const adapter = new BunRuntimeAdapter(mockBunApi);
 			const result = await adapter.spawn("echo", ["hello"]);
 
 			expect(result.success).toBe(true);
@@ -63,13 +64,13 @@ describe("BunRuntimeAdapter", () => {
 				exited: Promise.resolve(1),
 			};
 
-			const mockBunApi = {
+			const mockBunApi: BunAPI = {
 				spawn: vi.fn().mockReturnValue(mockProc),
 				sleep: vi.fn(),
 				file: vi.fn(),
-			};
+			} as BunAPI;
 
-			const adapter = new BunRuntimeAdapter(mockBunApi as any);
+			const adapter = new BunRuntimeAdapter(mockBunApi);
 			const result = await adapter.spawn("false", []);
 
 			expect(result.success).toBe(false);
@@ -78,15 +79,15 @@ describe("BunRuntimeAdapter", () => {
 		});
 
 		it("should handle spawn error", async () => {
-			const mockBunApi = {
+			const mockBunApi: BunAPI = {
 				spawn: vi.fn().mockImplementation(() => {
 					throw new Error("command not found");
 				}),
 				sleep: vi.fn(),
 				file: vi.fn(),
-			};
+			} as BunAPI;
 
-			const adapter = new BunRuntimeAdapter(mockBunApi as any);
+			const adapter = new BunRuntimeAdapter(mockBunApi);
 			const result = await adapter.spawn("nonexistent", []);
 
 			expect(result.success).toBe(false);
@@ -98,15 +99,15 @@ describe("BunRuntimeAdapter", () => {
 	describe("sleep", () => {
 		it("should call Bun.sleep", async () => {
 			const mockSleep = vi.fn().mockResolvedValue(undefined);
-			const mockBunApi = {
+			const mockBunApi: BunAPI = {
 				spawn: vi.fn(),
 				sleep: mockSleep,
 				file: vi.fn().mockReturnValue({
 					text: vi.fn().mockResolvedValue("file content"),
 				}),
-			};
+			} as BunAPI;
 
-			const adapter = new BunRuntimeAdapter(mockBunApi as any);
+			const adapter = new BunRuntimeAdapter(mockBunApi);
 			await adapter.sleep(100);
 
 			expect(mockSleep).toHaveBeenCalledWith(100);
@@ -119,13 +120,13 @@ describe("BunRuntimeAdapter", () => {
 			const mockFile = vi.fn().mockReturnValue({
 				text: mockText,
 			});
-			const mockBunApi = {
+			const mockBunApi: BunAPI = {
 				spawn: vi.fn(),
 				sleep: vi.fn(),
 				file: mockFile,
-			};
+			} as BunAPI;
 
-			const adapter = new BunRuntimeAdapter(mockBunApi as any);
+			const adapter = new BunRuntimeAdapter(mockBunApi);
 			const result = await adapter.readFile("/path/to/file.txt");
 
 			expect(result).toBe("file content");
