@@ -5,8 +5,7 @@ export default defineConfig({
 		globals: true,
 		include: ["tests/**/*.test.ts"],
 		// Disable file-level parallelism to prevent test interference
-		// Some tests (e.g., fetcher.test.ts) use module-level mocks that can affect other files
-		// Running tests sequentially ensures proper isolation
+		// tests/unit/fetcher.test.ts uses module-level vi.mock("node:fs") which can leak
 		fileParallelism: false,
 		coverage: {
 			provider: "v8",
