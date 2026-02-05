@@ -1,5 +1,5 @@
-import { existsSync } from "node:fs";
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { existsSync, writeFileSync } from "node:fs";
+import { mkdir, readFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CrawlLogger } from "../../src/crawler/logger.js";
@@ -52,7 +52,7 @@ describe("IndexManager", () => {
 				],
 				specs: [],
 			};
-			await writeFile(join(testDir, "index.json"), JSON.stringify(indexData));
+			writeFileSync(join(testDir, "index.json"), JSON.stringify(indexData));
 
 			const manager = new IndexManager(testDir, "https://example.com", {
 				maxDepth: 2,
@@ -79,7 +79,7 @@ describe("IndexManager", () => {
 			const mockLogger = {
 				logIndexLoadError: vi.fn(),
 			} as unknown as CrawlLogger;
-			await writeFile(join(testDir, "index.json"), "{ invalid json }");
+			writeFileSync(join(testDir, "index.json"), "{ invalid json }");
 
 			const manager = new IndexManager(
 				testDir,
@@ -105,7 +105,7 @@ describe("IndexManager", () => {
 				pages: [],
 				specs: [],
 			};
-			await writeFile(join(testDir, "index.json"), JSON.stringify(indexData));
+			writeFileSync(join(testDir, "index.json"), JSON.stringify(indexData));
 
 			const manager = new IndexManager(testDir, "https://example.com", {
 				maxDepth: 2,
@@ -127,7 +127,7 @@ describe("IndexManager", () => {
 				pages: "not an array",
 				specs: [],
 			};
-			await writeFile(join(testDir, "index.json"), JSON.stringify(indexData));
+			writeFileSync(join(testDir, "index.json"), JSON.stringify(indexData));
 
 			const manager = new IndexManager(
 				testDir,
@@ -156,7 +156,7 @@ describe("IndexManager", () => {
 				totalPages: 0,
 				specs: [],
 			};
-			await writeFile(join(testDir, "index.json"), JSON.stringify(indexData));
+			writeFileSync(join(testDir, "index.json"), JSON.stringify(indexData));
 
 			const manager = new IndexManager(
 				testDir,
@@ -178,7 +178,7 @@ describe("IndexManager", () => {
 			const mockLogger = {
 				logIndexFormatError: vi.fn(),
 			} as unknown as CrawlLogger;
-			await writeFile(join(testDir, "index.json"), "null");
+			writeFileSync(join(testDir, "index.json"), "null");
 
 			const manager = new IndexManager(
 				testDir,
@@ -200,7 +200,7 @@ describe("IndexManager", () => {
 			const mockLogger = {
 				logIndexFormatError: vi.fn(),
 			} as unknown as CrawlLogger;
-			await writeFile(join(testDir, "index.json"), "123");
+			writeFileSync(join(testDir, "index.json"), "123");
 
 			const manager = new IndexManager(
 				testDir,
@@ -264,7 +264,7 @@ describe("IndexManager", () => {
 				],
 				specs: [],
 			};
-			await writeFile(join(testDir, "index.json"), JSON.stringify(indexData));
+			writeFileSync(join(testDir, "index.json"), JSON.stringify(indexData));
 
 			const manager = new IndexManager(testDir, "https://example.com", {
 				maxDepth: 2,
@@ -302,7 +302,7 @@ describe("IndexManager", () => {
 				],
 				specs: [],
 			};
-			await writeFile(join(testDir, "index.json"), JSON.stringify(indexData));
+			writeFileSync(join(testDir, "index.json"), JSON.stringify(indexData));
 
 			const manager = new IndexManager(testDir, "https://example.com", {
 				maxDepth: 2,
@@ -358,7 +358,7 @@ describe("IndexManager", () => {
 				],
 				specs: [],
 			};
-			await writeFile(join(testDir, "index.json"), JSON.stringify(indexData));
+			writeFileSync(join(testDir, "index.json"), JSON.stringify(indexData));
 
 			const manager = new IndexManager(testDir, "https://example.com", {
 				maxDepth: 2,
@@ -416,7 +416,7 @@ describe("IndexManager", () => {
 				],
 				specs: [],
 			};
-			await writeFile(join(testDir, "index.json"), JSON.stringify(indexData));
+			writeFileSync(join(testDir, "index.json"), JSON.stringify(indexData));
 
 			const manager = new IndexManager(testDir, "https://example.com", {
 				maxDepth: 2,
@@ -456,7 +456,7 @@ describe("IndexManager", () => {
 				],
 				specs: [],
 			};
-			await writeFile(join(testDir, "index.json"), JSON.stringify(indexData));
+			writeFileSync(join(testDir, "index.json"), JSON.stringify(indexData));
 
 			const manager = new IndexManager(testDir, "https://example.com", {
 				maxDepth: 2,
