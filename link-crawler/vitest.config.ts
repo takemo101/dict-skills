@@ -7,13 +7,20 @@ export default defineConfig({
 		include: ["tests/**/*.test.ts"],
 		// ファイル間の並列実行を無効化してテスト分離問題を解消
 		fileParallelism: false,
-		// 同時実行数を1に制限してテスト分離を確保
-		pool: "threads",
+		// forksプールを使用して各テストファイルを完全に分離
+		// (threadsではなくforksを使用することで、module mocksが他のファイルに影響しない)
+		pool: "forks",
 		poolOptions: {
-			threads: {
-				singleThread: true,
+			forks: {
+				singleFork: true,
 			},
 		},
+		// テスト間でモックをクリアして分離を確保
+		clearMocks: true,
+		mockReset: true,
+		restoreMocks: true,
+		// 各テストファイルを完全に分離
+		isolate: true,
 		coverage: {
 			provider: "v8",
 			reporter: ["text", "html", "json-summary"],
