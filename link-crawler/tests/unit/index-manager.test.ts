@@ -1,21 +1,30 @@
 import { existsSync, writeFileSync } from "node:fs";
 import { mkdir, readFile, rm } from "node:fs/promises";
 import { join } from "node:path";
-import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CrawlLogger } from "../../src/crawler/logger.js";
 import { IndexManager } from "../../src/output/index-manager.js";
 import type { PageMetadata } from "../../src/types.js";
 
 describe("IndexManager", () => {
-	const testDir = join(import.meta.dirname, `.test-index-manager-${process.pid}`);
+	// テストごとに一意なディレクトリを生成
+	let testDir: string;
+	let testCounter = 0;
 
 	beforeEach(async () => {
+		// 各テストで一意なディレクトリを生成
+		// 複数のランダム要素を組み合わせて衝突を回避
+		testCounter++;
+		const uniqueId = `${process.pid}-${testCounter}-${Date.now()}-${performance.now()}-${Math.random().toString(36).slice(2)}`;
+		testDir = join(import.meta.dirname, `.test-index-manager-${uniqueId}`);
 		await rm(testDir, { recursive: true, force: true });
 		await mkdir(testDir, { recursive: true });
 	});
 
-	afterAll(async () => {
-		await rm(testDir, { recursive: true, force: true });
+	afterEach(async () => {
+		if (testDir) {
+			await rm(testDir, { recursive: true, force: true });
+		}
 	});
 
 	describe("constructor", () => {
