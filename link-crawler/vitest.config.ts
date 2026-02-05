@@ -5,6 +5,7 @@ export default defineConfig({
 		globals: true,
 		fileParallelism: false,
 		include: ["tests/**/*.test.ts"],
+		globalTeardown: "./tests/global-teardown.ts",
 		// ファイル間の並列実行を無効化してテスト分離問題を解消
 		fileParallelism: false,
 		// 同時実行数を1に制限してテスト分離を確保

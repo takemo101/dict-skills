@@ -1,7 +1,7 @@
 import { existsSync, writeFileSync } from "node:fs";
 import { mkdir, readFile, rm } from "node:fs/promises";
 import { join } from "node:path";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CrawlLogger } from "../../src/crawler/logger.js";
 import { IndexManager } from "../../src/output/index-manager.js";
 import type { PageMetadata } from "../../src/types.js";
@@ -12,6 +12,10 @@ describe("IndexManager", () => {
 	beforeEach(async () => {
 		await rm(testDir, { recursive: true, force: true });
 		await mkdir(testDir, { recursive: true });
+	});
+
+	afterAll(async () => {
+		await rm(testDir, { recursive: true, force: true });
 	});
 
 	describe("constructor", () => {
