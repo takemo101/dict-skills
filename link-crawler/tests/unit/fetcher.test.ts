@@ -1,19 +1,13 @@
 import * as fs from "node:fs";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { PlaywrightFetcher, parseCliOutput } from "../../src/crawler/fetcher.js";
 import { DependencyError, FetchError, TimeoutError } from "../../src/errors.js";
 import type { CrawlConfig } from "../../src/types.js";
 import type { RuntimeAdapter, SpawnResult } from "../../src/utils/runtime.js";
 
-// Mock node:fs - using simple inline mocks (Bun + Vitest compatible, no vi.importActual)
-vi.mock("node:fs", () => ({
-	existsSync: vi.fn(),
-	rmSync: vi.fn(),
-}));
-
-// Get typed references to the mocked functions
-const mockExistsSync = fs.existsSync as ReturnType<typeof vi.fn>;
-const mockRmSync = fs.rmSync as ReturnType<typeof vi.fn>;
+// Spy on fs functions instead of mocking the entire module to prevent pollution
+const mockExistsSync = vi.spyOn(fs, "existsSync");
+const mockRmSync = vi.spyOn(fs, "rmSync");
 
 const createMockConfig = (overrides: Partial<CrawlConfig> = {}): CrawlConfig => ({
 	startUrl: "https://example.com",
@@ -42,8 +36,12 @@ const createMockRuntime = (): RuntimeAdapter => ({
 
 beforeEach(() => {
 	vi.clearAllMocks();
-	mockExistsSync.mockReset();
-	mockRmSync.mockReset();
+});
+
+afterAll(() => {
+	mockExistsSync.mockRestore();
+	mockRmSync.mockRestore();
+	vi.restoreAllMocks();
 });
 
 describe("PlaywrightFetcher", () => {
