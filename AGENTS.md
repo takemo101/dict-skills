@@ -1,4 +1,8 @@
-# Link Crawler - AI Context
+# dict-skills - AI Context
+
+## プロジェクト構造
+
+- `link-crawler/` - メインのクローラー実装
 
 ## 既知の制約
 
@@ -17,8 +21,8 @@
 ## 開発時の注意
 
 - playwright-cliのバージョン変更時は [001](docs/decisions/001-playwright-cli-session.md) を確認
-- テスト: `bun run test`
-- 動作確認: `bun run src/crawl.ts https://example.com -d 1`
+- テスト: `cd link-crawler && bun run test`
+- 動作確認: `cd link-crawler && bun run src/crawl.ts https://example.com -d 1`
 
 ## 関連ドキュメント
 
