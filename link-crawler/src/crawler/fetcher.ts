@@ -32,8 +32,6 @@ export interface PlaywrightPathConfig {
  *    - close: session-stop コマンドに変更
  */
 export class PlaywrightFetcher implements Fetcher {
-	// sessionIdは現在未使用だが、将来の並列実行対応のため保持
-	private sessionId: string;
 	private initialized = false;
 	private nodePath: string = "node";
 	private playwrightPath: string = "playwright-cli";
@@ -45,8 +43,6 @@ export class PlaywrightFetcher implements Fetcher {
 		runtime?: RuntimeAdapter,
 		pathConfig?: PlaywrightPathConfig,
 	) {
-		// 短いsessionId（Unixソケットパス長制限対策、現在は未使用）
-		this.sessionId = `c${Date.now().toString(36)}`;
 		this.runtime = runtime ?? createRuntimeAdapter();
 		this.pathConfig = pathConfig ?? {
 			nodePaths: PATHS.NODE_PATHS,
@@ -123,10 +119,7 @@ export class PlaywrightFetcher implements Fetcher {
 		await this.runtime.sleep(this.config.spaWait);
 
 		// コンテンツ取得
-		const result = await this.runCli([
-			"eval",
-			"document.documentElement.outerHTML",
-		]);
+		const result = await this.runCli(["eval", "document.documentElement.outerHTML"]);
 		if (!result.success) {
 			throw new FetchError(`Failed to get content: ${result.stderr}`, url);
 		}
