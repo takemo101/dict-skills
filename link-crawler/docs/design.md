@@ -431,7 +431,9 @@ class PlaywrightFetcher implements Fetcher {
     private config: CrawlConfig,
     runtime?: RuntimeAdapter,
   ) {
-    this.sessionId = `crawl-${Date.now()}`;
+    // Short session ID to avoid Unix socket path length limit (~108 chars)
+    // Note: Currently using default session due to playwright-cli 0.0.63+ compatibility
+    this.sessionId = `c${Date.now().toString(36)}`;
     this.runtime = runtime ?? createRuntimeAdapter();
   }
 
@@ -463,7 +465,8 @@ class PlaywrightFetcher implements Fetcher {
   }
 
   private async executeFetch(url: string): Promise<FetchResult | null> {
-    const openArgs = ["open", url, "--session", this.sessionId];
+    // Use default session (playwright-cli 0.0.63+ doesn't support --session on subsequent commands)
+    const openArgs = ["open", url];
     if (this.config.headed) {
       openArgs.push("--headed");
     }
@@ -489,8 +492,6 @@ class PlaywrightFetcher implements Fetcher {
     const result = await this.runCli([
       "eval",
       "document.documentElement.outerHTML",
-      "--session",
-      this.sessionId,
     ]);
 
     if (!result.success) {
@@ -505,7 +506,7 @@ class PlaywrightFetcher implements Fetcher {
   }
 
   async close(): Promise<void> {
-    await this.runCli(["close", "--session", this.sessionId]);
+    await this.runCli(["session-stop"]);
 
     // セッションクリーンアップ（--keep-sessionオプションで制御）
     if (!this.config.keepSession) {

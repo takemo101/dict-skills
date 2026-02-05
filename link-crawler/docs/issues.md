@@ -400,3 +400,26 @@ Phase 5 (仕上げ)
 |---------|------|------|
 | 実装 | 430 | 49% |
 | テスト | 440 | 51% |
+
+---
+
+## 修正履歴
+
+### 2026-02-05: playwright-cli 0.0.63+ 互換性対応
+
+**問題**:
+1. Unixソケットパス長制限（~108文字）によるエラー
+   - `Error: listen EINVAL: invalid argument ...sock`
+   - sessionIdが `crawl-${Date.now()}` で長すぎた
+2. playwright-cli 0.0.63+ で `--session` オプションの仕様変更
+   - 2回目以降のコマンドで `--session` を使うと "session already configured" エラー
+
+**修正**:
+1. sessionIdを短縮: `crawl-${Date.now()}` → `c${Date.now().toString(36)}`
+2. デフォルトセッションを使用するよう変更:
+   - `["open", url, "--session", sessionId]` → `["open", url]`
+   - `["eval", ..., "--session", sessionId]` → `["eval", ...]`
+   - `["network", "--session", sessionId]` → `["network"]`
+   - `["close", "--session", sessionId]` → `["session-stop"]`
+
+**影響ファイル**: `src/crawler/fetcher.ts`, `docs/design.md`
