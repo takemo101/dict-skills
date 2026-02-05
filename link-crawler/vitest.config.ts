@@ -3,9 +3,10 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
 	test: {
 		globals: true,
-		fileParallelism: false,
 		include: ["tests/**/*.test.ts"],
-		// ファイル間の並列実行を無効化してテスト分離問題を解消
+		globalTeardown: "./tests/global-teardown.ts",
+		// Disable file-level parallelism to prevent test interference
+		// tests/unit/fetcher.test.ts uses module-level vi.mock("node:fs") which can leak
 		fileParallelism: false,
 		// forksプールを使用して各テストファイルを完全に分離
 		// (threadsではなくforksを使用することで、module mocksが他のファイルに影響しない)
