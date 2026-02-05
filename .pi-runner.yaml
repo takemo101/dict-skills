@@ -15,13 +15,16 @@ worktree:
     - .envrc
 
 # =====================================
-# tmux設定
+# マルチプレクサ設定
 # =====================================
-tmux:
-  # セッション名のプレフィックス（例: pi-issue-42）
-  session_prefix: "dict"
+multiplexer:
+  # 使用するマルチプレクサ: tmux | zellij
+  type: "zellij"
 
-  # tmuxセッション内で起動するか
+  # セッション名のプレフィックス（例: pi-issue-42）
+  session_prefix: "pi"
+
+  # セッション内で起動するか
   start_in_session: true
 
 # =====================================
