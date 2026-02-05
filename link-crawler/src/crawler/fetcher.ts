@@ -26,7 +26,8 @@ export class PlaywrightFetcher implements Fetcher {
 		runtime?: RuntimeAdapter,
 		pathConfig?: PlaywrightPathConfig,
 	) {
-		this.sessionId = `crawl-${Date.now()}`;
+		// Short session ID to avoid Unix socket path length limit (~108 chars)
+		this.sessionId = `c${Date.now().toString(36)}`;
 		this.runtime = runtime ?? createRuntimeAdapter();
 		this.pathConfig = pathConfig ?? {
 			nodePaths: PATHS.NODE_PATHS,
@@ -58,7 +59,8 @@ export class PlaywrightFetcher implements Fetcher {
 
 	/** フェッチを実行 */
 	private async executeFetch(url: string): Promise<FetchResult | null> {
-		const openArgs = ["open", url, "--session", this.sessionId];
+		// Use default session (playwright-cli 0.0.63+ doesn't support --session on subsequent commands)
+		const openArgs = ["open", url];
 		if (this.config.headed) {
 			openArgs.push("--headed");
 		}
@@ -99,8 +101,6 @@ export class PlaywrightFetcher implements Fetcher {
 		const result = await this.runCli([
 			"eval",
 			"document.documentElement.outerHTML",
-			"--session",
-			this.sessionId,
 		]);
 		if (!result.success) {
 			throw new FetchError(`Failed to get content: ${result.stderr}`, url);
@@ -118,7 +118,7 @@ export class PlaywrightFetcher implements Fetcher {
 	/** HTTPステータスコードを取得 */
 	private async getHttpStatusCode(): Promise<number | null> {
 		try {
-			const networkResult = await this.runCli(["network", "--session", this.sessionId]);
+			const networkResult = await this.runCli(["network"]);
 			if (!networkResult.success) {
 				return null;
 			}
@@ -183,7 +183,7 @@ export class PlaywrightFetcher implements Fetcher {
 
 	async close(): Promise<void> {
 		try {
-			await this.runCli(["close", "--session", this.sessionId]);
+			await this.runCli(["session-stop"]);
 		} catch {
 			// セッションが既に閉じている場合は無視
 		}
