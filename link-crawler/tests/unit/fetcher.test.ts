@@ -479,9 +479,7 @@ describe("PlaywrightFetcher", () => {
 
 			expect(mockRuntime.spawn).toHaveBeenCalledWith(expect.any(String), [
 				"playwright-cli",
-				"close",
-				"--session",
-				expect.any(String),
+				"session-stop",
 			]);
 		});
 
