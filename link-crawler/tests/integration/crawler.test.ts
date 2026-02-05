@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Crawler } from "../../src/crawler/index.js";
 import type { CrawlConfig, Fetcher, FetchResult } from "../../src/types.js";
 
-const testOutputDir = "./test-output-integration";
+const testOutputDir = `./test-output-integration-${process.pid}`;
 
 /** テスト用のモックFetcher */
 class MockFetcher implements Fetcher {
