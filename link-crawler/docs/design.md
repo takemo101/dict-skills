@@ -420,7 +420,24 @@ interface RuntimeAdapter {
 #### PlaywrightFetcherの実装
 
 ```typescript
+/**
+ * Playwright-CLI Fetcher (全サイト対応)
+ *
+ * ## playwright-cli 0.0.63+ 互換性について (2026-02-05)
+ *
+ * ### 問題1: Unixソケットパス長制限
+ * playwright-cliはセッションごとにUnixソケットを作成する。
+ * パスが `/var/folders/.../playwright-cli/<hash>/<sessionId>.sock` となり、
+ * Unixの制限(~108文字)を超えるとEINVALエラーが発生。
+ * → sessionIdを短縮: `crawl-${Date.now()}` → `c${Date.now().toString(36)}`
+ *
+ * ### 問題2: --session オプションの仕様変更
+ * playwright-cli 0.0.63+ では、2回目以降のコマンドで `--session=xxx` を使うと
+ * "The session is already configured" エラーが発生する。
+ * → デフォルトセッション(--session省略)を使用するよう変更
+ */
 class PlaywrightFetcher implements Fetcher {
+  // sessionIdは現在未使用だが、将来の並列実行対応のため保持
   private sessionId: string;
   private initialized = false;
   private nodePath: string = "node";
@@ -431,8 +448,7 @@ class PlaywrightFetcher implements Fetcher {
     private config: CrawlConfig,
     runtime?: RuntimeAdapter,
   ) {
-    // Short session ID to avoid Unix socket path length limit (~108 chars)
-    // Note: Currently using default session due to playwright-cli 0.0.63+ compatibility
+    // 短いsessionId（Unixソケットパス長制限対策、現在は未使用）
     this.sessionId = `c${Date.now().toString(36)}`;
     this.runtime = runtime ?? createRuntimeAdapter();
   }
@@ -464,8 +480,13 @@ class PlaywrightFetcher implements Fetcher {
     return Promise.race([this.executeFetch(url), timeoutPromise]);
   }
 
+  /**
+   * フェッチを実行
+   * Note: playwright-cli 0.0.63+ では名前付きセッションが使えないため、
+   * デフォルトセッションを使用。並列クロールは不可。
+   */
   private async executeFetch(url: string): Promise<FetchResult | null> {
-    // Use default session (playwright-cli 0.0.63+ doesn't support --session on subsequent commands)
+    // デフォルトセッションを使用（--session省略）
     const openArgs = ["open", url];
     if (this.config.headed) {
       openArgs.push("--headed");
@@ -506,6 +527,9 @@ class PlaywrightFetcher implements Fetcher {
   }
 
   async close(): Promise<void> {
+    // デフォルトセッションを停止
+    // Note: 以前は ["close", "--session", sessionId] だったが、
+    // playwright-cli 0.0.63+ では session-stop コマンドを使用
     await this.runCli(["session-stop"]);
 
     // セッションクリーンアップ（--keep-sessionオプションで制御）

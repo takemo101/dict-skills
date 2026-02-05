@@ -12,8 +12,27 @@ export interface PlaywrightPathConfig {
 	cliPaths: readonly string[];
 }
 
-/** Playwright-CLI Fetcher (全サイト対応) */
+/**
+ * Playwright-CLI Fetcher (全サイト対応)
+ *
+ * ## playwright-cli 0.0.63+ 互換性について (2026-02-05)
+ *
+ * ### 問題1: Unixソケットパス長制限
+ * playwright-cliはセッションごとにUnixソケットを作成する。
+ * パスが `/var/folders/.../playwright-cli/<hash>/<sessionId>.sock` となり、
+ * Unixの制限(~108文字)を超えるとEINVALエラーが発生。
+ * → sessionIdを `crawl-${Date.now()}` から `c${Date.now().toString(36)}` に短縮
+ *
+ * ### 問題2: --session オプションの仕様変更
+ * playwright-cli 0.0.63+ では、`--session=xxx` でセッション作成後、
+ * 2回目以降のコマンドで同じ `--session=xxx` を使うと
+ * "The session is already configured" エラーが発生する。
+ * → デフォルトセッション(--session省略)を使用するよう変更
+ *    - open, eval, network: --session オプションを削除
+ *    - close: session-stop コマンドに変更
+ */
 export class PlaywrightFetcher implements Fetcher {
+	// sessionIdは現在未使用だが、将来の並列実行対応のため保持
 	private sessionId: string;
 	private initialized = false;
 	private nodePath: string = "node";
@@ -26,7 +45,7 @@ export class PlaywrightFetcher implements Fetcher {
 		runtime?: RuntimeAdapter,
 		pathConfig?: PlaywrightPathConfig,
 	) {
-		// Short session ID to avoid Unix socket path length limit (~108 chars)
+		// 短いsessionId（Unixソケットパス長制限対策、現在は未使用）
 		this.sessionId = `c${Date.now().toString(36)}`;
 		this.runtime = runtime ?? createRuntimeAdapter();
 		this.pathConfig = pathConfig ?? {
@@ -57,9 +76,15 @@ export class PlaywrightFetcher implements Fetcher {
 		return this.runtime.spawn(this.nodePath, [this.playwrightPath, ...args]);
 	}
 
-	/** フェッチを実行 */
+	/**
+	 * フェッチを実行
+	 *
+	 * Note: playwright-cli 0.0.63+ では名前付きセッション(--session=xxx)が
+	 * 2回目以降のコマンドで使えないため、デフォルトセッションを使用。
+	 * これにより並列クロールはできないが、通常の逐次クロールでは問題なし。
+	 */
 	private async executeFetch(url: string): Promise<FetchResult | null> {
-		// Use default session (playwright-cli 0.0.63+ doesn't support --session on subsequent commands)
+		// デフォルトセッションを使用（--session省略）
 		const openArgs = ["open", url];
 		if (this.config.headed) {
 			openArgs.push("--headed");
@@ -183,6 +208,9 @@ export class PlaywrightFetcher implements Fetcher {
 
 	async close(): Promise<void> {
 		try {
+			// デフォルトセッションを停止
+			// Note: 以前は ["close", "--session", sessionId] だったが、
+			// playwright-cli 0.0.63+ では session-stop コマンドを使用
 			await this.runCli(["session-stop"]);
 		} catch {
 			// セッションが既に閉じている場合は無視
