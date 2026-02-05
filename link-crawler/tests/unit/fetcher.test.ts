@@ -1,12 +1,11 @@
 import * as fs from "node:fs";
-import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PlaywrightFetcher, parseCliOutput } from "../../src/crawler/fetcher.js";
 import { DependencyError, FetchError, TimeoutError } from "../../src/errors.js";
 import type { CrawlConfig } from "../../src/types.js";
 import type { RuntimeAdapter, SpawnResult } from "../../src/utils/runtime.js";
 
-// Mock node:fs - using simple inline mocks (Bun + Vitest compatible)
-// IMPORTANT: vi.unmock() in afterAll() prevents pollution to other test files
+// Mock node:fs - using simple inline mocks (Bun + Vitest compatible, no vi.importActual)
 vi.mock("node:fs", () => ({
 	existsSync: vi.fn(),
 	rmSync: vi.fn(),
@@ -43,13 +42,8 @@ const createMockRuntime = (): RuntimeAdapter => ({
 
 beforeEach(() => {
 	vi.clearAllMocks();
-});
-
-afterAll(() => {
-	// Unmock and reset modules to prevent pollution to other test files
-	vi.unmock("node:fs");
-	vi.resetModules();
-	vi.restoreAllMocks();
+	mockExistsSync.mockReset();
+	mockRmSync.mockReset();
 });
 
 describe("PlaywrightFetcher", () => {
