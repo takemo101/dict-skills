@@ -334,9 +334,91 @@ describe("CrawlerEngine Integration", () => {
 
 			const index2 = JSON.parse(readFileSync(join(testOutputDir, "index.json"), "utf-8"));
 
-			expect(index2.totalPages).toBe(0);
-			expect(index2.pages).toHaveLength(0);
+			// Skipped pages should be preserved from first crawl
+			expect(index2.totalPages).toBe(1);
+			expect(index2.pages).toHaveLength(1);
+			expect(index2.pages[0].url).toBe("https://example.com");
+			expect(index2.pages[0].hash).toBe(originalHash);
 			expect(originalHash).toBeDefined();
+		});
+
+		it("should merge unchanged pages with changed pages in diff mode", async () => {
+			// First crawl: 3 pages
+			const mockFetcher1 = new MockFetcher({
+				"https://example.com": {
+					html: createTestHtml({
+						title: "Home",
+						content: "<p>Home content.</p>",
+						links: ["https://example.com/page1", "https://example.com/page2"],
+					}),
+				},
+				"https://example.com/page1": {
+					html: createTestHtml({
+						title: "Page 1",
+						content: "<p>Page 1 content.</p>",
+					}),
+				},
+				"https://example.com/page2": {
+					html: createTestHtml({
+						title: "Page 2",
+						content: "<p>Page 2 content.</p>",
+					}),
+				},
+			});
+
+			const config1 = { ...getDefaultConfig(), diff: false };
+			const crawler1 = new Crawler(config1, mockFetcher1);
+			await crawler1.run();
+
+			const index1 = JSON.parse(readFileSync(join(testOutputDir, "index.json"), "utf-8"));
+			expect(index1.totalPages).toBe(3);
+
+			// Second crawl: only page1 changed
+			const mockFetcher2 = new MockFetcher({
+				"https://example.com": {
+					html: createTestHtml({
+						title: "Home",
+						content: "<p>Home content.</p>",
+						links: ["https://example.com/page1", "https://example.com/page2"],
+					}),
+				},
+				"https://example.com/page1": {
+					html: createTestHtml({
+						title: "Page 1",
+						content: "<p>UPDATED Page 1 content.</p>",
+					}),
+				},
+				"https://example.com/page2": {
+					html: createTestHtml({
+						title: "Page 2",
+						content: "<p>Page 2 content.</p>",
+					}),
+				},
+			});
+
+			const config2 = { ...getDefaultConfig(), diff: true };
+			const crawler2 = new Crawler(config2, mockFetcher2);
+			await crawler2.run();
+
+			const index2 = JSON.parse(readFileSync(join(testOutputDir, "index.json"), "utf-8"));
+
+			// Should have all 3 pages
+			expect(index2.totalPages).toBe(3);
+			expect(index2.pages).toHaveLength(3);
+
+			// Changed page should have new hash
+			const page1After = index2.pages.find((p: { url: string }) => p.url === "https://example.com/page1");
+			const page1Before = index1.pages.find((p: { url: string }) => p.url === "https://example.com/page1");
+			expect(page1After.hash).not.toBe(page1Before.hash);
+
+			// Unchanged pages should have old hash
+			const homePageAfter = index2.pages.find((p: { url: string }) => p.url === "https://example.com");
+			const homePageBefore = index1.pages.find((p: { url: string }) => p.url === "https://example.com");
+			expect(homePageAfter.hash).toBe(homePageBefore.hash);
+
+			const page2After = index2.pages.find((p: { url: string }) => p.url === "https://example.com/page2");
+			const page2Before = index1.pages.find((p: { url: string }) => p.url === "https://example.com/page2");
+			expect(page2After.hash).toBe(page2Before.hash);
 		});
 
 		it("should detect changed content in diff mode", async () => {

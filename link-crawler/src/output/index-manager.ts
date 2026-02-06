@@ -30,7 +30,7 @@ export class IndexManager {
 	constructor(
 		private outputDir: string,
 		private baseUrl: string,
-		private config: { maxDepth: number; sameDomain: boolean },
+		private config: { maxDepth: number; sameDomain: boolean; diff?: boolean },
 		private logger?: CrawlLogger,
 	) {
 		// 既存のindex.jsonを読み込み
@@ -150,10 +150,29 @@ export class IndexManager {
 	}
 
 	/**
+	 * 既存のページ情報を結果にマージ
+	 * 差分クロール時、スキップされたページの情報を保持するために使用
+	 */
+	private mergeExistingPages(): void {
+		for (const [url, page] of this.existingPages) {
+			// 既に登録済みのページはスキップ
+			if (!this.result.pages.some((p) => p.url === url)) {
+				this.result.pages.push(page);
+				this.result.totalPages++;
+			}
+		}
+	}
+
+	/**
 	 * インデックスを保存
 	 * @returns 保存したファイルパス
 	 */
 	saveIndex(): string {
+		// 差分モード時は既存ページをマージ
+		if (this.config.diff) {
+			this.mergeExistingPages();
+		}
+
 		const indexPath = join(this.outputDir, "index.json");
 		writeFileSync(indexPath, JSON.stringify(this.result, null, 2));
 		return indexPath;
