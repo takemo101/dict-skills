@@ -142,6 +142,28 @@ describe("OutputWriter", () => {
 		expect(content).toMatch(/---\n\n## Introduction/);
 	});
 
+	it("should include hash field in frontmatter", () => {
+		const writer = new OutputWriter(defaultConfig);
+		const markdown = "# Test Content\n\nThis is test content.";
+
+		writer.savePage(
+			"https://example.com/page1",
+			markdown,
+			1,
+			["https://example.com/page2"],
+			defaultMetadata,
+			"Test Page",
+		);
+
+		const pagePath = join(testOutputDir, "pages/page-001-test-page.md");
+		const content = readFileSync(pagePath, "utf-8");
+
+		// Verify that hash field is present in frontmatter
+		expect(content).toMatch(/^---\n/);
+		expect(content).toMatch(/\nhash: [a-f0-9]{64}\n/);
+		expect(content).toMatch(/\n---\n\n/);
+	});
+
 	describe("filename with title", () => {
 		it("should include slugified title in filename", () => {
 			const writer = new OutputWriter(defaultConfig);
