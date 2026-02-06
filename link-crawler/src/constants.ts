@@ -59,7 +59,7 @@ export const PATHS = {
 	PLAYWRIGHT_PATHS: [
 		"/opt/homebrew/bin/playwright-cli",
 		"/usr/local/bin/playwright-cli",
-		`${process.env.HOME}/.npm-global/bin/playwright-cli`,
+		...(process.env.HOME ? [`${process.env.HOME}/.npm-global/bin/playwright-cli`] : []),
 	],
 } as const;
 
