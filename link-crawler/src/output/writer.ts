@@ -73,6 +73,16 @@ export class OutputWriter {
 		return this.indexManager.getNextPageNumber();
 	}
 
+	/** ページファイル名を生成 (public: Crawler の --no-pages モードで使用) */
+	buildPageFilename(metadata: PageMetadata, title: string | null): string {
+		const pageNum = String(this.getNextPageNumber()).padStart(FILENAME.PAGE_PAD_LENGTH, "0");
+		const pageTitle = metadata.title || title;
+		const titleSlug = slugify(pageTitle);
+		return titleSlug
+			? `${FILENAME.PAGES_DIR}/${FILENAME.PAGE_PREFIX}${pageNum}-${titleSlug}.md`
+			: `${FILENAME.PAGES_DIR}/${FILENAME.PAGE_PREFIX}${pageNum}.md`;
+	}
+
 	/** ページを登録（インデックスに追加） */
 	registerPage(
 		url: string,
@@ -96,12 +106,7 @@ export class OutputWriter {
 		title: string | null,
 		hash?: string,
 	): string {
-		const pageNum = String(this.getNextPageNumber()).padStart(FILENAME.PAGE_PAD_LENGTH, "0");
-		const pageTitle = metadata.title || title;
-		const titleSlug = slugify(pageTitle);
-		const pageFile = titleSlug
-			? `${FILENAME.PAGES_DIR}/${FILENAME.PAGE_PREFIX}${pageNum}-${titleSlug}.md`
-			: `${FILENAME.PAGES_DIR}/${FILENAME.PAGE_PREFIX}${pageNum}.md`;
+		const pageFile = this.buildPageFilename(metadata, title);
 		const pagePath = join(this.config.outputDir, pageFile);
 		const computedHash = hash ?? computeHash(markdown);
 
@@ -113,8 +118,8 @@ export class OutputWriter {
 		return pageFile;
 	}
 
-	/** frontmatterを構築 */
-	private buildFrontmatter(
+	/** frontmatterを構築 (public: Crawler の --no-pages モードで使用) */
+	buildFrontmatter(
 		url: string,
 		metadata: PageMetadata,
 		title: string | null,

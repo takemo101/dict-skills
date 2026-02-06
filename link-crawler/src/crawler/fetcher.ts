@@ -177,8 +177,9 @@ export class PlaywrightFetcher implements Fetcher {
 
 		try {
 			// タイムアウト用のPromiseを作成
+			let timeoutId: ReturnType<typeof setTimeout>;
 			const timeoutPromise = new Promise<never>((_, reject) => {
-				setTimeout(() => {
+				timeoutId = setTimeout(() => {
 					reject(
 						new TimeoutError(
 							`Request timeout after ${this.config.timeout / 1000}s (${this.config.timeout}ms)`,
@@ -189,7 +190,9 @@ export class PlaywrightFetcher implements Fetcher {
 			});
 
 			// fetchとタイムアウトを競争させる
-			return await Promise.race([this.executeFetch(url), timeoutPromise]);
+			const result = await Promise.race([this.executeFetch(url), timeoutPromise]);
+			clearTimeout(timeoutId!);
+			return result;
 		} catch (error) {
 			if (error instanceof FetchError || error instanceof TimeoutError) {
 				throw error;

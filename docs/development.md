@@ -70,18 +70,17 @@ link-crawler/
 │   │   ├── converter.test.ts
 │   │   ├── crawler.test.ts
 │   │   ├── errors.test.ts
+│   │   ├── extractor.test.ts
 │   │   ├── fetcher.test.ts
 │   │   ├── hasher.test.ts
 │   │   ├── index-manager.test.ts
+│   │   ├── links.test.ts
 │   │   ├── logger.test.ts
 │   │   ├── merger.test.ts
 │   │   ├── post-processor.test.ts
 │   │   ├── runtime.test.ts
 │   │   ├── site-name.test.ts
-│   │   ├── writer.test.ts
-│   │   └── parser/
-│   │       ├── extractor.test.ts
-│   │       └── links.test.ts
+│   │   └── writer.test.ts
 │   └── integration/             # 統合テスト
 │       └── crawler.test.ts
 │
