@@ -111,7 +111,7 @@ export class OutputWriter {
 		const pagePath = join(this.config.outputDir, pageFile);
 		const computedHash = hash ?? computeHash(markdown);
 
-		const frontmatter = this.buildFrontmatter(url, metadata, title, depth);
+		const frontmatter = this.buildFrontmatter(url, metadata, title, depth, computedHash);
 		writeFileSync(pagePath, frontmatter + markdown);
 
 		this.registerPage(url, pageFile, depth, links, metadata, title, computedHash);
@@ -125,6 +125,7 @@ export class OutputWriter {
 		metadata: PageMetadata,
 		title: string | null,
 		depth: number,
+		hash?: string,
 	): string {
 		const pageCrawledAt = new Date().toISOString();
 		const lines: (string | null)[] = [
@@ -133,6 +134,7 @@ export class OutputWriter {
 			`title: "${(metadata.title || title || "").replace(/"/g, '\\"')}"`,
 			metadata.description ? `description: "${metadata.description.replace(/"/g, '\\"')}"` : null,
 			metadata.keywords ? `keywords: "${metadata.keywords}"` : null,
+			hash ? `hash: "${hash}"` : null,
 			`crawledAt: ${pageCrawledAt}`,
 			`depth: ${depth}`,
 			"---",

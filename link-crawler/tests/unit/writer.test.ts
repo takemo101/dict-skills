@@ -142,6 +142,33 @@ describe("OutputWriter", () => {
 		expect(content).toMatch(/---\n\n## Introduction/);
 	});
 
+	it("should include hash in frontmatter", () => {
+		const writer = new OutputWriter(defaultConfig);
+		const markdown = "# Test Content\n\nThis is test content.";
+
+		const pageFile = writer.savePage(
+			"https://example.com/page1",
+			markdown,
+			1,
+			[],
+			defaultMetadata,
+			"Test Page",
+		);
+
+		const pagePath = join(testOutputDir, pageFile);
+		const content = readFileSync(pagePath, "utf-8");
+
+		// Verify that hash is included in frontmatter
+		expect(content).toMatch(/^---\n/);
+		expect(content).toMatch(/\nhash: "[a-f0-9]{64}"\n/);
+		expect(content).toMatch(/\n---\n\n/);
+
+		// Verify hash is a SHA-256 hex string (64 characters)
+		const hashMatch = content.match(/hash: "([a-f0-9]{64})"/);
+		expect(hashMatch).toBeTruthy();
+		expect(hashMatch![1]).toHaveLength(64);
+	});
+
 	describe("filename with title", () => {
 		it("should include slugified title in filename", () => {
 			const writer = new OutputWriter(defaultConfig);
