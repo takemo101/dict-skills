@@ -162,13 +162,35 @@ export function extractMetadata(dom: JSDOM): PageMetadata {
 	};
 }
 
-/** HTMLから本文コンテンツを抽出 */
+/** HTMLから本文コンテンツを抽出（JSDOMインスタンスを使用） */
+export function extractContent(dom: JSDOM): { title: string | null; content: string | null };
+/** HTMLから本文コンテンツを抽出（HTML文字列を使用） */
 export function extractContent(
 	html: string,
 	url: string,
+): { title: string | null; content: string | null };
+/** HTMLから本文コンテンツを抽出（実装） */
+export function extractContent(
+	htmlOrDom: string | JSDOM,
+	url?: string,
 ): { title: string | null; content: string | null } {
+	let dom: JSDOM;
+	let actualUrl: string;
+
+	if (typeof htmlOrDom === "string") {
+		// 既存の使い方（html, url）
+		if (!url) {
+			throw new Error("URL is required when passing HTML string");
+		}
+		dom = new JSDOM(htmlOrDom, { url });
+		actualUrl = url;
+	} else {
+		// 新しい使い方（dom）
+		dom = htmlOrDom;
+		actualUrl = dom.window.location.href;
+	}
+
 	// コードブロックを保護してからReadabilityを実行
-	const dom = new JSDOM(html, { url });
 	const codeBlockMap = protectCodeBlocks(dom.window.document);
 
 	const reader = new Readability(dom.window.document.cloneNode(true) as Document);
@@ -181,5 +203,7 @@ export function extractContent(
 	}
 
 	// フォールバック: main タグなどから抽出（コードブロックも保持）
-	return extractAndPreserveCodeBlocks(html, url);
+	// 注意: フォールバック時は新たにJSDOMを生成する（例外的なケース）
+	const html = typeof htmlOrDom === "string" ? htmlOrDom : dom.serialize();
+	return extractAndPreserveCodeBlocks(html, actualUrl);
 }
