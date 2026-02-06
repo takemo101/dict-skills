@@ -494,4 +494,3 @@ git push origin main --tags
 |-------------|------|
 | [design.md](./design.md) | アーキテクチャ・データ構造・モジュール設計 |
 | [cli-spec.md](./cli-spec.md) | CLIオプション・使用例・出力形式 |
-| [issues.md](./issues.md) | 実装Issue一覧 |
