@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Chunker } from "../../src/output/chunker.js";
@@ -197,37 +197,6 @@ Content 2.`;
 			const chunker = new Chunker(testOutputDir);
 			const result = chunker.chunkAndWrite("");
 			expect(result).toEqual([]);
-		});
-	});
-
-	describe("chunkFullMd", () => {
-		it("should return empty array when full.md does not exist", () => {
-			// Use a non-existent directory
-			const nonExistentDir = join(testOutputDir, "non-existent");
-			const chunker = new Chunker(nonExistentDir);
-			const result = chunker.chunkFullMd();
-			expect(result).toEqual([]);
-		});
-
-		it("should chunk existing full.md file", () => {
-			const chunker = new Chunker(testOutputDir);
-			const markdown = `# First Section
-
-First content.
-
-# Second Section
-
-Second content.`;
-
-			// Create full.md file manually
-			const fullMdPath = join(testOutputDir, "full.md");
-			writeFileSync(fullMdPath, markdown);
-
-			const result = chunker.chunkFullMd();
-
-			expect(result).toHaveLength(2);
-			expect(result[0]).toContain("chunk-001.md");
-			expect(result[1]).toContain("chunk-002.md");
 		});
 	});
 });

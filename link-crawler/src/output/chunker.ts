@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 /**
@@ -97,22 +97,5 @@ export class Chunker {
 	chunkAndWrite(fullMarkdown: string): string[] {
 		const chunks = this.chunk(fullMarkdown);
 		return this.writeChunks(chunks);
-	}
-
-	/**
-	 * full.mdファイルを読み込んでチャンク分割
-	 * @returns 出力されたファイルパスの配列
-	 */
-	chunkFullMd(): string[] {
-		const fullMdPath = join(this.outputDir, "full.md");
-		try {
-			const content = readFileSync(fullMdPath, "utf-8");
-			return this.chunkAndWrite(content);
-		} catch (error) {
-			console.warn(
-				`[WARN] Failed to read full.md: ${error instanceof Error ? error.message : String(error)}`,
-			);
-			return [];
-		}
 	}
 }

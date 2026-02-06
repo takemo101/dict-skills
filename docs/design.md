@@ -865,13 +865,12 @@ class Chunker {
   }
 
   /**
-   * full.mdファイルを読み込んでチャンク分割
+   * full.mdを読み込んでチャンク分割し、ファイルに出力
+   * @param fullMarkdown 結合されたMarkdown文字列
    * @returns 出力されたファイルパスの配列
    */
-  chunkFullMd(): string[] {
-    const fullMdPath = join(this.outputDir, "full.md");
-    const content = readFileSync(fullMdPath, "utf-8");
-    const chunks = this.chunk(content);
+  chunkAndWrite(fullMarkdown: string): string[] {
+    const chunks = this.chunk(fullMarkdown);
     return this.writeChunks(chunks);
   }
 }
