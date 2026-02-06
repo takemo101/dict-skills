@@ -460,6 +460,113 @@ describe("PlaywrightFetcher", () => {
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
 			await expect(fetcher.fetch("https://example.com")).rejects.toThrow(TimeoutError);
 		});
+
+		it("should cleanup session when timeout occurs", async () => {
+			const config = createMockConfig({ timeout: 100 });
+			const mockRuntime = createMockRuntime();
+			const spawnCalls: string[][] = [];
+
+			mockRuntime.spawn = vi.fn().mockImplementation((_cmd, args) => {
+				spawnCalls.push([...args]);
+
+				// version check は成功
+				if (args.includes("--version")) {
+					return Promise.resolve({
+						success: true,
+						stdout: "1.0.0",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+
+				// open コマンドは遅延してタイムアウトさせる
+				if (args.includes("open")) {
+					return new Promise((resolve) => {
+						setTimeout(() => {
+							resolve({
+								success: true,
+								stdout: "",
+								stderr: "",
+								exitCode: 0,
+							} as SpawnResult);
+						}, 1000);
+					});
+				}
+
+				// session-stop は即座に成功
+				if (args.includes("session-stop")) {
+					return Promise.resolve({
+						success: true,
+						stdout: "",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+
+				return Promise.resolve({
+					success: true,
+					stdout: "",
+					stderr: "",
+					exitCode: 0,
+				} as SpawnResult);
+			});
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+
+			await expect(fetcher.fetch("https://example.com")).rejects.toThrow(TimeoutError);
+
+			// session-stop が呼ばれたことを確認
+			const sessionStopCalls = spawnCalls.filter((args) => args.includes("session-stop"));
+			expect(sessionStopCalls.length).toBeGreaterThan(0);
+		});
+
+		it("should handle session-stop failure on timeout gracefully", async () => {
+			const config = createMockConfig({ timeout: 100 });
+			const mockRuntime = createMockRuntime();
+
+			mockRuntime.spawn = vi.fn().mockImplementation((_cmd, args) => {
+				// version check は成功
+				if (args.includes("--version")) {
+					return Promise.resolve({
+						success: true,
+						stdout: "1.0.0",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+
+				// open コマンドは遅延してタイムアウトさせる
+				if (args.includes("open")) {
+					return new Promise((resolve) => {
+						setTimeout(() => {
+							resolve({
+								success: true,
+								stdout: "",
+								stderr: "",
+								exitCode: 0,
+							} as SpawnResult);
+						}, 1000);
+					});
+				}
+
+				// session-stop は失敗
+				if (args.includes("session-stop")) {
+					return Promise.reject(new Error("Session already closed"));
+				}
+
+				return Promise.resolve({
+					success: true,
+					stdout: "",
+					stderr: "",
+					exitCode: 0,
+				} as SpawnResult);
+			});
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+
+			// session-stop が失敗しても TimeoutError は throw される
+			await expect(fetcher.fetch("https://example.com")).rejects.toThrow(TimeoutError);
+		});
 	});
 
 	describe("close", () => {
