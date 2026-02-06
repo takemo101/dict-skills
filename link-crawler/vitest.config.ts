@@ -5,17 +5,14 @@ export default defineConfig({
 		globals: true,
 		include: ["tests/**/*.test.ts"],
 		globalTeardown: "./tests/global-teardown.ts",
-		// Disable file-level parallelism to prevent test interference
-		// tests/unit/fetcher.test.ts uses module-level vi.mock("node:fs") which can leak
-		fileParallelism: false,
+		// Enable file-level parallelism for faster test execution
+		// forks pool provides complete isolation between test files
+		fileParallelism: true,
 		// forksプールを使用して各テストファイルを完全に分離
 		// (threadsではなくforksを使用することで、module mocksが他のファイルに影響しない)
 		pool: "forks",
-		poolOptions: {
-			forks: {
-				singleFork: true,
-			},
-		},
+		// Vitest 4: poolOptions moved to top-level
+		singleFork: false,
 		// テスト間でモックをクリアして分離を確保
 		clearMocks: true,
 		mockReset: true,

@@ -57,8 +57,8 @@ export class PostProcessor {
 				fullMdContent = "";
 			}
 		} else if (this.config.chunks) {
-			// mergeなしでchunksのみの場合は、メモリから結合内容を生成
-			fullMdContent = this.buildFullMarkdown(pages, contents);
+			// mergeなしでchunksのみの場合は、Mergerを使ってメモリから結合内容を生成
+			fullMdContent = this.merger.buildFullContent(pages, contents);
 		}
 
 		// Chunker実行 (--no-chunks時はスキップ)
@@ -67,40 +67,6 @@ export class PostProcessor {
 			const chunkFiles = this.chunker.chunkAndWrite(fullMdContent);
 			this.logger.logChunkerComplete(chunkFiles.length);
 		}
-	}
-
-	/**
-	 * Markdownを結合してfull.md内容を生成
-	 * @param pages クロール済みページ一覧
-	 * @param pageContents ページ内容のMap
-	 * @returns 結合されたMarkdown文字列
-	 */
-	private buildFullMarkdown(pages: CrawledPage[], pageContents: Map<string, string>): string {
-		const sections: string[] = [];
-
-		for (const page of pages) {
-			const title = page.title || page.url;
-			const header = `# ${title}`;
-			const urlLine = `> Source: ${page.url}`;
-			const content = pageContents.get(page.file) || "";
-
-			// frontmatterを除去
-			const cleanContent = content.replace(/^---[\s\S]*?---\n*/, "").trim();
-
-			// タイトルを除去
-			const lines = cleanContent.split("\n");
-			if (lines.length > 0 && lines[0].startsWith("# ")) {
-				lines.shift();
-				while (lines.length > 0 && lines[0].trim() === "") {
-					lines.shift();
-				}
-			}
-			const body = lines.join("\n");
-
-			sections.push(`${header}\n\n${urlLine}\n\n${body}`);
-		}
-
-		return sections.join("\n\n---\n\n");
 	}
 
 	/**

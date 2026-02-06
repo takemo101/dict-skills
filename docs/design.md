@@ -162,13 +162,16 @@ link-crawler/
 │ 3. クロールループ                        │
 │  ┌─────────────────────────────────────┐│
 │  │ 3.1 playwright-cli でHTML取得       ││
-│  │ 3.2 ハッシュ計算                    ││
-│  │ 3.3 差分チェック (--diff時)         ││
+│  │ 3.2 contentType判定 (API spec分岐)  ││
+│  │ 3.3 メタデータ抽出 (JSDOM)          ││
+│  │ 3.4 コンテンツ抽出 (Readability)    ││
+│  │ 3.5 リンク抽出 (JSDOM)              ││
+│  │ 3.6 Markdown変換 (Turndown)         ││
+│  │ 3.7 ハッシュ計算                    ││
+│  │ 3.8 差分チェック (--diff時)         ││
 │  │     └─ 変更なし → スキップ          ││
-│  │ 3.4 本文抽出 (Readability)          ││
-│  │ 3.5 Markdown変換 (Turndown)         ││
-│  │ 3.6 ページ保存                      ││
-│  │ 3.7 リンク抽出 → キューに追加       ││
+│  │ 3.9 ページ保存                      ││
+│  │ 3.10 再帰クロール                   ││
 │  └─────────────────────────────────────┘│
 │  depth < maxDepth まで再帰              │
 └──────────┬──────────────────────────────┘
@@ -296,7 +299,8 @@ interface DetectedSpec {
 
 ### 5.3 full.md 形式
 
-ページを `# タイトル` で区切り、Source URL付きで1ファイルに結合:
+ページを `# タイトル` で区切り、Source URL付きで1ファイルに結合。
+セクション間は `\n\n---\n\n` で結合される:
 
 ```markdown
 # Getting Started
@@ -321,6 +325,8 @@ interface DetectedSpec {
 
 設定方法...
 ```
+
+**Note**: セパレータ `---` の前後には空行（`\n\n`）が入る。
 
 ### 5.4 チャンク分割ロジック
 
@@ -426,32 +432,31 @@ interface RuntimeAdapter {
  *
  * ## playwright-cli 0.0.63+ 互換性について (2026-02-05)
  *
- * ### 問題1: Unixソケットパス長制限
- * playwright-cliはセッションごとにUnixソケットを作成する。
- * パスが `/var/folders/.../playwright-cli/<hash>/<sessionId>.sock` となり、
- * Unixの制限(~108文字)を超えるとEINVALエラーが発生。
- * → sessionIdを短縮: `crawl-${Date.now()}` → `c${Date.now().toString(36)}`
- *
- * ### 問題2: --session オプションの仕様変更
- * playwright-cli 0.0.63+ では、2回目以降のコマンドで `--session=xxx` を使うと
+ * ### --session オプションの仕様変更
+ * playwright-cli 0.0.63+ では、`--session=xxx` でセッション作成後、
+ * 2回目以降のコマンドで同じ `--session=xxx` を使うと
  * "The session is already configured" エラーが発生する。
  * → デフォルトセッション(--session省略)を使用するよう変更
+ *    - open, eval, network: --session オプションを削除
+ *    - close: session-stop コマンドに変更
  */
 class PlaywrightFetcher implements Fetcher {
-  // sessionIdは現在未使用だが、将来の並列実行対応のため保持
-  private sessionId: string;
   private initialized = false;
   private nodePath: string = "node";
   private playwrightPath: string = "playwright-cli";
   private runtime: RuntimeAdapter;
+  private pathConfig: PlaywrightPathConfig;
 
   constructor(
     private config: CrawlConfig,
     runtime?: RuntimeAdapter,
+    pathConfig?: PlaywrightPathConfig,
   ) {
-    // 短いsessionId（Unixソケットパス長制限対策、現在は未使用）
-    this.sessionId = `c${Date.now().toString(36)}`;
     this.runtime = runtime ?? createRuntimeAdapter();
+    this.pathConfig = pathConfig ?? {
+      nodePaths: PATHS.NODE_PATHS,
+      cliPaths: PATHS.PLAYWRIGHT_PATHS,
+    };
   }
 
   /** CLIコマンドを実行（内部ヘルパー） */
@@ -483,8 +488,10 @@ class PlaywrightFetcher implements Fetcher {
 
   /**
    * フェッチを実行
-   * Note: playwright-cli 0.0.63+ では名前付きセッションが使えないため、
-   * デフォルトセッションを使用。並列クロールは不可。
+   *
+   * Note: playwright-cli 0.0.63+ では名前付きセッション(--session=xxx)が
+   * 2回目以降のコマンドで使えないため、デフォルトセッションを使用。
+   * これにより並列クロールはできないが、通常の逐次クロールでは問題なし。
    */
   private async executeFetch(url: string): Promise<FetchResult | null> {
     // デフォルトセッションを使用（--session省略）
@@ -496,14 +503,29 @@ class PlaywrightFetcher implements Fetcher {
     // ページを開く
     const openResult = await this.runCli(openArgs);
 
-    // エラーページやHTTP 404等の場合はnullを返してスキップ
-    if (!openResult.success || openResult.stdout.includes("chrome-error://")) {
+    // 404等でページが開けない場合はnullを返してスキップ
+    if (!openResult.success) {
+      if (
+        openResult.stderr.includes("ERR_HTTP_RESPONSE_CODE_FAILURE") ||
+        openResult.stdout.includes("chrome-error://")
+      ) {
+        return null;
+      }
+      throw new FetchError(`Failed to open page: ${openResult.stderr}`, url);
+    }
+
+    // エラーページにリダイレクトされた場合はスキップ
+    if (
+      openResult.stdout.includes("chrome-error://") ||
+      openResult.stdout.includes("Page URL: chrome-error://")
+    ) {
       return null;
     }
 
-    // HTTPステータスコード確認（200以外はスキップ）
+    // HTTPステータスコードを確認（networkコマンドを使用）
     const statusCode = await this.getHttpStatusCode();
     if (statusCode !== null && statusCode !== 200) {
+      // 200以外はスキップ
       return null;
     }
 
@@ -511,33 +533,39 @@ class PlaywrightFetcher implements Fetcher {
     await this.runtime.sleep(this.config.spaWait);
 
     // コンテンツ取得
-    const result = await this.runCli([
-      "eval",
-      "document.documentElement.outerHTML",
-    ]);
-
+    const result = await this.runCli(["eval", "document.documentElement.outerHTML"]);
     if (!result.success) {
       throw new FetchError(`Failed to get content: ${result.stderr}`, url);
     }
 
+    const html = parseCliOutput(result.stdout);
+
     return {
-      html: parseCliOutput(result.stdout),
+      html,
       finalUrl: url,
       contentType: "text/html",
     };
   }
 
   async close(): Promise<void> {
-    // デフォルトセッションを停止
-    // Note: 以前は ["close", "--session", sessionId] だったが、
-    // playwright-cli 0.0.63+ では session-stop コマンドを使用
-    await this.runCli(["session-stop"]);
+    try {
+      // デフォルトセッションを停止
+      // Note: 以前は ["close", "--session", sessionId] だったが、
+      // playwright-cli 0.0.63+ では session-stop コマンドを使用
+      await this.runCli(["session-stop"]);
+    } catch {
+      // セッションが既に閉じている場合は無視
+    }
 
-    // セッションクリーンアップ（--keep-sessionオプションで制御）
+    // .playwright-cli ディレクトリをクリーンアップ
     if (!this.config.keepSession) {
-      const cliDir = join(process.cwd(), ".playwright-cli");
-      if (existsSync(cliDir)) {
-        rmSync(cliDir, { recursive: true, force: true });
+      try {
+        const cliDir = join(process.cwd(), ".playwright-cli");
+        if (existsSync(cliDir)) {
+          rmSync(cliDir, { recursive: true, force: true });
+        }
+      } catch {
+        // クリーンアップ失敗は無視
       }
     }
   }
@@ -601,21 +629,42 @@ function computeHash(content: string): string {
 ### 8.2 差分検知
 
 ```typescript
+/**
+ * ハッシュ管理クラス
+ * 差分検知を行う
+ * 
+ * Note: ファイルI/Oは IndexManager が担当し、
+ * Hasher は純粋なロジッククラスとして実装
+ */
 class Hasher {
-  private existingHashes: Map<string, string>;
+  private hashes: Map<string, string>;
 
-  constructor(indexPath: string) {
-    this.existingHashes = this.loadHashes(indexPath);
+  /**
+   * @param existingHashes 既存のハッシュMap（URL → hash）
+   */
+  constructor(existingHashes: Map<string, string> = new Map()) {
+    this.hashes = new Map(existingHashes);
   }
 
-  isChanged(url: string, content: string): boolean {
-    const newHash = computeHash(content);
-    const existingHash = this.existingHashes.get(url);
+  /**
+   * URLのコンテンツが変更されたかを判定
+   * @param url 対象URL
+   * @param newHash 新しいハッシュ値
+   * @returns 変更があればtrue、なければfalse
+   */
+  isChanged(url: string, newHash: string): boolean {
+    const existingHash = this.hashes.get(url);
+    if (existingHash === undefined) {
+      return true; // 新規ページは変更扱い
+    }
     return existingHash !== newHash;
   }
 
-  private loadHashes(path: string): Map<string, string> {
-    // index.json から url → hash のマップを構築
+  /**
+   * 読み込まれたハッシュの数を取得
+   */
+  get size(): number {
+    return this.hashes.size;
   }
 }
 ```
@@ -627,11 +676,54 @@ class Hasher {
 ### 9.1 Merger（全ページ結合）
 
 ```typescript
+/**
+ * ページ結合クラス
+ * 全ページを結合してfull.mdを生成
+ */
 class Merger {
+  constructor(private outputDir: string) {}
+
+  /**
+   * ページを結合してMarkdownを生成
+   * Note: merge()はヘッダー情報のみを生成し、
+   * 実際のコンテンツ処理はwriteFull()で行う
+   */
   merge(pages: CrawledPage[]): string {
     return pages
-      .map(page => `# ${page.title}\n\n${this.stripTitle(page.markdown)}`)
-      .join("\n\n");
+      .map(page => {
+        const title = page.title || page.url;
+        const header = `# ${title}`;
+        const urlLine = `> Source: ${page.url}`;
+        return `${header}\n\n${urlLine}\n`;
+      })
+      .join("\n---\n\n");
+  }
+
+  /**
+   * full.mdを出力
+   * @param pages クロール済みページ一覧
+   * @param pageContents ページ内容のMap (file -> markdown)
+   * @returns 出力ファイルパス
+   */
+  writeFull(pages: CrawledPage[], pageContents: Map<string, string>): string {
+    const sections: string[] = [];
+
+    for (const page of pages) {
+      const title = page.title || page.url;
+      const header = `# ${title}`;
+      const urlLine = `> Source: ${page.url}`;
+
+      const rawContent = pageContents.get(page.file) || "";
+      const content = this.stripTitle(rawContent);
+
+      sections.push(`${header}\n\n${urlLine}\n\n${content}`);
+    }
+
+    const fullContent = sections.join("\n\n---\n\n");
+    const outputPath = join(this.outputDir, "full.md");
+    writeFileSync(outputPath, fullContent);
+
+    return outputPath;
   }
 
   /**
@@ -671,26 +763,90 @@ class Merger {
 ### 9.2 Chunker（見出しベース分割）
 
 ```typescript
+/**
+ * Markdownチャンク分割クラス
+ * full.mdをH1見出しベースでチャンク分割
+ */
 class Chunker {
+  constructor(private outputDir: string) {}
+
+  /**
+   * MarkdownをH1見出しで分割
+   * @param fullMarkdown 結合されたMarkdown文字列
+   * @returns 分割されたチャンクの配列
+   */
   chunk(fullMarkdown: string): string[] {
     const chunks: string[] = [];
     const lines = fullMarkdown.split("\n");
     let currentChunk: string[] = [];
+    let inFrontmatter = false;
+    let isFirstH1 = true;
 
     for (const line of lines) {
-      if (line.startsWith("# ") && currentChunk.length > 0) {
-        // h1で新チャンク開始
-        chunks.push(currentChunk.join("\n"));
-        currentChunk = [];
+      // frontmatterの検出
+      if (line.trim() === "---") {
+        inFrontmatter = !inFrontmatter;
+        currentChunk.push(line);
+        continue;
       }
+
+      // frontmatter内は無条件で追加
+      if (inFrontmatter) {
+        currentChunk.push(line);
+        continue;
+      }
+
+      // H1見出しの検出（行頭が"# "）
+      if (line.startsWith("# ")) {
+        if (!isFirstH1 && currentChunk.length > 0) {
+          // 前のチャンクを保存
+          chunks.push(currentChunk.join("\n").trim());
+          currentChunk = [];
+        }
+        isFirstH1 = false;
+      }
+
       currentChunk.push(line);
     }
 
+    // 最後のチャンクを追加
     if (currentChunk.length > 0) {
-      chunks.push(currentChunk.join("\n"));
+      chunks.push(currentChunk.join("\n").trim());
     }
 
-    return chunks;
+    return chunks.filter((chunk) => chunk.length > 0);
+  }
+
+  /**
+   * チャンクをファイルに出力
+   * @param chunks チャンクの配列
+   * @returns 出力されたファイルパスの配列
+   */
+  writeChunks(chunks: string[]): string[] {
+    const chunksDir = join(this.outputDir, "chunks");
+    mkdirSync(chunksDir, { recursive: true });
+
+    const outputPaths: string[] = [];
+    for (let i = 0; i < chunks.length; i++) {
+      const chunkNum = String(i + 1).padStart(3, "0");
+      const chunkFile = `chunk-${chunkNum}.md`;
+      const chunkPath = join(chunksDir, chunkFile);
+      writeFileSync(chunkPath, chunks[i]);
+      outputPaths.push(chunkPath);
+    }
+
+    return outputPaths;
+  }
+
+  /**
+   * full.mdファイルを読み込んでチャンク分割
+   * @returns 出力されたファイルパスの配列
+   */
+  chunkFullMd(): string[] {
+    const fullMdPath = join(this.outputDir, "full.md");
+    const content = readFileSync(fullMdPath, "utf-8");
+    const chunks = this.chunk(content);
+    return this.writeChunks(chunks);
   }
 }
 ```

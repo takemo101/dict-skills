@@ -584,7 +584,7 @@ describe("PlaywrightFetcher", () => {
 		});
 	});
 
-	describe("getHttpInfo", () => {
+	describe("getHttpMetadata", () => {
 		it("should normalize relative paths with parent directory references", async () => {
 			const config = createMockConfig();
 			const mockRuntime = createMockRuntime();
@@ -602,8 +602,10 @@ describe("PlaywrightFetcher", () => {
 
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
 			const result = await (
-				fetcher as unknown as { getHttpInfo(): Promise<{ statusCode: number | null; contentType: string }> }
-			).getHttpInfo();
+				fetcher as unknown as {
+					getHttpMetadata(): Promise<{ statusCode: number | null; contentType: string }>;
+				}
+			).getHttpMetadata();
 
 			expect(result.statusCode).toBe(200);
 			expect(result.contentType).toBe("text/html");
@@ -624,15 +626,17 @@ describe("PlaywrightFetcher", () => {
 			} as SpawnResult);
 
 			mockExistsSync.mockReturnValue(true);
-			mockRuntime.readFile = vi.fn().mockResolvedValue("status: 404\ncontent-type: application/json");
+			mockRuntime.readFile = vi.fn().mockResolvedValue("status: 404\ncontent-type: text/html");
 
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
 			const result = await (
-				fetcher as unknown as { getHttpInfo(): Promise<{ statusCode: number | null; contentType: string }> }
-			).getHttpInfo();
+				fetcher as unknown as {
+					getHttpMetadata(): Promise<{ statusCode: number | null; contentType: string }>;
+				}
+			).getHttpMetadata();
 
 			expect(result.statusCode).toBe(404);
-			expect(result.contentType).toBe("application/json");
+			expect(result.contentType).toBe("text/html");
 		});
 
 		it("should handle normalized paths correctly", async () => {
@@ -648,18 +652,20 @@ describe("PlaywrightFetcher", () => {
 			} as SpawnResult);
 
 			mockExistsSync.mockReturnValue(true);
-			mockRuntime.readFile = vi.fn().mockResolvedValue("status: 301\ncontent-type: application/yaml");
+			mockRuntime.readFile = vi.fn().mockResolvedValue("status: 301\ncontent-type: text/html");
 
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
 			const result = await (
-				fetcher as unknown as { getHttpInfo(): Promise<{ statusCode: number | null; contentType: string }> }
-			).getHttpInfo();
+				fetcher as unknown as {
+					getHttpMetadata(): Promise<{ statusCode: number | null; contentType: string }>;
+				}
+			).getHttpMetadata();
 
 			expect(result.statusCode).toBe(301);
-			expect(result.contentType).toBe("application/yaml");
+			expect(result.contentType).toBe("text/html");
 		});
 
-		it("should return null status and default contentType when network log file does not exist", async () => {
+		it("should return default values when network log file does not exist", async () => {
 			const config = createMockConfig();
 			const mockRuntime = createMockRuntime();
 
@@ -674,14 +680,16 @@ describe("PlaywrightFetcher", () => {
 
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
 			const result = await (
-				fetcher as unknown as { getHttpInfo(): Promise<{ statusCode: number | null; contentType: string }> }
-			).getHttpInfo();
+				fetcher as unknown as {
+					getHttpMetadata(): Promise<{ statusCode: number | null; contentType: string }>;
+				}
+			).getHttpMetadata();
 
 			expect(result.statusCode).toBeNull();
 			expect(result.contentType).toBe("text/html");
 		});
 
-		it("should return null when network command fails (line 84-85)", async () => {
+		it("should return default values when network command fails (line 84-85)", async () => {
 			const config = createMockConfig();
 			const mockRuntime = createMockRuntime();
 			let callCount = 0;
@@ -732,7 +740,7 @@ describe("PlaywrightFetcher", () => {
 			expect(result?.html).toBe("<html>Content</html>");
 		});
 
-		it("should return null when network log path is not found (line 88)", async () => {
+		it("should return default values when network log path is not found (line 88)", async () => {
 			const config = createMockConfig();
 			const mockRuntime = createMockRuntime();
 			let callCount = 0;
@@ -781,7 +789,7 @@ describe("PlaywrightFetcher", () => {
 			expect(result).not.toBeNull();
 		});
 
-		it("should return null when log file does not exist (line 92)", async () => {
+		it("should return default values when log file does not exist (line 92)", async () => {
 			const config = createMockConfig();
 			const mockRuntime = createMockRuntime();
 			let callCount = 0;
@@ -831,7 +839,7 @@ describe("PlaywrightFetcher", () => {
 			expect(result).not.toBeNull();
 		});
 
-		it("should return null when log file has no status code match (line 95-96)", async () => {
+		it("should return default values when log file has no status code match (line 95-96)", async () => {
 			const config = createMockConfig();
 			const mockRuntime = createMockRuntime();
 			let callCount = 0;
@@ -882,7 +890,7 @@ describe("PlaywrightFetcher", () => {
 			expect(result).not.toBeNull();
 		});
 
-		it("should handle exceptions in getHttpInfo gracefully", async () => {
+		it("should handle exceptions in getHttpMetadata gracefully (line 130)", async () => {
 			const config = createMockConfig();
 			const mockRuntime = createMockRuntime();
 			let callCount = 0;
@@ -1074,6 +1082,139 @@ describe("PlaywrightFetcher", () => {
 			const result = await fetcher.fetch("https://example.com");
 
 			expect(result).toBeNull();
+		});
+
+		it("should extract application/json content-type", async () => {
+			const config = createMockConfig();
+			const mockRuntime = createMockRuntime();
+
+			mockRuntime.spawn = vi.fn().mockResolvedValue({
+				success: true,
+				stdout: "[Network](../logs/network.log)",
+				stderr: "",
+				exitCode: 0,
+			} as SpawnResult);
+
+			mockExistsSync.mockReturnValue(true);
+			mockRuntime.readFile = vi
+				.fn()
+				.mockResolvedValue("status: 200\ncontent-type: application/json");
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			const result = await (
+				fetcher as unknown as {
+					getHttpMetadata(): Promise<{ statusCode: number | null; contentType: string }>;
+				}
+			).getHttpMetadata();
+
+			expect(result.statusCode).toBe(200);
+			expect(result.contentType).toBe("application/json");
+		});
+
+		it("should extract application/yaml content-type", async () => {
+			const config = createMockConfig();
+			const mockRuntime = createMockRuntime();
+
+			mockRuntime.spawn = vi.fn().mockResolvedValue({
+				success: true,
+				stdout: "[Network](../logs/network.log)",
+				stderr: "",
+				exitCode: 0,
+			} as SpawnResult);
+
+			mockExistsSync.mockReturnValue(true);
+			mockRuntime.readFile = vi
+				.fn()
+				.mockResolvedValue("status: 200\ncontent-type: application/yaml");
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			const result = await (
+				fetcher as unknown as {
+					getHttpMetadata(): Promise<{ statusCode: number | null; contentType: string }>;
+				}
+			).getHttpMetadata();
+
+			expect(result.statusCode).toBe(200);
+			expect(result.contentType).toBe("application/yaml");
+		});
+
+		it("should handle content-type with charset parameter", async () => {
+			const config = createMockConfig();
+			const mockRuntime = createMockRuntime();
+
+			mockRuntime.spawn = vi.fn().mockResolvedValue({
+				success: true,
+				stdout: "[Network](../logs/network.log)",
+				stderr: "",
+				exitCode: 0,
+			} as SpawnResult);
+
+			mockExistsSync.mockReturnValue(true);
+			mockRuntime.readFile = vi
+				.fn()
+				.mockResolvedValue("status: 200\ncontent-type: text/html; charset=utf-8");
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			const result = await (
+				fetcher as unknown as {
+					getHttpMetadata(): Promise<{ statusCode: number | null; contentType: string }>;
+				}
+			).getHttpMetadata();
+
+			expect(result.statusCode).toBe(200);
+			expect(result.contentType).toBe("text/html");
+		});
+
+		it("should handle case-insensitive content-type header", async () => {
+			const config = createMockConfig();
+			const mockRuntime = createMockRuntime();
+
+			mockRuntime.spawn = vi.fn().mockResolvedValue({
+				success: true,
+				stdout: "[Network](../logs/network.log)",
+				stderr: "",
+				exitCode: 0,
+			} as SpawnResult);
+
+			mockExistsSync.mockReturnValue(true);
+			mockRuntime.readFile = vi
+				.fn()
+				.mockResolvedValue("status: 200\nContent-Type: application/json");
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			const result = await (
+				fetcher as unknown as {
+					getHttpMetadata(): Promise<{ statusCode: number | null; contentType: string }>;
+				}
+			).getHttpMetadata();
+
+			expect(result.statusCode).toBe(200);
+			expect(result.contentType).toBe("application/json");
+		});
+
+		it("should default to text/html when content-type is missing", async () => {
+			const config = createMockConfig();
+			const mockRuntime = createMockRuntime();
+
+			mockRuntime.spawn = vi.fn().mockResolvedValue({
+				success: true,
+				stdout: "[Network](../logs/network.log)",
+				stderr: "",
+				exitCode: 0,
+			} as SpawnResult);
+
+			mockExistsSync.mockReturnValue(true);
+			mockRuntime.readFile = vi.fn().mockResolvedValue("status: 200");
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			const result = await (
+				fetcher as unknown as {
+					getHttpMetadata(): Promise<{ statusCode: number | null; contentType: string }>;
+				}
+			).getHttpMetadata();
+
+			expect(result.statusCode).toBe(200);
+			expect(result.contentType).toBe("text/html");
 		});
 	});
 

@@ -108,8 +108,8 @@ export class PlaywrightFetcher implements Fetcher {
 			return null;
 		}
 
-		// HTTPステータスコードとContent-Typeを取得（networkコマンドを使用）
-		const { statusCode, contentType } = await this.getHttpInfo();
+		// HTTPメタデータ（ステータスコード・content-type）を取得
+		const { statusCode, contentType } = await this.getHttpMetadata();
 		if (statusCode !== null && statusCode !== 200) {
 			// 200以外はスキップ
 			return null;
@@ -133,8 +133,8 @@ export class PlaywrightFetcher implements Fetcher {
 		};
 	}
 
-	/** HTTPステータスコードとContent-Typeを取得 */
-	private async getHttpInfo(): Promise<{ statusCode: number | null; contentType: string }> {
+	/** HTTPメタデータ（ステータスコード・content-type）を取得 */
+	private async getHttpMetadata(): Promise<{ statusCode: number | null; contentType: string }> {
 		try {
 			const networkResult = await this.runCli(["network"]);
 			if (!networkResult.success) {
@@ -150,22 +150,15 @@ export class PlaywrightFetcher implements Fetcher {
 
 				if (existsSync(fullPath)) {
 					const logContent = await this.runtime.readFile(fullPath);
-					
-					// ステータスコードを抽出
-					let statusCode: number | null = null;
+
+					// ステータスコード抽出
 					const statusMatch = logContent.match(/status:\s*(\d+)/);
-					if (statusMatch) {
-						statusCode = parseInt(statusMatch[1], 10);
-					}
-					
-					// Content-Typeヘッダーを抽出
-					// 例: "content-type: application/yaml; charset=utf-8"
-					let contentType = "text/html";
-					const contentTypeMatch = logContent.match(/content-type:\s*([^;\n\r]+)/i);
-					if (contentTypeMatch) {
-						contentType = contentTypeMatch[1].trim();
-					}
-					
+					const statusCode = statusMatch ? parseInt(statusMatch[1], 10) : null;
+
+					// content-type 抽出（大文字小文字を区別しない、セミコロン以降は除外）
+					const contentTypeMatch = logContent.match(/content-type:\s*([^\n\r;]+)/i);
+					const contentType = contentTypeMatch ? contentTypeMatch[1].trim() : "text/html";
+
 					return { statusCode, contentType };
 				}
 			}
@@ -187,9 +180,9 @@ export class PlaywrightFetcher implements Fetcher {
 			this.initialized = true;
 		}
 
+		let timeoutId: ReturnType<typeof setTimeout> | undefined;
 		try {
 			// タイムアウト用のPromiseを作成
-			let timeoutId: ReturnType<typeof setTimeout>;
 			const timeoutPromise = new Promise<never>((_, reject) => {
 				timeoutId = setTimeout(() => {
 					reject(
@@ -203,9 +196,15 @@ export class PlaywrightFetcher implements Fetcher {
 
 			// fetchとタイムアウトを競争させる
 			const result = await Promise.race([this.executeFetch(url), timeoutPromise]);
-			clearTimeout(timeoutId!);
+			if (timeoutId !== undefined) {
+				clearTimeout(timeoutId);
+			}
 			return result;
 		} catch (error) {
+			// エラー時もタイマーをクリア
+			if (timeoutId !== undefined) {
+				clearTimeout(timeoutId);
+			}
 			if (error instanceof FetchError || error instanceof TimeoutError) {
 				throw error;
 			}

@@ -78,38 +78,85 @@ Content after title.`;
 		});
 	});
 
-	describe("merge", () => {
-		it("should return empty string for empty pages", () => {
+	describe("buildFullContent", () => {
+		it("should build full markdown content without writing to file", () => {
 			const merger = new Merger(testOutputDir);
+			const pages = [createPage("https://example.com/page1", "Page 1", "pages/page-001.md")];
+			const pageContents = new Map([["pages/page-001.md", "# Page 1\n\nThis is content."]]);
 
-			const result = merger.merge([]);
+			const result = merger.buildFullContent(pages, pageContents);
 
-			expect(result).toBe("");
+			expect(result).toContain("# Page 1");
+			expect(result).toContain("> Source: https://example.com/page1");
+			expect(result).toContain("This is content.");
 		});
 
-		it("should merge multiple pages with headers", () => {
+		it("should merge multiple pages with separators", () => {
 			const merger = new Merger(testOutputDir);
 			const pages = [
 				createPage("https://example.com/page1", "Page 1", "pages/page-001.md"),
 				createPage("https://example.com/page2", "Page 2", "pages/page-002.md"),
 			];
+			const pageContents = new Map([
+				["pages/page-001.md", "# Page 1\n\nContent 1"],
+				["pages/page-002.md", "# Page 2\n\nContent 2"],
+			]);
 
-			const result = merger.merge(pages);
+			const result = merger.buildFullContent(pages, pageContents);
 
-			expect(result).toContain("# Page 1");
-			expect(result).toContain("> Source: https://example.com/page1");
-			expect(result).toContain("# Page 2");
-			expect(result).toContain("> Source: https://example.com/page2");
 			expect(result).toContain("---");
+			expect(result).toContain("Content 1");
+			expect(result).toContain("Content 2");
+			// Should have 1 separator for 2 pages
+			const separatorMatches = result.match(/---/g);
+			expect(separatorMatches).toHaveLength(1);
 		});
 
-		it("should use URL as title if title is null", () => {
+		it("should handle empty pages array", () => {
 			const merger = new Merger(testOutputDir);
-			const pages = [createPage("https://example.com/untitled", null, "pages/page-001.md")];
+			const pages: CrawledPage[] = [];
+			const pageContents = new Map<string, string>();
 
-			const result = merger.merge(pages);
+			const result = merger.buildFullContent(pages, pageContents);
 
-			expect(result).toContain("# https://example.com/untitled");
+			expect(result).toBe("");
+		});
+
+		it("should use URL as title when title is null", () => {
+			const merger = new Merger(testOutputDir);
+			const pages = [createPage("https://example.com/page1", null, "pages/page-001.md")];
+			const pageContents = new Map([["pages/page-001.md", "# Original Title\n\nContent"]]);
+
+			const result = merger.buildFullContent(pages, pageContents);
+
+			expect(result).toContain("# https://example.com/page1");
+			expect(result).toContain("Content");
+		});
+
+		it("should strip frontmatter and title from content", () => {
+			const merger = new Merger(testOutputDir);
+			const pages = [createPage("https://example.com/page1", "Page 1", "pages/page-001.md")];
+			const pageContents = new Map([
+				[
+					"pages/page-001.md",
+					`---
+title: Page 1
+url: https://example.com/page1
+---
+
+# Page 1
+
+Content after frontmatter`,
+				],
+			]);
+
+			const result = merger.buildFullContent(pages, pageContents);
+
+			expect(result).toContain("# Page 1");
+			expect(result).toContain("Content after frontmatter");
+			// Should not have duplicate title
+			const titleMatches = result.match(/# Page 1/g);
+			expect(titleMatches).toHaveLength(1);
 		});
 	});
 

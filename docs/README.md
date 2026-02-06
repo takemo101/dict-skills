@@ -24,7 +24,7 @@ cd link-crawler
 bun run dev https://docs.example.com -d 2
 
 # 出力確認（サイト名ディレクトリ配下に生成されます）
-cat .context/docs-example-com/full.md
+cat .context/example/full.md
 ```
 
 ### 方法2: 手動インストール
@@ -37,7 +37,7 @@ bun install
 bun run dev https://docs.example.com -d 2
 
 # 出力確認（サイト名ディレクトリ配下に生成されます）
-cat .context/docs-example-com/full.md
+cat .context/example/full.md
 ```
 
 ## piスキル統合
