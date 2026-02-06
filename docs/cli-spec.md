@@ -233,13 +233,23 @@ crawl https://docs.example.com --delay 2000
 ```markdown
 # Getting Started
 
+> Source: https://docs.example.com/getting-started
+
 導入部分の内容...
+
+---
 
 # Installation
 
+> Source: https://docs.example.com/installation
+
 インストール手順...
 
+---
+
 # Configuration
+
+> Source: https://docs.example.com/configuration
 
 設定方法...
 ```
