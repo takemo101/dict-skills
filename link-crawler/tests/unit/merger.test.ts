@@ -78,41 +78,6 @@ Content after title.`;
 		});
 	});
 
-	describe("merge", () => {
-		it("should return empty string for empty pages", () => {
-			const merger = new Merger(testOutputDir);
-
-			const result = merger.merge([]);
-
-			expect(result).toBe("");
-		});
-
-		it("should merge multiple pages with headers", () => {
-			const merger = new Merger(testOutputDir);
-			const pages = [
-				createPage("https://example.com/page1", "Page 1", "pages/page-001.md"),
-				createPage("https://example.com/page2", "Page 2", "pages/page-002.md"),
-			];
-
-			const result = merger.merge(pages);
-
-			expect(result).toContain("# Page 1");
-			expect(result).toContain("> Source: https://example.com/page1");
-			expect(result).toContain("# Page 2");
-			expect(result).toContain("> Source: https://example.com/page2");
-			expect(result).toContain("---");
-		});
-
-		it("should use URL as title if title is null", () => {
-			const merger = new Merger(testOutputDir);
-			const pages = [createPage("https://example.com/untitled", null, "pages/page-001.md")];
-
-			const result = merger.merge(pages);
-
-			expect(result).toContain("# https://example.com/untitled");
-		});
-	});
-
 	describe("buildFullContent", () => {
 		it("should build full markdown content without writing to file", () => {
 			const merger = new Merger(testOutputDir);

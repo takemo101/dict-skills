@@ -10,29 +10,6 @@ export class Merger {
 	constructor(private outputDir: string) {}
 
 	/**
-	 * ページを結合してMarkdownを生成
-	 * @param pages クロール済みページ一覧
-	 * @returns 結合されたMarkdown文字列
-	 */
-	merge(pages: CrawledPage[]): string {
-		if (pages.length === 0) {
-			return "";
-		}
-
-		const sections = pages.map((page) => {
-			const title = page.title || page.url;
-			const header = `# ${title}`;
-			const urlLine = `> Source: ${page.url}`;
-			// コンテンツは実際のファイルから読み込むのではなく、
-			// ここではヘッダー情報のみを生成
-			// 実際のコンテンツはwriteFullで読み込む
-			return { header, urlLine, page };
-		});
-
-		return sections.map((s) => `${s.header}\n\n${s.urlLine}\n`).join("\n---\n\n");
-	}
-
-	/**
 	 * Markdownから先頭のH1タイトルを除去
 	 * frontmatterがある場合は考慮する
 	 * @param markdown Markdown文字列

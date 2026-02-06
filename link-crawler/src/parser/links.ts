@@ -37,14 +37,44 @@ export function shouldCrawl(url: string, visited: Set<string>, config: CrawlConf
 	return true;
 }
 
-/** HTML からリンクを抽出 */
+/** HTML からリンクを抽出（JSDOMインスタンスを使用） */
+export function extractLinks(dom: JSDOM, visited: Set<string>, config: CrawlConfig): string[];
+/** HTML からリンクを抽出（HTML文字列を使用） */
 export function extractLinks(
 	html: string,
 	baseUrl: string,
 	visited: Set<string>,
 	config: CrawlConfig,
+): string[];
+/** HTML からリンクを抽出（実装） */
+export function extractLinks(
+	htmlOrDom: string | JSDOM,
+	visitedOrBaseUrl: Set<string> | string,
+	configOrVisited: CrawlConfig | Set<string>,
+	config?: CrawlConfig,
 ): string[] {
-	const dom = new JSDOM(html, { url: baseUrl });
+	let dom: JSDOM;
+	let visited: Set<string>;
+	let crawlConfig: CrawlConfig;
+	let baseUrl: string;
+
+	if (typeof htmlOrDom === "string") {
+		// 既存の使い方（html, baseUrl, visited, config）
+		if (!config) {
+			throw new Error("Config is required when passing HTML string");
+		}
+		baseUrl = visitedOrBaseUrl as string;
+		visited = configOrVisited as Set<string>;
+		crawlConfig = config;
+		dom = new JSDOM(htmlOrDom, { url: baseUrl });
+	} else {
+		// 新しい使い方（dom, visited, config）
+		dom = htmlOrDom;
+		visited = visitedOrBaseUrl as Set<string>;
+		crawlConfig = configOrVisited as CrawlConfig;
+		baseUrl = dom.window.location.href;
+	}
+
 	const links = new Set<string>();
 	const anchors = dom.window.document.querySelectorAll("a[href]");
 
@@ -60,7 +90,7 @@ export function extractLinks(
 		}
 
 		const normalized = normalizeUrl(href, baseUrl);
-		if (normalized && shouldCrawl(normalized, visited, config)) {
+		if (normalized && shouldCrawl(normalized, visited, crawlConfig)) {
 			links.add(normalized);
 		}
 	}

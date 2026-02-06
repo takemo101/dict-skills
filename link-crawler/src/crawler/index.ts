@@ -4,7 +4,7 @@ import { OutputWriter } from "../output/writer.js";
 import { htmlToMarkdown } from "../parser/converter.js";
 import { extractContent, extractMetadata } from "../parser/extractor.js";
 import { extractLinks } from "../parser/links.js";
-import type { CrawlConfig, Fetcher } from "../types.js";
+import type { CrawlConfig, Fetcher, FetchResult } from "../types.js";
 import type { RuntimeAdapter } from "../utils/runtime.js";
 import { createRuntimeAdapter } from "../utils/runtime.js";
 import { CrawlLogger } from "./logger.js";
@@ -89,10 +89,19 @@ export class Crawler {
 		this.visited.add(url); // URL単位で訪問済みを管理（深度は無関係）
 		this.logger.logCrawlStart(url, depth);
 
-		const result = await this.fetcher.fetch(url);
-		if (!result) {
-			this.logger.logDebug("Fetch failed", { url, depth });
-			return;
+		let result: FetchResult | null;
+		try {
+			result = await this.fetcher.fetch(url);
+			if (!result) {
+				// fetch()がnullを返した場合：404やエラーページ
+				this.logger.logFetchError(url, "Page not available (404 or error page)", depth);
+				return;
+			}
+		} catch (error) {
+			// fetch()が例外をスローした場合：FetchError, TimeoutError等
+			const message = error instanceof Error ? error.message : String(error);
+			this.logger.logFetchError(url, message, depth);
+			return; // スキップして続行（クロール全体は停止しない）
 		}
 
 		const { html, contentType } = result;
@@ -112,20 +121,22 @@ export class Crawler {
 			return;
 		}
 
-		// メタデータ抽出
+		// JSDOM を1回だけ生成
 		const dom = new JSDOM(html, { url });
+
+		// メタデータ抽出（既にJSDOMを受け取る）
 		const metadata = extractMetadata(dom);
 		this.logger.logDebug("Metadata extracted", {
 			title: metadata.title,
 			description: metadata.description?.substring(0, 100),
 		});
 
-		// コンテンツ抽出
-		const { title, content } = extractContent(html, url);
+		// コンテンツ抽出（JSDOMを渡す）
+		const { title, content } = extractContent(dom);
 		this.logger.logDebug("Content extracted", { title, contentLength: content?.length || 0 });
 
-		// リンク抽出
-		const links = extractLinks(html, url, this.visited, this.config);
+		// リンク抽出（JSDOMを渡す）
+		const links = extractLinks(dom, this.visited, this.config);
 		this.logger.logDebug("Links extracted", { linkCount: links.length, links: links.slice(0, 5) });
 
 		// Markdown変換
