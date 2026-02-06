@@ -146,7 +146,7 @@ export class PlaywrightFetcher implements Fetcher {
 			if (logMatch) {
 				// 相対パスから絶対パスを構築
 				const logPath = normalize(logMatch[1]);
-				const fullPath = join(process.cwd(), logPath);
+				const fullPath = join(this.runtime.cwd(), logPath);
 
 				if (existsSync(fullPath)) {
 					const logContent = await this.runtime.readFile(fullPath);
@@ -229,7 +229,7 @@ export class PlaywrightFetcher implements Fetcher {
 		// .playwright-cli ディレクトリをクリーンアップ
 		if (!this.config.keepSession) {
 			try {
-				const cliDir = join(process.cwd(), ".playwright-cli");
+				const cliDir = join(this.runtime.cwd(), ".playwright-cli");
 				if (existsSync(cliDir)) {
 					rmSync(cliDir, { recursive: true, force: true });
 				}

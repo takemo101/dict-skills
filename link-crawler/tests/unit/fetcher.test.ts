@@ -38,6 +38,7 @@ const createMockRuntime = (): RuntimeAdapter => ({
 	spawn: vi.fn(),
 	sleep: vi.fn(),
 	readFile: vi.fn(),
+	cwd: vi.fn().mockReturnValue("/mock/working/dir"),
 });
 
 beforeEach(() => {

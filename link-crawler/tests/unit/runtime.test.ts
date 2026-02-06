@@ -133,6 +133,23 @@ describe("BunRuntimeAdapter", () => {
 			expect(mockFile).toHaveBeenCalledWith("/path/to/file.txt");
 		});
 	});
+
+	describe("cwd", () => {
+		it("should return current working directory", () => {
+			const mockBunApi: BunAPI = {
+				spawn: vi.fn(),
+				sleep: vi.fn(),
+				file: vi.fn(),
+			} as BunAPI;
+
+			const adapter = new BunRuntimeAdapter(mockBunApi);
+			const result = adapter.cwd();
+
+			expect(result).toBe(process.cwd());
+			expect(typeof result).toBe("string");
+			expect(result.length).toBeGreaterThan(0);
+		});
+	});
 });
 
 describe("NodeRuntimeAdapter", () => {
@@ -198,6 +215,16 @@ describe("NodeRuntimeAdapter", () => {
 			} finally {
 				await unlink(testFile).catch(() => {});
 			}
+		});
+	});
+
+	describe("cwd", () => {
+		it("should return current working directory", () => {
+			const result = adapter.cwd();
+
+			expect(result).toBe(process.cwd());
+			expect(typeof result).toBe("string");
+			expect(result.length).toBeGreaterThan(0);
 		});
 	});
 });
