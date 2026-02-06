@@ -82,8 +82,12 @@ export class PostProcessor {
 				const pagePath = join(this.config.outputDir, page.file);
 				const content = readFileSync(pagePath, "utf-8");
 				contents.set(page.file, content);
-			} catch {
-				// ファイルが読み込めない場合は空文字
+			} catch (error) {
+				// ファイルが読み込めない場合は空文字（デバッグログのみ）
+				this.logger.logDebug("Failed to read page file", {
+					file: page.file,
+					error: String(error),
+				});
 				contents.set(page.file, "");
 			}
 		}

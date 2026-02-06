@@ -219,8 +219,11 @@ export class PlaywrightFetcher implements Fetcher {
 			// Note: 以前は ["close", "--session", sessionId] だったが、
 			// playwright-cli 0.0.63+ では session-stop コマンドを使用
 			await this.runCli(["session-stop"]);
-		} catch {
-			// セッションが既に閉じている場合は無視
+		} catch (error) {
+			// セッションが既に閉じている場合は無視（デバッグログのみ）
+			if (process.env.DEBUG === "1") {
+				console.log(`[DEBUG] session-stop failed (expected if already closed): ${error}`);
+			}
 		}
 
 		// .playwright-cli ディレクトリをクリーンアップ
@@ -230,8 +233,11 @@ export class PlaywrightFetcher implements Fetcher {
 				if (existsSync(cliDir)) {
 					rmSync(cliDir, { recursive: true, force: true });
 				}
-			} catch {
-				// クリーンアップ失敗は無視
+			} catch (error) {
+				// クリーンアップ失敗は無視（デバッグログのみ）
+				if (process.env.DEBUG === "1") {
+					console.log(`[DEBUG] .playwright-cli cleanup failed: ${error}`);
+				}
 			}
 		}
 	}
