@@ -168,7 +168,7 @@ export class Crawler {
 			} else {
 				// メモリに保存 (Merger/Chunker用)
 				const pageFile = this.writer.buildPageFilename(metadata, title);
-				const frontmatter = this.writer.buildFrontmatter(url, metadata, title, depth);
+				const frontmatter = this.writer.buildFrontmatter(url, metadata, title, depth, hash);
 				this.pageContents.set(pageFile, frontmatter + markdown);
 				// writerにもページ情報を追加（ファイルは書き込まない）
 				this.writer.registerPage(url, pageFile, depth, links, metadata, title, hash);
