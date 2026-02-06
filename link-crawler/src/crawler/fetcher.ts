@@ -108,8 +108,8 @@ export class PlaywrightFetcher implements Fetcher {
 			return null;
 		}
 
-		// HTTPステータスコードを確認（networkコマンドを使用）
-		const statusCode = await this.getHttpStatusCode();
+		// HTTPメタデータ（ステータスコード・content-type）を取得
+		const { statusCode, contentType } = await this.getHttpMetadata();
 		if (statusCode !== null && statusCode !== 200) {
 			// 200以外はスキップ
 			return null;
@@ -129,16 +129,16 @@ export class PlaywrightFetcher implements Fetcher {
 		return {
 			html,
 			finalUrl: url,
-			contentType: "text/html",
+			contentType,
 		};
 	}
 
-	/** HTTPステータスコードを取得 */
-	private async getHttpStatusCode(): Promise<number | null> {
+	/** HTTPメタデータ（ステータスコード・content-type）を取得 */
+	private async getHttpMetadata(): Promise<{ statusCode: number | null; contentType: string }> {
 		try {
 			const networkResult = await this.runCli(["network"]);
 			if (!networkResult.success) {
-				return null;
+				return { statusCode: null, contentType: "text/html" };
 			}
 
 			// networkログファイルのパスを抽出
@@ -150,16 +150,21 @@ export class PlaywrightFetcher implements Fetcher {
 
 				if (existsSync(fullPath)) {
 					const logContent = await this.runtime.readFile(fullPath);
-					// 最後のリクエストのステータスコードを抽出
+
+					// ステータスコード抽出
 					const statusMatch = logContent.match(/status:\s*(\d+)/);
-					if (statusMatch) {
-						return parseInt(statusMatch[1], 10);
-					}
+					const statusCode = statusMatch ? parseInt(statusMatch[1], 10) : null;
+
+					// content-type 抽出（大文字小文字を区別しない、セミコロン以降は除外）
+					const contentTypeMatch = logContent.match(/content-type:\s*([^\n\r;]+)/i);
+					const contentType = contentTypeMatch ? contentTypeMatch[1].trim() : "text/html";
+
+					return { statusCode, contentType };
 				}
 			}
-			return null;
+			return { statusCode: null, contentType: "text/html" };
 		} catch {
-			return null;
+			return { statusCode: null, contentType: "text/html" };
 		}
 	}
 
