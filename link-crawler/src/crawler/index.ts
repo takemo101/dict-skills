@@ -4,7 +4,7 @@ import { OutputWriter } from "../output/writer.js";
 import { htmlToMarkdown } from "../parser/converter.js";
 import { extractContent, extractMetadata } from "../parser/extractor.js";
 import { extractLinks } from "../parser/links.js";
-import type { CrawlConfig, Fetcher } from "../types.js";
+import type { CrawlConfig, Fetcher, FetchResult } from "../types.js";
 import type { RuntimeAdapter } from "../utils/runtime.js";
 import { createRuntimeAdapter } from "../utils/runtime.js";
 import { CrawlLogger } from "./logger.js";
@@ -89,7 +89,7 @@ export class Crawler {
 		this.visited.add(url); // URL単位で訪問済みを管理（深度は無関係）
 		this.logger.logCrawlStart(url, depth);
 
-		let result;
+		let result: FetchResult | null;
 		try {
 			result = await this.fetcher.fetch(url);
 			if (!result) {

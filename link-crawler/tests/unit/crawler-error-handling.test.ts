@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 import { Crawler } from "../../src/crawler/index.js";
 import type { CrawlLogger } from "../../src/crawler/logger.js";
 import { FetchError, TimeoutError } from "../../src/errors.js";
@@ -20,6 +20,8 @@ describe("Crawler - Error Handling", () => {
 			timeout: 5000,
 			spaWait: 100,
 			sameDomain: true,
+			includePattern: null,
+			excludePattern: null,
 			diff: false,
 			pages: true,
 			merge: false,
@@ -72,7 +74,10 @@ describe("Crawler - Error Handling", () => {
 
 	describe("fetch() が FetchError をスローする場合", () => {
 		it("エラーがキャッチされ、logFetchError() が呼ばれ、クロールは続行する", async () => {
-			const fetchError = new FetchError("Failed to open page: Network error", "https://example.com");
+			const fetchError = new FetchError(
+				"Failed to open page: Network error",
+				"https://example.com",
+			);
 			(mockFetcher.fetch as Mock).mockRejectedValue(fetchError);
 
 			// クロール実行（エラーでスローされないことを確認）
@@ -142,7 +147,11 @@ describe("Crawler - Error Handling", () => {
 			await expect(crawler.crawl("https://example.com", 0)).resolves.toBeUndefined();
 
 			// logFetchError() が呼ばれたことを確認
-			expect(mockLogger.logFetchError).toHaveBeenCalledWith("https://example.com", "String error", 0);
+			expect(mockLogger.logFetchError).toHaveBeenCalledWith(
+				"https://example.com",
+				"String error",
+				0,
+			);
 
 			// fetch() は1回だけ呼ばれる
 			expect(mockFetcher.fetch).toHaveBeenCalledTimes(1);
