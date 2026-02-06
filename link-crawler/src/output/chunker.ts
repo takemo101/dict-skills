@@ -24,14 +24,34 @@ export class Chunker {
 		const lines = fullMarkdown.split("\n");
 		let currentChunk: string[] = [];
 		let inFrontmatter = false;
+		let frontmatterEnded = false; // frontmatter終了フラグ
 		let isFirstH1 = true;
+		let seenNonEmptyLine = false; // 非空行検出フラグ
 
 		for (const line of lines) {
-			// frontmatterの検出
-			if (line.trim() === "---") {
-				inFrontmatter = !inFrontmatter;
-				currentChunk.push(line);
-				continue;
+			// frontmatter検出（ファイル先頭のみ）
+			if (line.trim() === "---" && !frontmatterEnded) {
+				// 先頭の空行をスキップした後の最初の---
+				if (!seenNonEmptyLine) {
+					inFrontmatter = true;
+					currentChunk.push(line);
+					seenNonEmptyLine = true;
+					continue;
+				}
+
+				// frontmatter内で2番目の---を検出
+				if (inFrontmatter) {
+					inFrontmatter = false;
+					frontmatterEnded = true;
+					currentChunk.push(line);
+					continue;
+				}
+			}
+
+			// 非空行を検出（frontmatterがない場合）
+			if (line.trim() !== "" && !seenNonEmptyLine) {
+				seenNonEmptyLine = true;
+				frontmatterEnded = true; // frontmatterなし確定
 			}
 
 			// frontmatter内は無条件で追加
