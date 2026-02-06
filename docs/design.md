@@ -522,8 +522,8 @@ class PlaywrightFetcher implements Fetcher {
       return null;
     }
 
-    // HTTPステータスコードを確認（networkコマンドを使用）
-    const statusCode = await this.getHttpStatusCode();
+    // HTTPメタデータ（ステータスコード・content-type）を取得
+    const { statusCode, contentType } = await this.getHttpMetadata();
     if (statusCode !== null && statusCode !== 200) {
       // 200以外はスキップ
       return null;
@@ -543,8 +543,43 @@ class PlaywrightFetcher implements Fetcher {
     return {
       html,
       finalUrl: url,
-      contentType: "text/html",
+      contentType,
     };
+  }
+
+  /** HTTPメタデータ（ステータスコード・content-type）を取得 */
+  private async getHttpMetadata(): Promise<{ statusCode: number | null; contentType: string }> {
+    try {
+      const networkResult = await this.runCli(["network"]);
+      if (!networkResult.success) {
+        return { statusCode: null, contentType: "text/html" };
+      }
+
+      // networkログファイルのパスを抽出
+      const logMatch = networkResult.stdout.match(/\[Network\]\(([^)]+)\)/);
+      if (logMatch) {
+        // 相対パスから絶対パスを構築
+        const logPath = normalize(logMatch[1]);
+        const fullPath = join(this.runtime.cwd(), logPath);
+
+        if (existsSync(fullPath)) {
+          const logContent = await this.runtime.readFile(fullPath);
+
+          // ステータスコード抽出
+          const statusMatch = logContent.match(/status:\s*(\d+)/);
+          const statusCode = statusMatch ? parseInt(statusMatch[1], 10) : null;
+
+          // content-type 抽出（大文字小文字を区別しない、セミコロン以降は除外）
+          const contentTypeMatch = logContent.match(/content-type:\s*([^\n\r;]+)/i);
+          const contentType = contentTypeMatch ? contentTypeMatch[1].trim() : "text/html";
+
+          return { statusCode, contentType };
+        }
+      }
+      return { statusCode: null, contentType: "text/html" };
+    } catch {
+      return { statusCode: null, contentType: "text/html" };
+    }
   }
 
   async close(): Promise<void> {
@@ -684,54 +719,8 @@ class Merger {
   constructor(private outputDir: string) {}
 
   /**
-   * ページを結合してMarkdownを生成
-   * Note: merge()はヘッダー情報のみを生成し、
-   * 実際のコンテンツ処理はwriteFull()で行う
-   */
-  merge(pages: CrawledPage[]): string {
-    return pages
-      .map(page => {
-        const title = page.title || page.url;
-        const header = `# ${title}`;
-        const urlLine = `> Source: ${page.url}`;
-        return `${header}\n\n${urlLine}\n`;
-      })
-      .join("\n---\n\n");
-  }
-
-  /**
-   * full.mdを出力
-   * @param pages クロール済みページ一覧
-   * @param pageContents ページ内容のMap (file -> markdown)
-   * @returns 出力ファイルパス
-   */
-  writeFull(pages: CrawledPage[], pageContents: Map<string, string>): string {
-    const sections: string[] = [];
-
-    for (const page of pages) {
-      const title = page.title || page.url;
-      const header = `# ${title}`;
-      const urlLine = `> Source: ${page.url}`;
-
-      const rawContent = pageContents.get(page.file) || "";
-      const content = this.stripTitle(rawContent);
-
-      sections.push(`${header}\n\n${urlLine}\n\n${content}`);
-    }
-
-    const fullContent = sections.join("\n\n---\n\n");
-    const outputPath = join(this.outputDir, "full.md");
-    writeFileSync(outputPath, fullContent);
-
-    return outputPath;
-  }
-
-  /**
    * Markdownから先頭のH1タイトルを除去
    * frontmatterがある場合は考慮する
-   * 
-   * Note: publicメソッドとして実装（テストで使用されている）
-   * 
    * @param markdown Markdown文字列
    * @returns タイトル除去後のMarkdown
    */
@@ -756,6 +745,43 @@ class Merger {
     }
 
     return lines.join("\n");
+  }
+
+  /**
+   * Markdownを結合してfull.md内容を生成（ファイル書き込みなし）
+   * @param pages クロール済みページ一覧
+   * @param pageContents ページ内容のMap (file -> markdown)
+   * @returns 結合されたMarkdown文字列
+   */
+  buildFullContent(pages: CrawledPage[], pageContents: Map<string, string>): string {
+    const sections: string[] = [];
+
+    for (const page of pages) {
+      const title = page.title || page.url;
+      const header = `# ${title}`;
+      const urlLine = `> Source: ${page.url}`;
+
+      const rawContent = pageContents.get(page.file) || "";
+      const content = this.stripTitle(rawContent);
+
+      sections.push(`${header}\n\n${urlLine}\n\n${content}`);
+    }
+
+    return sections.join("\n\n---\n\n");
+  }
+
+  /**
+   * full.mdを出力
+   * @param pages クロール済みページ一覧
+   * @param pageContents ページ内容のMap (file -> markdown)
+   * @returns 出力ファイルパス
+   */
+  writeFull(pages: CrawledPage[], pageContents: Map<string, string>): string {
+    const fullContent = this.buildFullContent(pages, pageContents);
+    const outputPath = join(this.outputDir, "full.md");
+    writeFileSync(outputPath, fullContent);
+
+    return outputPath;
   }
 }
 ```
