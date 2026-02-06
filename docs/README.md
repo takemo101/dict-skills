@@ -63,6 +63,7 @@ ln -s /path/to/link-crawler ~/.pi/agent/skills/link-crawler
 | ドキュメント | 内容 |
 |-------------|------|
 | [設計書](./design.md) | アーキテクチャ・データ構造・モジュール設計 |
+| [開発ガイド](./development.md) | 開発ワークフロー・コーディング規約・テスト方針 |
 
 ## 🚀 目的別ガイド
 
