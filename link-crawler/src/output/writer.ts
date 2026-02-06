@@ -37,6 +37,7 @@ export class OutputWriter {
 			{
 				maxDepth: config.maxDepth,
 				sameDomain: config.sameDomain,
+				diff: config.diff,
 			},
 			this.logger,
 		);

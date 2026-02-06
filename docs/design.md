@@ -299,7 +299,8 @@ interface DetectedSpec {
 
 ### 5.3 full.md 形式
 
-ページを `# タイトル` で区切り、Source URL付きで1ファイルに結合:
+ページを `# タイトル` で区切り、Source URL付きで1ファイルに結合。
+セクション間は `\n\n---\n\n` で結合される:
 
 ```markdown
 # Getting Started
@@ -324,6 +325,8 @@ interface DetectedSpec {
 
 設定方法...
 ```
+
+**Note**: セパレータ `---` の前後には空行（`\n\n`）が入る。
 
 ### 5.4 チャンク分割ロジック
 
@@ -626,6 +629,13 @@ function computeHash(content: string): string {
 ### 8.2 差分検知
 
 ```typescript
+/**
+ * ハッシュ管理クラス
+ * 差分検知を行う
+ * 
+ * Note: ファイルI/Oは IndexManager が担当し、
+ * Hasher は純粋なロジッククラスとして実装
+ */
 class Hasher {
   private hashes: Map<string, string>;
 
@@ -666,11 +676,54 @@ class Hasher {
 ### 9.1 Merger（全ページ結合）
 
 ```typescript
+/**
+ * ページ結合クラス
+ * 全ページを結合してfull.mdを生成
+ */
 class Merger {
+  constructor(private outputDir: string) {}
+
+  /**
+   * ページを結合してMarkdownを生成
+   * Note: merge()はヘッダー情報のみを生成し、
+   * 実際のコンテンツ処理はwriteFull()で行う
+   */
   merge(pages: CrawledPage[]): string {
     return pages
-      .map(page => `# ${page.title}\n\n${this.stripTitle(page.markdown)}`)
-      .join("\n\n");
+      .map(page => {
+        const title = page.title || page.url;
+        const header = `# ${title}`;
+        const urlLine = `> Source: ${page.url}`;
+        return `${header}\n\n${urlLine}\n`;
+      })
+      .join("\n---\n\n");
+  }
+
+  /**
+   * full.mdを出力
+   * @param pages クロール済みページ一覧
+   * @param pageContents ページ内容のMap (file -> markdown)
+   * @returns 出力ファイルパス
+   */
+  writeFull(pages: CrawledPage[], pageContents: Map<string, string>): string {
+    const sections: string[] = [];
+
+    for (const page of pages) {
+      const title = page.title || page.url;
+      const header = `# ${title}`;
+      const urlLine = `> Source: ${page.url}`;
+
+      const rawContent = pageContents.get(page.file) || "";
+      const content = this.stripTitle(rawContent);
+
+      sections.push(`${header}\n\n${urlLine}\n\n${content}`);
+    }
+
+    const fullContent = sections.join("\n\n---\n\n");
+    const outputPath = join(this.outputDir, "full.md");
+    writeFileSync(outputPath, fullContent);
+
+    return outputPath;
   }
 
   /**
@@ -710,26 +763,90 @@ class Merger {
 ### 9.2 Chunker（見出しベース分割）
 
 ```typescript
+/**
+ * Markdownチャンク分割クラス
+ * full.mdをH1見出しベースでチャンク分割
+ */
 class Chunker {
+  constructor(private outputDir: string) {}
+
+  /**
+   * MarkdownをH1見出しで分割
+   * @param fullMarkdown 結合されたMarkdown文字列
+   * @returns 分割されたチャンクの配列
+   */
   chunk(fullMarkdown: string): string[] {
     const chunks: string[] = [];
     const lines = fullMarkdown.split("\n");
     let currentChunk: string[] = [];
+    let inFrontmatter = false;
+    let isFirstH1 = true;
 
     for (const line of lines) {
-      if (line.startsWith("# ") && currentChunk.length > 0) {
-        // h1で新チャンク開始
-        chunks.push(currentChunk.join("\n"));
-        currentChunk = [];
+      // frontmatterの検出
+      if (line.trim() === "---") {
+        inFrontmatter = !inFrontmatter;
+        currentChunk.push(line);
+        continue;
       }
+
+      // frontmatter内は無条件で追加
+      if (inFrontmatter) {
+        currentChunk.push(line);
+        continue;
+      }
+
+      // H1見出しの検出（行頭が"# "）
+      if (line.startsWith("# ")) {
+        if (!isFirstH1 && currentChunk.length > 0) {
+          // 前のチャンクを保存
+          chunks.push(currentChunk.join("\n").trim());
+          currentChunk = [];
+        }
+        isFirstH1 = false;
+      }
+
       currentChunk.push(line);
     }
 
+    // 最後のチャンクを追加
     if (currentChunk.length > 0) {
-      chunks.push(currentChunk.join("\n"));
+      chunks.push(currentChunk.join("\n").trim());
     }
 
-    return chunks;
+    return chunks.filter((chunk) => chunk.length > 0);
+  }
+
+  /**
+   * チャンクをファイルに出力
+   * @param chunks チャンクの配列
+   * @returns 出力されたファイルパスの配列
+   */
+  writeChunks(chunks: string[]): string[] {
+    const chunksDir = join(this.outputDir, "chunks");
+    mkdirSync(chunksDir, { recursive: true });
+
+    const outputPaths: string[] = [];
+    for (let i = 0; i < chunks.length; i++) {
+      const chunkNum = String(i + 1).padStart(3, "0");
+      const chunkFile = `chunk-${chunkNum}.md`;
+      const chunkPath = join(chunksDir, chunkFile);
+      writeFileSync(chunkPath, chunks[i]);
+      outputPaths.push(chunkPath);
+    }
+
+    return outputPaths;
+  }
+
+  /**
+   * full.mdファイルを読み込んでチャンク分割
+   * @returns 出力されたファイルパスの配列
+   */
+  chunkFullMd(): string[] {
+    const fullMdPath = join(this.outputDir, "full.md");
+    const content = readFileSync(fullMdPath, "utf-8");
+    const chunks = this.chunk(content);
+    return this.writeChunks(chunks);
   }
 }
 ```
