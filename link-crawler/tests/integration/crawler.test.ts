@@ -4,7 +4,8 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Crawler } from "../../src/crawler/index.js";
 import type { CrawlConfig, Fetcher, FetchResult } from "../../src/types.js";
 
-const testOutputDir = `./test-output-integration-${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+// テストごとに一意なディレクトリを生成
+let testOutputDir: string;
 
 /** テスト用のモックFetcher */
 class MockFetcher implements Fetcher {
@@ -81,7 +82,8 @@ function createTestHtml(options: {
 </html>`;
 }
 
-const defaultConfig: CrawlConfig = {
+/** デフォルトのテスト設定を取得 */
+const getDefaultConfig = (): CrawlConfig => ({
 	startUrl: "https://example.com",
 	maxDepth: 2,
 	outputDir: testOutputDir,
@@ -97,15 +99,24 @@ const defaultConfig: CrawlConfig = {
 	merge: true,
 	chunks: true,
 	keepSession: false,
-};
+});
 
 describe("CrawlerEngine Integration", () => {
+	let testCounter = 0;
+
 	beforeEach(() => {
+		// 各テストで一意なディレクトリを生成
+		// 複数のランダム要素を組み合わせて衝突を回避
+		testCounter++;
+		const uniqueId = `${process.pid}-${testCounter}-${Date.now()}-${performance.now()}-${Math.random().toString(36).slice(2)}`;
+		testOutputDir = join(import.meta.dirname, `.test-output-integration-${uniqueId}`);
 		rmSync(testOutputDir, { recursive: true, force: true });
 	});
 
 	afterEach(() => {
-		rmSync(testOutputDir, { recursive: true, force: true });
+		if (testOutputDir) {
+			rmSync(testOutputDir, { recursive: true, force: true });
+		}
 	});
 
 	describe("E2E-style crawling with mock Fetcher", () => {
@@ -120,7 +131,7 @@ describe("CrawlerEngine Integration", () => {
 				},
 			});
 
-			const crawler = new Crawler(defaultConfig, mockFetcher);
+			const crawler = new Crawler(getDefaultConfig(), mockFetcher);
 			await crawler.run();
 
 			expect(existsSync(testOutputDir)).toBe(true);
@@ -173,7 +184,7 @@ describe("CrawlerEngine Integration", () => {
 				},
 			});
 
-			const config = { ...defaultConfig, maxDepth: 2 };
+			const config = { ...getDefaultConfig(), maxDepth: 2 };
 			const crawler = new Crawler(config, mockFetcher);
 			await crawler.run();
 
@@ -224,7 +235,7 @@ describe("CrawlerEngine Integration", () => {
 				},
 			});
 
-			const config = { ...defaultConfig, sameDomain: true };
+			const config = { ...getDefaultConfig(), sameDomain: true };
 			const crawler = new Crawler(config, mockFetcher);
 			await crawler.run();
 
@@ -248,7 +259,7 @@ describe("CrawlerEngine Integration", () => {
 				},
 			});
 
-			const crawler = new Crawler(defaultConfig, mockFetcher);
+			const crawler = new Crawler(getDefaultConfig(), mockFetcher);
 			await crawler.run();
 
 			const indexContent = JSON.parse(readFileSync(join(testOutputDir, "index.json"), "utf-8"));
@@ -282,7 +293,7 @@ describe("CrawlerEngine Integration", () => {
 				},
 			});
 
-			const config = { ...defaultConfig, maxDepth: 1 };
+			const config = { ...getDefaultConfig(), maxDepth: 1 };
 			const crawler = new Crawler(config, mockFetcher);
 			await crawler.run();
 
@@ -306,7 +317,7 @@ describe("CrawlerEngine Integration", () => {
 				"https://example.com": { html: initialHtml },
 			});
 
-			const config1 = { ...defaultConfig, diff: false };
+			const config1 = { ...getDefaultConfig(), diff: false };
 			const crawler1 = new Crawler(config1, mockFetcher1);
 			await crawler1.run();
 
@@ -317,7 +328,7 @@ describe("CrawlerEngine Integration", () => {
 				"https://example.com": { html: initialHtml },
 			});
 
-			const config2 = { ...defaultConfig, diff: true };
+			const config2 = { ...getDefaultConfig(), diff: true };
 			const crawler2 = new Crawler(config2, mockFetcher2);
 			await crawler2.run();
 
@@ -338,7 +349,7 @@ describe("CrawlerEngine Integration", () => {
 				},
 			});
 
-			const config1 = { ...defaultConfig, diff: false };
+			const config1 = { ...getDefaultConfig(), diff: false };
 			const crawler1 = new Crawler(config1, mockFetcher1);
 			await crawler1.run();
 
@@ -354,7 +365,7 @@ describe("CrawlerEngine Integration", () => {
 				},
 			});
 
-			const config2 = { ...defaultConfig, diff: true };
+			const config2 = { ...getDefaultConfig(), diff: true };
 			const crawler2 = new Crawler(config2, mockFetcher2);
 			await crawler2.run();
 
@@ -382,7 +393,7 @@ describe("CrawlerEngine Integration", () => {
 				},
 			});
 
-			const config = { ...defaultConfig, merge: true };
+			const config = { ...getDefaultConfig(), merge: true };
 			const crawler = new Crawler(config, mockFetcher);
 			await crawler.run();
 
@@ -418,7 +429,7 @@ describe("CrawlerEngine Integration", () => {
 				},
 			});
 
-			const config = { ...defaultConfig, chunks: true, merge: true };
+			const config = { ...getDefaultConfig(), chunks: true, merge: true };
 			const crawler = new Crawler(config, mockFetcher);
 			await crawler.run();
 
@@ -444,7 +455,7 @@ describe("CrawlerEngine Integration", () => {
 				},
 			});
 
-			const config = { ...defaultConfig, pages: false, merge: true };
+			const config = { ...getDefaultConfig(), pages: false, merge: true };
 			const crawler = new Crawler(config, mockFetcher);
 			await crawler.run();
 
@@ -463,7 +474,7 @@ describe("CrawlerEngine Integration", () => {
 				},
 			});
 
-			const config = { ...defaultConfig, merge: false, pages: true };
+			const config = { ...getDefaultConfig(), merge: false, pages: true };
 			const crawler = new Crawler(config, mockFetcher);
 			await crawler.run();
 
@@ -487,7 +498,7 @@ describe("CrawlerEngine Integration", () => {
 				},
 			});
 
-			const crawler = new Crawler(defaultConfig, mockFetcher);
+			const crawler = new Crawler(getDefaultConfig(), mockFetcher);
 			await crawler.run();
 
 			const indexContent = JSON.parse(readFileSync(join(testOutputDir, "index.json"), "utf-8"));
@@ -526,7 +537,7 @@ describe("CrawlerEngine Integration", () => {
 				},
 			});
 
-			const crawler = new Crawler(defaultConfig, mockFetcher);
+			const crawler = new Crawler(getDefaultConfig(), mockFetcher);
 			await crawler.run();
 
 			const indexContent = JSON.parse(readFileSync(join(testOutputDir, "index.json"), "utf-8"));
