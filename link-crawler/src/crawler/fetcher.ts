@@ -205,6 +205,19 @@ export class PlaywrightFetcher implements Fetcher {
 			if (timeoutId !== undefined) {
 				clearTimeout(timeoutId);
 			}
+
+			// タイムアウトエラーの場合はセッションをクリーンアップ
+			if (error instanceof TimeoutError) {
+				try {
+					await this.runCli(["session-stop"]);
+				} catch (cleanupError) {
+					// クリーンアップエラーは無視（セッションが既に閉じている可能性）
+					if (process.env.DEBUG === "1") {
+						console.log(`[DEBUG] session-stop on timeout failed: ${cleanupError}`);
+					}
+				}
+			}
+
 			if (error instanceof FetchError || error instanceof TimeoutError) {
 				throw error;
 			}
