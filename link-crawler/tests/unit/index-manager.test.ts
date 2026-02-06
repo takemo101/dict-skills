@@ -7,7 +7,7 @@ import { IndexManager } from "../../src/output/index-manager.js";
 import type { PageMetadata } from "../../src/types.js";
 
 describe("IndexManager", () => {
-	const testDir = join(import.meta.dirname, `.test-index-manager-${process.pid}`);
+	const testDir = join(import.meta.dirname, `.test-index-manager-${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`);
 
 	beforeEach(async () => {
 		await rm(testDir, { recursive: true, force: true });
