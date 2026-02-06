@@ -191,7 +191,7 @@ export class PlaywrightFetcher implements Fetcher {
 
 			// fetchとタイムアウトを競争させる
 			const result = await Promise.race([this.executeFetch(url), timeoutPromise]);
-			clearTimeout(timeoutId);
+			clearTimeout(timeoutId!);
 			return result;
 		} catch (error) {
 			// エラー時もタイマーをクリア
