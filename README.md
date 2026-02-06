@@ -46,8 +46,8 @@ bun run link-crawler/src/crawl.ts https://nextjs.org/docs -d 2
 | Document | Target Audience | Content |
 |----------|----------------|---------|
 | [SKILL.md](link-crawler/SKILL.md) | **pi users** | Concise usage as a pi skill |
-| [CLI Specification](link-crawler/docs/cli-spec.md) | **CLI users** | Complete option list, examples, output format specifications |
-| [Design Document](link-crawler/docs/design.md) | **Developers** | Architecture, data structures, technical specifications |
+| [CLI Specification](docs/cli-spec.md) | **CLI users** | Complete option list, examples, output format specifications |
+| [Design Document](docs/design.md) | **Developers** | Architecture, data structures, technical specifications |
 
 ### Contributing
 
@@ -109,19 +109,19 @@ bun run link-crawler/src/crawl.ts https://nextjs.org/docs -d 2
 | ドキュメント | 対象読者 | 内容 |
 |-------------|---------|------|
 | [SKILL.md](link-crawler/SKILL.md) | **piユーザー** | piスキルとしての簡潔な使い方 |
-| [CLI仕様書](link-crawler/docs/cli-spec.md) | **CLIユーザー** | 完全なオプション一覧・詳細な使用例・出力形式の仕様 |
-| [設計書](link-crawler/docs/design.md) | **開発者** | アーキテクチャ・データ構造・技術仕様 |
+| [CLI仕様書](docs/cli-spec.md) | **CLIユーザー** | 完全なオプション一覧・詳細な使用例・出力形式の仕様 |
+| [設計書](docs/design.md) | **開発者** | アーキテクチャ・データ構造・技術仕様 |
 
 ### 情報の所在
 
 | 知りたいこと | 参照先 |
 |-------------|--------|
-| 全オプションの詳細 | [CLI仕様書](link-crawler/docs/cli-spec.md#3-オプション一覧) |
-| 使用例・ユースケース | [CLI仕様書](link-crawler/docs/cli-spec.md#4-使用例) |
-| 出力形式の仕様 | [CLI仕様書](link-crawler/docs/cli-spec.md#5-出力構造) |
-| 終了コード・環境変数 | [CLI仕様書](link-crawler/docs/cli-spec.md#6-終了コード) |
+| 全オプションの詳細 | [CLI仕様書](docs/cli-spec.md#3-オプション一覧) |
+| 使用例・ユースケース | [CLI仕様書](docs/cli-spec.md#4-使用例) |
+| 出力形式の仕様 | [CLI仕様書](docs/cli-spec.md#5-出力構造) |
+| 終了コード・環境変数 | [CLI仕様書](docs/cli-spec.md#6-終了コード) |
 | piスキルとしての使い方 | [SKILL.md](link-crawler/SKILL.md) |
-| アーキテクチャ・設計 | [設計書](link-crawler/docs/design.md) |
+| アーキテクチャ・設計 | [設計書](docs/design.md) |
 
 ## コントリビューション
 
