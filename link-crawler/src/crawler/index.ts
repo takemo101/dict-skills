@@ -156,20 +156,8 @@ export class Crawler {
 				this.logger.logPageSaved(pageFile, depth, links.length);
 			} else {
 				// メモリに保存 (Merger/Chunker用)
-				const pageNum = String(this.writer.getNextPageNumber()).padStart(3, "0");
-				const pageFile = `pages/page-${pageNum}.md`;
-				const frontmatter = [
-					"---",
-					`url: ${url}`,
-					`title: "${(metadata.title || title || "").replace(/"/g, '\\"')}"`,
-					`crawledAt: ${new Date().toISOString()}`,
-					`depth: ${depth}`,
-					"---",
-					"",
-					"",
-				]
-					.filter((line) => line !== null)
-					.join("\n");
+				const pageFile = this.writer.buildPageFilename(metadata, title);
+				const frontmatter = this.writer.buildFrontmatter(url, metadata, title, depth);
 				this.pageContents.set(pageFile, frontmatter + markdown);
 				// writerにもページ情報を追加（ファイルは書き込まない）
 				this.writer.registerPage(url, pageFile, depth, links, metadata, title, hash);
