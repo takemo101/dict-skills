@@ -1,5 +1,5 @@
 import { Readability } from "@mozilla/readability";
-import { JSDOM } from "jsdom";
+import type { JSDOM } from "jsdom";
 import type { PageMetadata } from "../types.js";
 
 /** コードブロックを検出するためのセレクタ一覧 */
@@ -102,9 +102,10 @@ function restoreCodeBlocks(html: string, codeBlockMap: Map<string, string>): str
 }
 
 /** フォールバック抽出時にコードブロックを保護 */
-function extractAndPreserveCodeBlocks(
-	doc: Document,
-): { title: string | null; content: string | null } {
+function extractAndPreserveCodeBlocks(doc: Document): {
+	title: string | null;
+	content: string | null;
+} {
 	const body = doc.body;
 
 	// コードブロックを収集（削除前に保存）
@@ -121,8 +122,7 @@ function extractAndPreserveCodeBlocks(
 		el.remove();
 	}
 
-	const main =
-		doc.querySelector("main, article, [role='main'], .content, #content") || body;
+	const main = doc.querySelector("main, article, [role='main'], .content, #content") || body;
 	let content = main?.innerHTML || null;
 
 	// コンテンツにコードブロックが含まれていない場合、収集したものを追加
@@ -162,8 +162,6 @@ export function extractMetadata(dom: JSDOM): PageMetadata {
 
 /** HTMLから本文コンテンツを抽出（JSDOMインスタンスを使用） */
 export function extractContent(dom: JSDOM): { title: string | null; content: string | null } {
-	const actualUrl = dom.window.location.href;
-
 	// コードブロックを保護してからReadabilityを実行
 	const codeBlockMap = protectCodeBlocks(dom.window.document);
 
