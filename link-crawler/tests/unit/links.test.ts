@@ -1,3 +1,4 @@
+import { JSDOM } from "jsdom";
 import { describe, expect, it } from "vitest";
 import { extractLinks, isSameDomain, normalizeUrl, shouldCrawl } from "../../src/parser/links.js";
 import type { CrawlConfig } from "../../src/types.js";
@@ -206,7 +207,8 @@ describe("extractLinks", () => {
 			</html>
 		`;
 		const visited = new Set<string>();
-		const links = extractLinks(html, "https://example.com", visited, baseConfig);
+		const dom = new JSDOM(html, { url: "https://example.com" });
+		const links = extractLinks(dom, visited, baseConfig);
 
 		expect(links).toContain("https://example.com/about");
 		expect(links).toContain("https://example.com/contact");
@@ -224,7 +226,8 @@ describe("extractLinks", () => {
 			</html>
 		`;
 		const visited = new Set<string>();
-		const links = extractLinks(html, "https://example.com", visited, baseConfig);
+		const dom = new JSDOM(html, { url: "https://example.com" });
+		const links = extractLinks(dom, visited, baseConfig);
 
 		expect(links).toContain("https://example.com/about");
 		expect(links).toContain("https://example.com/contact");
@@ -242,7 +245,8 @@ describe("extractLinks", () => {
 			</html>
 		`;
 		const visited = new Set<string>();
-		const links = extractLinks(html, "https://example.com", visited, baseConfig);
+		const dom = new JSDOM(html, { url: "https://example.com" });
+		const links = extractLinks(dom, visited, baseConfig);
 
 		// Both links should normalize to the same URL without fragment
 		expect(links).toHaveLength(1);
@@ -259,7 +263,8 @@ describe("extractLinks", () => {
 			</html>
 		`;
 		const visited = new Set<string>();
-		const links = extractLinks(html, "https://example.com", visited, baseConfig);
+		const dom = new JSDOM(html, { url: "https://example.com" });
+		const links = extractLinks(dom, visited, baseConfig);
 
 		expect(links).toHaveLength(1);
 		expect(links[0]).toBe("https://example.com/page");
@@ -276,7 +281,8 @@ describe("extractLinks", () => {
 			</html>
 		`;
 		const visited = new Set<string>();
-		const links = extractLinks(html, "https://example.com", visited, baseConfig);
+		const dom = new JSDOM(html, { url: "https://example.com" });
+		const links = extractLinks(dom, visited, baseConfig);
 
 		expect(links).toHaveLength(1);
 		expect(links[0]).toBe("https://example.com/page");
@@ -292,7 +298,8 @@ describe("extractLinks", () => {
 			</html>
 		`;
 		const visited = new Set<string>();
-		const links = extractLinks(html, "https://example.com", visited, baseConfig);
+		const dom = new JSDOM(html, { url: "https://example.com" });
+		const links = extractLinks(dom, visited, baseConfig);
 
 		expect(links).toHaveLength(1);
 		expect(links[0]).toBe("https://example.com/page");
@@ -308,7 +315,8 @@ describe("extractLinks", () => {
 			</html>
 		`;
 		const visited = new Set<string>(["https://example.com/about"]);
-		const links = extractLinks(html, "https://example.com", visited, baseConfig);
+		const dom = new JSDOM(html, { url: "https://example.com" });
+		const links = extractLinks(dom, visited, baseConfig);
 
 		expect(links).toHaveLength(1);
 		expect(links[0]).toBe("https://example.com/contact");
@@ -325,7 +333,8 @@ describe("extractLinks", () => {
 			</html>
 		`;
 		const visited = new Set<string>();
-		const links = extractLinks(html, "https://example.com", visited, baseConfig);
+		const dom = new JSDOM(html, { url: "https://example.com" });
+		const links = extractLinks(dom, visited, baseConfig);
 
 		expect(links).toHaveLength(1);
 		expect(links[0]).toBe("https://example.com/page");
@@ -341,7 +350,8 @@ describe("extractLinks", () => {
 			</html>
 		`;
 		const visited = new Set<string>();
-		const links = extractLinks(html, "https://example.com", visited, baseConfig);
+		const dom = new JSDOM(html, { url: "https://example.com" });
+		const links = extractLinks(dom, visited, baseConfig);
 
 		expect(links).toHaveLength(1);
 		expect(links[0]).toBe("https://example.com/page");
@@ -357,7 +367,8 @@ describe("extractLinks", () => {
 			</html>
 		`;
 		const visited = new Set<string>();
-		const links = extractLinks(html, "https://example.com", visited, baseConfig);
+		const dom = new JSDOM(html, { url: "https://example.com" });
+		const links = extractLinks(dom, visited, baseConfig);
 
 		expect(links).toHaveLength(1);
 		expect(links[0]).toBe("https://example.com/page");
@@ -374,7 +385,8 @@ describe("extractLinks", () => {
 			</html>
 		`;
 		const visited = new Set<string>();
-		const links = extractLinks(html, "https://example.com", visited, baseConfig);
+		const dom = new JSDOM(html, { url: "https://example.com" });
+		const links = extractLinks(dom, visited, baseConfig);
 
 		expect(links).toHaveLength(1);
 		expect(links[0]).toBe("https://example.com/page");
@@ -393,7 +405,8 @@ describe("extractLinks", () => {
 		const visited = new Set<string>();
 		// includePattern needs to match full URL
 		const config = { ...baseConfig, includePattern: /\/docs/ };
-		const links = extractLinks(html, "https://example.com", visited, config);
+		const dom = new JSDOM(html, { url: "https://example.com" });
+		const links = extractLinks(dom, visited, config);
 
 		expect(links).toHaveLength(1);
 		expect(links[0]).toBe("https://example.com/docs/guide");
@@ -411,7 +424,8 @@ describe("extractLinks", () => {
 		`;
 		const visited = new Set<string>();
 		const config = { ...baseConfig, excludePattern: /draft/ };
-		const links = extractLinks(html, "https://example.com", visited, config);
+		const dom = new JSDOM(html, { url: "https://example.com" });
+		const links = extractLinks(dom, visited, config);
 
 		expect(links).toContain("https://example.com/page/final");
 		expect(links).toContain("https://example.com/other");
@@ -430,7 +444,8 @@ describe("extractLinks", () => {
 		`;
 		const visited = new Set<string>();
 		const config = { ...baseConfig, sameDomain: false };
-		const links = extractLinks(html, "https://example.com", visited, config);
+		const dom = new JSDOM(html, { url: "https://example.com" });
+		const links = extractLinks(dom, visited, config);
 
 		expect(links).toContain("https://other.com/page");
 		expect(links).toContain("https://example.com/local");
@@ -449,7 +464,8 @@ describe("extractLinks", () => {
 			</html>
 		`;
 		const visited = new Set<string>();
-		const links = extractLinks(html, "https://example.com", visited, baseConfig);
+		const dom = new JSDOM(html, { url: "https://example.com" });
+		const links = extractLinks(dom, visited, baseConfig);
 
 		expect(links).toHaveLength(1);
 		expect(links[0]).toBe("https://example.com/page");

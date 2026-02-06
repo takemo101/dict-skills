@@ -232,7 +232,8 @@ describe("extractContent", () => {
 				</body>
 			</html>
 		`;
-		const result = extractContent(html, "https://example.com/article");
+		const dom = new JSDOM(html, { url: "https://example.com/article" });
+		const result = extractContent(dom);
 
 		// Readability uses the document title, not the h1
 		expect(result.title).toBe("Article Title");
@@ -252,7 +253,8 @@ describe("extractContent", () => {
 				</body>
 			</html>
 		`;
-		const result = extractContent(html, "https://example.com/minimal");
+		const dom = new JSDOM(html, { url: "https://example.com/minimal" });
+		const result = extractContent(dom);
 
 		// Readability may still extract minimal content or fall back
 		// The test verifies the function doesn't throw
@@ -273,7 +275,8 @@ describe("extractContent", () => {
 				</body>
 			</html>
 		`;
-		const result = extractContent(html, "https://example.com/scripts");
+		const dom = new JSDOM(html, { url: "https://example.com/scripts" });
+		const result = extractContent(dom);
 
 		// Readability should handle this, or fallback should remove scripts
 		if (result.content) {
@@ -295,7 +298,8 @@ describe("extractContent", () => {
 				</body>
 			</html>
 		`;
-		const result = extractContent(html, "https://example.com/styles");
+		const dom = new JSDOM(html, { url: "https://example.com/styles" });
+		const result = extractContent(dom);
 
 		if (result.content) {
 			expect(result.content).not.toContain("color: red");
@@ -318,7 +322,8 @@ describe("extractContent", () => {
 				</body>
 			</html>
 		`;
-		const result = extractContent(html, "https://example.com/main");
+		const dom = new JSDOM(html, { url: "https://example.com/main" });
+		const result = extractContent(dom);
 
 		expect(result.content).not.toBeNull();
 		if (result.content) {
@@ -349,7 +354,8 @@ describe("extractContent", () => {
 				</body>
 			</html>
 		`;
-		const result = extractContent(html, "https://example.com/complex");
+		const dom = new JSDOM(html, { url: "https://example.com/complex" });
+		const result = extractContent(dom);
 
 		expect(result.content).not.toBeNull();
 		if (result.content) {
@@ -360,7 +366,8 @@ describe("extractContent", () => {
 
 	it("should handle empty HTML", () => {
 		const html = "";
-		const result = extractContent(html, "https://example.com/empty");
+		const dom = new JSDOM(html, { url: "https://example.com/empty" });
+		const result = extractContent(dom);
 
 		expect(result.title).toBeNull();
 		expect(result.content).toBeNull();
@@ -378,7 +385,8 @@ describe("extractContent", () => {
 				</body>
 			</html>
 		`;
-		const result = extractContent(html, "https://example.com/short");
+		const dom = new JSDOM(html, { url: "https://example.com/short" });
+		const result = extractContent(dom);
 
 		// Readability may extract minimal content or return null
 		// The test verifies the function handles short content gracefully
@@ -403,7 +411,8 @@ describe("extractContent", () => {
 				</body>
 			</html>
 		`;
-		const result = extractContent(html, "https://example.com/page");
+		const dom = new JSDOM(html, { url: "https://example.com/page" });
+		const result = extractContent(dom);
 
 		expect(result.content).not.toBeNull();
 	});
@@ -421,7 +430,8 @@ describe("extractContent", () => {
 				</body>
 			</html>
 		`;
-		const result = extractContent(html, "https://example.com/noscript");
+		const dom = new JSDOM(html, { url: "https://example.com/noscript" });
+		const result = extractContent(dom);
 
 		if (result.content) {
 			expect(result.content).not.toContain("Enable JavaScript");
@@ -442,7 +452,8 @@ describe("extractContent", () => {
 				</body>
 			</html>
 		`;
-		const result = extractContent(html, "https://example.com/content-class");
+		const dom = new JSDOM(html, { url: "https://example.com/content-class" });
+		const result = extractContent(dom);
 
 		// Readability may or may not find this, but if fallback is used, it should look for .content
 		if (result.content) {
@@ -464,7 +475,8 @@ describe("extractContent", () => {
 				</body>
 			</html>
 		`;
-		const result = extractContent(html, "https://example.com/id-content");
+		const dom = new JSDOM(html, { url: "https://example.com/id-content" });
+		const result = extractContent(dom);
 
 		if (result.content) {
 			expect(result.content.toLowerCase()).toContain("content");
@@ -491,7 +503,8 @@ describe("extractContent - code block preservation", () => {
 				</body>
 			</html>
 		`;
-		const result = extractContent(html, "https://example.com/code");
+		const dom = new JSDOM(html, { url: "https://example.com/code" });
+		const result = extractContent(dom);
 
 		expect(result.content).not.toBeNull();
 		expect(result.content).toContain("<pre>");
@@ -517,7 +530,8 @@ describe("extractContent - code block preservation", () => {
 				</body>
 			</html>
 		`;
-		const result = extractContent(html, "https://example.com/ts");
+		const dom = new JSDOM(html, { url: "https://example.com/ts" });
+		const result = extractContent(dom);
 
 		expect(result.content).not.toBeNull();
 		expect(result.content).toContain("typescript");
@@ -544,7 +558,8 @@ describe("extractContent - code block preservation", () => {
 				</body>
 			</html>
 		`;
-		const result = extractContent(html, "https://nextjs.org/docs");
+		const dom = new JSDOM(html, { url: "https://nextjs.org/docs" });
+		const result = extractContent(dom);
 
 		expect(result.content).not.toBeNull();
 		expect(result.content).toContain("data-rehype-pretty-code-fragment");
@@ -573,7 +588,8 @@ describe("extractContent - code block preservation", () => {
 				</body>
 			</html>
 		`;
-		const result = extractContent(html, "https://example.com/hljs");
+		const dom = new JSDOM(html, { url: "https://example.com/hljs" });
+		const result = extractContent(dom);
 
 		expect(result.content).not.toBeNull();
 		expect(result.content).toContain("hljs");
@@ -600,7 +616,8 @@ describe("extractContent - code block preservation", () => {
 				</body>
 			</html>
 		`;
-		const result = extractContent(html, "https://example.com/prism");
+		const dom = new JSDOM(html, { url: "https://example.com/prism" });
+		const result = extractContent(dom);
 
 		expect(result.content).not.toBeNull();
 		expect(result.content).toContain("prism-code");
@@ -629,7 +646,8 @@ describe("extractContent - code block preservation", () => {
 				</body>
 			</html>
 		`;
-		const result = extractContent(html, "https://example.com/shiki");
+		const dom = new JSDOM(html, { url: "https://example.com/shiki" });
+		const result = extractContent(dom);
 
 		expect(result.content).not.toBeNull();
 		expect(result.content).toContain("shiki");
@@ -660,7 +678,8 @@ describe("extractContent - code block preservation", () => {
 				</body>
 			</html>
 		`;
-		const result = extractContent(html, "https://example.com/multi");
+		const dom = new JSDOM(html, { url: "https://example.com/multi" });
+		const result = extractContent(dom);
 
 		expect(result.content).not.toBeNull();
 		// Count occurrences of code blocks
@@ -686,7 +705,8 @@ describe("extractContent - code block preservation", () => {
 				</body>
 			</html>
 		`;
-		const result = extractContent(html, "https://example.com/data-lang");
+		const dom = new JSDOM(html, { url: "https://example.com/data-lang" });
+		const result = extractContent(dom);
 
 		expect(result.content).not.toBeNull();
 		expect(result.content).toContain("data-language");
@@ -713,7 +733,8 @@ describe("extractContent - code block preservation", () => {
 				</body>
 			</html>
 		`;
-		const result = extractContent(html, "https://example.com/highlight");
+		const dom = new JSDOM(html, { url: "https://example.com/highlight" });
+		const result = extractContent(dom);
 
 		expect(result.content).not.toBeNull();
 		expect(result.content).toContain("highlight");
@@ -739,7 +760,8 @@ describe("extractContent - code block preservation", () => {
 				</body>
 			</html>
 		`;
-		const result = extractContent(html, "https://example.com/code-block");
+		const dom = new JSDOM(html, { url: "https://example.com/code-block" });
+		const result = extractContent(dom);
 
 		expect(result.content).not.toBeNull();
 		expect(result.content).toContain("code-block");
@@ -760,7 +782,8 @@ describe("extractContent - code block preservation", () => {
 				</body>
 			</html>
 		`;
-		const result = extractContent(html, "https://example.com/code-collection");
+		const dom = new JSDOM(html, { url: "https://example.com/code-collection" });
+		const result = extractContent(dom);
 
 		// In fallback mode, code blocks should be collected and preserved
 		expect(result.content).not.toBeNull();
@@ -790,7 +813,8 @@ describe("extractContent - code block preservation", () => {
 				</body>
 			</html>
 		`;
-		const result = extractContent(html, "https://example.com/nested-code");
+		const dom = new JSDOM(html, { url: "https://example.com/nested-code" });
+		const result = extractContent(dom);
 
 		expect(result.content).not.toBeNull();
 		// Should contain the code content without duplication
@@ -814,7 +838,8 @@ describe("extractContent - edge cases", () => {
 			</body>
 			</html>
 		`;
-		const result = extractContent(html, "https://example.com/nav-only");
+		const dom = new JSDOM(html, { url: "https://example.com/nav-only" });
+		const result = extractContent(dom);
 
 		// Fallback should provide content
 		expect(result).toHaveProperty("content");
@@ -838,7 +863,8 @@ describe("extractContent - edge cases", () => {
 			</body>
 			</html>
 		`;
-		const result = extractContent(html, "https://example.com/figure");
+		const dom = new JSDOM(html, { url: "https://example.com/figure" });
+		const result = extractContent(dom);
 
 		expect(result.content).not.toBeNull();
 		if (result.content) {
@@ -867,7 +893,8 @@ describe("extractContent - fallback code block preservation", () => {
 			</body>
 			</html>
 		`;
-		const result = extractContent(html, "https://example.com/fallback-code");
+		const dom = new JSDOM(html, { url: "https://example.com/fallback-code" });
+		const result = extractContent(dom);
 
 		// Fallback should provide content with code blocks
 		expect(result.content).not.toBeNull();
@@ -897,7 +924,8 @@ describe("extractContent - fallback code block preservation", () => {
 			</body>
 			</html>
 		`;
-		const result = extractContent(html, "https://example.com/code-addition");
+		const dom = new JSDOM(html, { url: "https://example.com/code-addition" });
+		const result = extractContent(dom);
 
 		// Fallback should collect code blocks and add them
 		expect(result.content).not.toBeNull();
@@ -926,7 +954,8 @@ describe("extractContent - fallback code block preservation", () => {
 			</body>
 			</html>
 		`;
-		const result = extractContent(html, "https://example.com/main-fallback");
+		const dom = new JSDOM(html, { url: "https://example.com/main-fallback" });
+		const result = extractContent(dom);
 
 		expect(result.content).not.toBeNull();
 		if (result.content) {
@@ -950,7 +979,8 @@ describe("extractContent - fallback code block preservation", () => {
 			</body>
 			</html>
 		`;
-		const result = extractContent(html, "https://example.com/article-fallback");
+		const dom = new JSDOM(html, { url: "https://example.com/article-fallback" });
+		const result = extractContent(dom);
 
 		expect(result.content).not.toBeNull();
 	});
@@ -970,7 +1000,8 @@ describe("extractContent - fallback code block preservation", () => {
 			</body>
 			</html>
 		`;
-		const result = extractContent(html, "https://example.com/role-main-fallback");
+		const dom = new JSDOM(html, { url: "https://example.com/role-main-fallback" });
+		const result = extractContent(dom);
 
 		expect(result.content).not.toBeNull();
 	});
@@ -990,7 +1021,8 @@ describe("extractContent - fallback code block preservation", () => {
 			</body>
 			</html>
 		`;
-		const result = extractContent(html, "https://example.com/content-class-fallback");
+		const dom = new JSDOM(html, { url: "https://example.com/content-class-fallback" });
+		const result = extractContent(dom);
 
 		expect(result.content).not.toBeNull();
 	});
@@ -1010,7 +1042,8 @@ describe("extractContent - fallback code block preservation", () => {
 			</body>
 			</html>
 		`;
-		const result = extractContent(html, "https://example.com/content-id-fallback");
+		const dom = new JSDOM(html, { url: "https://example.com/content-id-fallback" });
+		const result = extractContent(dom);
 
 		expect(result.content).not.toBeNull();
 	});
@@ -1030,7 +1063,8 @@ describe("extractContent - fallback code block preservation", () => {
 			</body>
 			</html>
 		`;
-		const result = extractContent(html, "https://example.com/body-fallback");
+		const dom = new JSDOM(html, { url: "https://example.com/body-fallback" });
+		const result = extractContent(dom);
 
 		// Should fallback to body when no specific selector matches
 		expect(result).toHaveProperty("content");
@@ -1057,7 +1091,8 @@ describe("extractContent - fallback code block preservation", () => {
 			</body>
 			</html>
 		`;
-		const result = extractContent(html, "https://example.com/all-selectors");
+		const dom = new JSDOM(html, { url: "https://example.com/all-selectors" });
+		const result = extractContent(dom);
 
 		// Should collect code blocks from all selectors (lines 110-117)
 		expect(result.content).not.toBeNull();
@@ -1079,7 +1114,8 @@ describe("extractContent - fallback code block preservation", () => {
 			</body>
 			</html>
 		`;
-		const result = extractContent(html, "https://example.com/has-code");
+		const dom = new JSDOM(html, { url: "https://example.com/has-code" });
+		const result = extractContent(dom);
 
 		expect(result.content).not.toBeNull();
 		if (result.content) {
@@ -1091,7 +1127,8 @@ describe("extractContent - fallback code block preservation", () => {
 	it("should trigger fallback with empty body", () => {
 		// Completely empty body - definitely triggers fallback
 		const html = `<!DOCTYPE html><html><head><title></title></head><body></body></html>`;
-		const result = extractContent(html, "https://example.com/empty");
+		const dom = new JSDOM(html, { url: "https://example.com/empty" });
+		const result = extractContent(dom);
 
 		// Fallback returns empty content for empty body (may be whitespace or null)
 		expect(result.title).toBeNull();
@@ -1120,7 +1157,8 @@ describe("extractContent - fallback code block preservation", () => {
 			</body>
 			</html>
 		`;
-		const result = extractContent(html, "https://example.com/complex");
+		const dom = new JSDOM(html, { url: "https://example.com/complex" });
+		const result = extractContent(dom);
 
 		// Should extract content (either via Readability or fallback)
 		expect(result.content).not.toBeNull();
@@ -1145,7 +1183,8 @@ describe("extractContent - fallback edge cases for coverage", () => {
 			<style>.test { }</style>
 			<aside><pre><code>code in aside</code></pre></aside>
 		</body></html>`;
-		const result = extractContent(html, "https://example.com/fallback-code-collection");
+		const dom = new JSDOM(html, { url: "https://example.com/fallback-code-collection" });
+		const result = extractContent(dom);
 
 		// Fallback executes and collects code blocks
 		expect(result).toHaveProperty("content");
@@ -1168,7 +1207,8 @@ describe("extractContent - fallback edge cases for coverage", () => {
 				<div class="shiki">9</div>
 			</aside>
 		</body></html>`;
-		const result = extractContent(html, "https://example.com/fallback-all-selectors");
+		const dom = new JSDOM(html, { url: "https://example.com/fallback-all-selectors" });
+		const result = extractContent(dom);
 
 		expect(result).toHaveProperty("content");
 	});
@@ -1181,7 +1221,8 @@ describe("extractContent - fallback edge cases for coverage", () => {
 			<main><span>text only</span></main>
 			<aside><pre><code>code block</code></pre></aside>
 		</body></html>`;
-		const result = extractContent(html, "https://example.com/fallback-append");
+		const dom = new JSDOM(html, { url: "https://example.com/fallback-append" });
+		const result = extractContent(dom);
 
 		expect(result).toHaveProperty("content");
 	});
@@ -1194,7 +1235,8 @@ describe("extractContent - fallback edge cases for coverage", () => {
 			<style>y</style>
 			<main><span>main</span></main>
 		</body></html>`;
-		const result = extractContent(html, "https://example.com/fallback-main-selector");
+		const dom = new JSDOM(html, { url: "https://example.com/fallback-main-selector" });
+		const result = extractContent(dom);
 
 		expect(result.content).not.toBeNull();
 	});
@@ -1206,7 +1248,8 @@ describe("extractContent - fallback edge cases for coverage", () => {
 			<style>y</style>
 			<article><span>article</span></article>
 		</body></html>`;
-		const result = extractContent(html, "https://example.com/fallback-article-selector");
+		const dom = new JSDOM(html, { url: "https://example.com/fallback-article-selector" });
+		const result = extractContent(dom);
 
 		expect(result.content).not.toBeNull();
 	});
@@ -1218,7 +1261,8 @@ describe("extractContent - fallback edge cases for coverage", () => {
 			<style>y</style>
 			<div role="main"><span>role</span></div>
 		</body></html>`;
-		const result = extractContent(html, "https://example.com/fallback-role-selector");
+		const dom = new JSDOM(html, { url: "https://example.com/fallback-role-selector" });
+		const result = extractContent(dom);
 
 		expect(result.content).not.toBeNull();
 	});
@@ -1230,7 +1274,8 @@ describe("extractContent - fallback edge cases for coverage", () => {
 			<style>y</style>
 			<div class="content"><span>content</span></div>
 		</body></html>`;
-		const result = extractContent(html, "https://example.com/fallback-content-class-selector");
+		const dom = new JSDOM(html, { url: "https://example.com/fallback-content-class-selector" });
+		const result = extractContent(dom);
 
 		expect(result.content).not.toBeNull();
 	});
@@ -1242,7 +1287,8 @@ describe("extractContent - fallback edge cases for coverage", () => {
 			<style>y</style>
 			<div id="content"><span>id</span></div>
 		</body></html>`;
-		const result = extractContent(html, "https://example.com/fallback-content-id-selector");
+		const dom = new JSDOM(html, { url: "https://example.com/fallback-content-id-selector" });
+		const result = extractContent(dom);
 
 		expect(result.content).not.toBeNull();
 	});
@@ -1254,7 +1300,8 @@ describe("extractContent - fallback edge cases for coverage", () => {
 			<style>y</style>
 			<div class="other"><span>text</span></div>
 		</body></html>`;
-		const result = extractContent(html, "https://example.com/fallback-body-selector");
+		const dom = new JSDOM(html, { url: "https://example.com/fallback-body-selector" });
+		const result = extractContent(dom);
 
 		expect(result).toHaveProperty("content");
 	});
@@ -1267,7 +1314,8 @@ describe("extractContent - fallback edge cases for coverage", () => {
 			<style>y</style>
 			<main></main>
 		</body></html>`;
-		const result = extractContent(html, "https://example.com/fallback-empty-innerHTML");
+		const dom = new JSDOM(html, { url: "https://example.com/fallback-empty-innerHTML" });
+		const result = extractContent(dom);
 
 		// Content is null or empty (line 133: || null)
 		expect(result).toHaveProperty("content");
@@ -1281,7 +1329,8 @@ describe("extractContent - fallback edge cases for coverage", () => {
 			<main><pre><code>inline</code></pre></main>
 			<aside><pre><code>aside</code></pre></aside>
 		</body></html>`;
-		const result = extractContent(html, "https://example.com/fallback-no-duplicate");
+		const dom = new JSDOM(html, { url: "https://example.com/fallback-no-duplicate" });
+		const result = extractContent(dom);
 
 		expect(result).toHaveProperty("content");
 	});
@@ -1289,7 +1338,8 @@ describe("extractContent - fallback edge cases for coverage", () => {
 	it("should handle completely empty body (line 132-136)", () => {
 		// Empty body -> Readability fails -> fallback -> body has no content
 		const html = `<!DOCTYPE html><html><body></body></html>`;
-		const result = extractContent(html, "https://example.com/fallback-completely-empty");
+		const dom = new JSDOM(html, { url: "https://example.com/fallback-completely-empty" });
+		const result = extractContent(dom);
 
 		expect(result.title).toBeNull();
 		// Content may be null or empty
