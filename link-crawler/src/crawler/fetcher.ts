@@ -150,15 +150,15 @@ export class PlaywrightFetcher implements Fetcher {
 
 				if (existsSync(fullPath)) {
 					const logContent = await this.runtime.readFile(fullPath);
-					
+
 					// ステータスコード抽出
 					const statusMatch = logContent.match(/status:\s*(\d+)/);
 					const statusCode = statusMatch ? parseInt(statusMatch[1], 10) : null;
-					
+
 					// content-type 抽出（大文字小文字を区別しない、セミコロン以降は除外）
 					const contentTypeMatch = logContent.match(/content-type:\s*([^\n\r;]+)/i);
 					const contentType = contentTypeMatch ? contentTypeMatch[1].trim() : "text/html";
-					
+
 					return { statusCode, contentType };
 				}
 			}

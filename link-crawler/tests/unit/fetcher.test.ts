@@ -602,7 +602,9 @@ describe("PlaywrightFetcher", () => {
 
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
 			const result = await (
-				fetcher as unknown as { getHttpMetadata(): Promise<{ statusCode: number | null; contentType: string }> }
+				fetcher as unknown as {
+					getHttpMetadata(): Promise<{ statusCode: number | null; contentType: string }>;
+				}
 			).getHttpMetadata();
 
 			expect(result.statusCode).toBe(200);
@@ -628,7 +630,9 @@ describe("PlaywrightFetcher", () => {
 
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
 			const result = await (
-				fetcher as unknown as { getHttpMetadata(): Promise<{ statusCode: number | null; contentType: string }> }
+				fetcher as unknown as {
+					getHttpMetadata(): Promise<{ statusCode: number | null; contentType: string }>;
+				}
 			).getHttpMetadata();
 
 			expect(result.statusCode).toBe(404);
@@ -652,7 +656,9 @@ describe("PlaywrightFetcher", () => {
 
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
 			const result = await (
-				fetcher as unknown as { getHttpMetadata(): Promise<{ statusCode: number | null; contentType: string }> }
+				fetcher as unknown as {
+					getHttpMetadata(): Promise<{ statusCode: number | null; contentType: string }>;
+				}
 			).getHttpMetadata();
 
 			expect(result.statusCode).toBe(301);
@@ -674,7 +680,9 @@ describe("PlaywrightFetcher", () => {
 
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
 			const result = await (
-				fetcher as unknown as { getHttpMetadata(): Promise<{ statusCode: number | null; contentType: string }> }
+				fetcher as unknown as {
+					getHttpMetadata(): Promise<{ statusCode: number | null; contentType: string }>;
+				}
 			).getHttpMetadata();
 
 			expect(result.statusCode).toBeNull();
@@ -1088,11 +1096,15 @@ describe("PlaywrightFetcher", () => {
 			} as SpawnResult);
 
 			mockExistsSync.mockReturnValue(true);
-			mockRuntime.readFile = vi.fn().mockResolvedValue("status: 200\ncontent-type: application/json");
+			mockRuntime.readFile = vi
+				.fn()
+				.mockResolvedValue("status: 200\ncontent-type: application/json");
 
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
 			const result = await (
-				fetcher as unknown as { getHttpMetadata(): Promise<{ statusCode: number | null; contentType: string }> }
+				fetcher as unknown as {
+					getHttpMetadata(): Promise<{ statusCode: number | null; contentType: string }>;
+				}
 			).getHttpMetadata();
 
 			expect(result.statusCode).toBe(200);
@@ -1111,11 +1123,15 @@ describe("PlaywrightFetcher", () => {
 			} as SpawnResult);
 
 			mockExistsSync.mockReturnValue(true);
-			mockRuntime.readFile = vi.fn().mockResolvedValue("status: 200\ncontent-type: application/yaml");
+			mockRuntime.readFile = vi
+				.fn()
+				.mockResolvedValue("status: 200\ncontent-type: application/yaml");
 
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
 			const result = await (
-				fetcher as unknown as { getHttpMetadata(): Promise<{ statusCode: number | null; contentType: string }> }
+				fetcher as unknown as {
+					getHttpMetadata(): Promise<{ statusCode: number | null; contentType: string }>;
+				}
 			).getHttpMetadata();
 
 			expect(result.statusCode).toBe(200);
@@ -1134,11 +1150,15 @@ describe("PlaywrightFetcher", () => {
 			} as SpawnResult);
 
 			mockExistsSync.mockReturnValue(true);
-			mockRuntime.readFile = vi.fn().mockResolvedValue("status: 200\ncontent-type: text/html; charset=utf-8");
+			mockRuntime.readFile = vi
+				.fn()
+				.mockResolvedValue("status: 200\ncontent-type: text/html; charset=utf-8");
 
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
 			const result = await (
-				fetcher as unknown as { getHttpMetadata(): Promise<{ statusCode: number | null; contentType: string }> }
+				fetcher as unknown as {
+					getHttpMetadata(): Promise<{ statusCode: number | null; contentType: string }>;
+				}
 			).getHttpMetadata();
 
 			expect(result.statusCode).toBe(200);
@@ -1157,11 +1177,15 @@ describe("PlaywrightFetcher", () => {
 			} as SpawnResult);
 
 			mockExistsSync.mockReturnValue(true);
-			mockRuntime.readFile = vi.fn().mockResolvedValue("status: 200\nContent-Type: application/json");
+			mockRuntime.readFile = vi
+				.fn()
+				.mockResolvedValue("status: 200\nContent-Type: application/json");
 
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
 			const result = await (
-				fetcher as unknown as { getHttpMetadata(): Promise<{ statusCode: number | null; contentType: string }> }
+				fetcher as unknown as {
+					getHttpMetadata(): Promise<{ statusCode: number | null; contentType: string }>;
+				}
 			).getHttpMetadata();
 
 			expect(result.statusCode).toBe(200);
@@ -1184,7 +1208,9 @@ describe("PlaywrightFetcher", () => {
 
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
 			const result = await (
-				fetcher as unknown as { getHttpMetadata(): Promise<{ statusCode: number | null; contentType: string }> }
+				fetcher as unknown as {
+					getHttpMetadata(): Promise<{ statusCode: number | null; contentType: string }>;
+				}
 			).getHttpMetadata();
 
 			expect(result.statusCode).toBe(200);
