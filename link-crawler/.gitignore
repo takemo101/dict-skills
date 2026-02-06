@@ -5,3 +5,5 @@ crawled/
 coverage/
 *.log
 .DS_Store
+test-output*/
+.test-output*/
