@@ -112,20 +112,22 @@ export class Crawler {
 			return;
 		}
 
-		// メタデータ抽出
+		// JSDOM を1回だけ生成
 		const dom = new JSDOM(html, { url });
+
+		// メタデータ抽出（既にJSDOMを受け取る）
 		const metadata = extractMetadata(dom);
 		this.logger.logDebug("Metadata extracted", {
 			title: metadata.title,
 			description: metadata.description?.substring(0, 100),
 		});
 
-		// コンテンツ抽出
-		const { title, content } = extractContent(html, url);
+		// コンテンツ抽出（JSDOMを渡す）
+		const { title, content } = extractContent(dom);
 		this.logger.logDebug("Content extracted", { title, contentLength: content?.length || 0 });
 
-		// リンク抽出
-		const links = extractLinks(html, url, this.visited, this.config);
+		// リンク抽出（JSDOMを渡す）
+		const links = extractLinks(dom, this.visited, this.config);
 		this.logger.logDebug("Links extracted", { linkCount: links.length, links: links.slice(0, 5) });
 
 		// Markdown変換
