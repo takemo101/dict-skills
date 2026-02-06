@@ -129,6 +129,92 @@ More content.
 			expect(result[0]).not.toMatch(/^\s/);
 			expect(result[0]).not.toMatch(/\s$/);
 		});
+
+		it("should handle full.md format with --- separators (3+ pages)", () => {
+			const chunker = new Chunker(testOutputDir);
+			const markdown = `# Page 1
+
+> Source: https://example.com/page1
+
+Content of page 1.
+
+---
+
+# Page 2
+
+> Source: https://example.com/page2
+
+Content of page 2.
+
+---
+
+# Page 3
+
+> Source: https://example.com/page3
+
+Content of page 3.`;
+
+			const result = chunker.chunk(markdown);
+
+			expect(result).toHaveLength(3);
+			expect(result[0]).toContain("# Page 1");
+			expect(result[1]).toContain("# Page 2");
+			expect(result[2]).toContain("# Page 3");
+			expect(result[0]).toContain("Content of page 1");
+			expect(result[1]).toContain("Content of page 2");
+			expect(result[2]).toContain("Content of page 3");
+		});
+
+		it("should handle 4 pages with --- separators", () => {
+			const chunker = new Chunker(testOutputDir);
+			const markdown = `# Page 1
+Content 1.
+
+---
+
+# Page 2
+Content 2.
+
+---
+
+# Page 3
+Content 3.
+
+---
+
+# Page 4
+Content 4.`;
+
+			const result = chunker.chunk(markdown);
+
+			expect(result).toHaveLength(4);
+			expect(result[0]).toContain("# Page 1");
+			expect(result[1]).toContain("# Page 2");
+			expect(result[2]).toContain("# Page 3");
+			expect(result[3]).toContain("# Page 4");
+		});
+
+		it("should handle frontmatter at start and --- separators later", () => {
+			const chunker = new Chunker(testOutputDir);
+			const markdown = `---
+title: Test Document
+---
+
+# Page 1
+Content 1.
+
+---
+
+# Page 2
+Content 2.`;
+
+			const result = chunker.chunk(markdown);
+
+			expect(result).toHaveLength(2);
+			expect(result[0]).toContain("title: Test Document");
+			expect(result[0]).toContain("# Page 1");
+			expect(result[1]).toContain("# Page 2");
+		});
 	});
 
 	describe("writeChunks", () => {
