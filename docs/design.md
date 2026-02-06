@@ -162,13 +162,16 @@ link-crawler/
 │ 3. クロールループ                        │
 │  ┌─────────────────────────────────────┐│
 │  │ 3.1 playwright-cli でHTML取得       ││
-│  │ 3.2 ハッシュ計算                    ││
-│  │ 3.3 差分チェック (--diff時)         ││
+│  │ 3.2 contentType判定 (API spec分岐)  ││
+│  │ 3.3 メタデータ抽出 (JSDOM)          ││
+│  │ 3.4 コンテンツ抽出 (Readability)    ││
+│  │ 3.5 リンク抽出 (JSDOM)              ││
+│  │ 3.6 Markdown変換 (Turndown)         ││
+│  │ 3.7 ハッシュ計算                    ││
+│  │ 3.8 差分チェック (--diff時)         ││
 │  │     └─ 変更なし → スキップ          ││
-│  │ 3.4 本文抽出 (Readability)          ││
-│  │ 3.5 Markdown変換 (Turndown)         ││
-│  │ 3.6 ページ保存                      ││
-│  │ 3.7 リンク抽出 → キューに追加       ││
+│  │ 3.9 ページ保存                      ││
+│  │ 3.10 再帰クロール                   ││
 │  └─────────────────────────────────────┘│
 │  depth < maxDepth まで再帰              │
 └──────────┬──────────────────────────────┘
@@ -429,32 +432,31 @@ interface RuntimeAdapter {
  *
  * ## playwright-cli 0.0.63+ 互換性について (2026-02-05)
  *
- * ### 問題1: Unixソケットパス長制限
- * playwright-cliはセッションごとにUnixソケットを作成する。
- * パスが `/var/folders/.../playwright-cli/<hash>/<sessionId>.sock` となり、
- * Unixの制限(~108文字)を超えるとEINVALエラーが発生。
- * → sessionIdを短縮: `crawl-${Date.now()}` → `c${Date.now().toString(36)}`
- *
- * ### 問題2: --session オプションの仕様変更
- * playwright-cli 0.0.63+ では、2回目以降のコマンドで `--session=xxx` を使うと
+ * ### --session オプションの仕様変更
+ * playwright-cli 0.0.63+ では、`--session=xxx` でセッション作成後、
+ * 2回目以降のコマンドで同じ `--session=xxx` を使うと
  * "The session is already configured" エラーが発生する。
  * → デフォルトセッション(--session省略)を使用するよう変更
+ *    - open, eval, network: --session オプションを削除
+ *    - close: session-stop コマンドに変更
  */
 class PlaywrightFetcher implements Fetcher {
-  // sessionIdは現在未使用だが、将来の並列実行対応のため保持
-  private sessionId: string;
   private initialized = false;
   private nodePath: string = "node";
   private playwrightPath: string = "playwright-cli";
   private runtime: RuntimeAdapter;
+  private pathConfig: PlaywrightPathConfig;
 
   constructor(
     private config: CrawlConfig,
     runtime?: RuntimeAdapter,
+    pathConfig?: PlaywrightPathConfig,
   ) {
-    // 短いsessionId（Unixソケットパス長制限対策、現在は未使用）
-    this.sessionId = `c${Date.now().toString(36)}`;
     this.runtime = runtime ?? createRuntimeAdapter();
+    this.pathConfig = pathConfig ?? {
+      nodePaths: PATHS.NODE_PATHS,
+      cliPaths: PATHS.PLAYWRIGHT_PATHS,
+    };
   }
 
   /** CLIコマンドを実行（内部ヘルパー） */
@@ -486,8 +488,10 @@ class PlaywrightFetcher implements Fetcher {
 
   /**
    * フェッチを実行
-   * Note: playwright-cli 0.0.63+ では名前付きセッションが使えないため、
-   * デフォルトセッションを使用。並列クロールは不可。
+   *
+   * Note: playwright-cli 0.0.63+ では名前付きセッション(--session=xxx)が
+   * 2回目以降のコマンドで使えないため、デフォルトセッションを使用。
+   * これにより並列クロールはできないが、通常の逐次クロールでは問題なし。
    */
   private async executeFetch(url: string): Promise<FetchResult | null> {
     // デフォルトセッションを使用（--session省略）
@@ -499,14 +503,29 @@ class PlaywrightFetcher implements Fetcher {
     // ページを開く
     const openResult = await this.runCli(openArgs);
 
-    // エラーページやHTTP 404等の場合はnullを返してスキップ
-    if (!openResult.success || openResult.stdout.includes("chrome-error://")) {
+    // 404等でページが開けない場合はnullを返してスキップ
+    if (!openResult.success) {
+      if (
+        openResult.stderr.includes("ERR_HTTP_RESPONSE_CODE_FAILURE") ||
+        openResult.stdout.includes("chrome-error://")
+      ) {
+        return null;
+      }
+      throw new FetchError(`Failed to open page: ${openResult.stderr}`, url);
+    }
+
+    // エラーページにリダイレクトされた場合はスキップ
+    if (
+      openResult.stdout.includes("chrome-error://") ||
+      openResult.stdout.includes("Page URL: chrome-error://")
+    ) {
       return null;
     }
 
-    // HTTPステータスコード確認（200以外はスキップ）
+    // HTTPステータスコードを確認（networkコマンドを使用）
     const statusCode = await this.getHttpStatusCode();
     if (statusCode !== null && statusCode !== 200) {
+      // 200以外はスキップ
       return null;
     }
 
@@ -514,33 +533,39 @@ class PlaywrightFetcher implements Fetcher {
     await this.runtime.sleep(this.config.spaWait);
 
     // コンテンツ取得
-    const result = await this.runCli([
-      "eval",
-      "document.documentElement.outerHTML",
-    ]);
-
+    const result = await this.runCli(["eval", "document.documentElement.outerHTML"]);
     if (!result.success) {
       throw new FetchError(`Failed to get content: ${result.stderr}`, url);
     }
 
+    const html = parseCliOutput(result.stdout);
+
     return {
-      html: parseCliOutput(result.stdout),
+      html,
       finalUrl: url,
       contentType: "text/html",
     };
   }
 
   async close(): Promise<void> {
-    // デフォルトセッションを停止
-    // Note: 以前は ["close", "--session", sessionId] だったが、
-    // playwright-cli 0.0.63+ では session-stop コマンドを使用
-    await this.runCli(["session-stop"]);
+    try {
+      // デフォルトセッションを停止
+      // Note: 以前は ["close", "--session", sessionId] だったが、
+      // playwright-cli 0.0.63+ では session-stop コマンドを使用
+      await this.runCli(["session-stop"]);
+    } catch {
+      // セッションが既に閉じている場合は無視
+    }
 
-    // セッションクリーンアップ（--keep-sessionオプションで制御）
+    // .playwright-cli ディレクトリをクリーンアップ
     if (!this.config.keepSession) {
-      const cliDir = join(process.cwd(), ".playwright-cli");
-      if (existsSync(cliDir)) {
-        rmSync(cliDir, { recursive: true, force: true });
+      try {
+        const cliDir = join(process.cwd(), ".playwright-cli");
+        if (existsSync(cliDir)) {
+          rmSync(cliDir, { recursive: true, force: true });
+        }
+      } catch {
+        // クリーンアップ失敗は無視
       }
     }
   }
@@ -614,6 +639,9 @@ function computeHash(content: string): string {
 class Hasher {
   private hashes: Map<string, string>;
 
+  /**
+   * @param existingHashes 既存のハッシュMap（URL → hash）
+   */
   constructor(existingHashes: Map<string, string> = new Map()) {
     this.hashes = new Map(existingHashes);
   }
@@ -630,6 +658,13 @@ class Hasher {
       return true; // 新規ページは変更扱い
     }
     return existingHash !== newHash;
+  }
+
+  /**
+   * 読み込まれたハッシュの数を取得
+   */
+  get size(): number {
+    return this.hashes.size;
   }
 }
 ```
