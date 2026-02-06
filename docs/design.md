@@ -35,8 +35,8 @@
 | Test Framework | Vitest | 4.x | 高速、ESM対応、Bun互換 |
 | CLI Parser | Commander | 13.x | 軽量、標準的 |
 | Browser | playwright-cli | latest | SPA完全対応、セッション管理 |
-| DOM Parser | JSDOM | 26.x | Node.js標準的なDOM実装 |
-| Content Extractor | @mozilla/readability | 0.5.x | Firefox由来、高品質 |
+| DOM Parser | JSDOM | 28.x | Node.js標準的なDOM実装 |
+| Content Extractor | @mozilla/readability | 0.6.x | Firefox由来、高品質 |
 | Markdown Converter | Turndown | 7.x | GFM対応、カスタマイズ可能 |
 
 ---
@@ -108,7 +108,8 @@ link-crawler/
 │   │   └── turndown-plugin-gfm.d.ts  # Turndown型定義
 │   │
 │   └── utils/
-│       └── runtime.ts          # ランタイムアダプター
+│       ├── runtime.ts          # ランタイムアダプター
+│       └── site-name.ts        # サイト名生成
 │
 ├── package.json
 ├── tsconfig.json
