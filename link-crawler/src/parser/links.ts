@@ -1,4 +1,4 @@
-import { JSDOM } from "jsdom";
+import type { JSDOM } from "jsdom";
 import type { CrawlConfig } from "../types.js";
 
 /** URL を正規化 */
