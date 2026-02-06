@@ -584,7 +584,7 @@ describe("PlaywrightFetcher", () => {
 		});
 	});
 
-	describe("getHttpStatusCode", () => {
+	describe("getHttpInfo", () => {
 		it("should normalize relative paths with parent directory references", async () => {
 			const config = createMockConfig();
 			const mockRuntime = createMockRuntime();
@@ -598,14 +598,15 @@ describe("PlaywrightFetcher", () => {
 			} as SpawnResult);
 
 			mockExistsSync.mockReturnValue(true);
-			mockRuntime.readFile = vi.fn().mockResolvedValue("status: 200");
+			mockRuntime.readFile = vi.fn().mockResolvedValue("status: 200\ncontent-type: text/html");
 
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
 			const result = await (
-				fetcher as unknown as { getHttpStatusCode(): Promise<number | null> }
-			).getHttpStatusCode();
+				fetcher as unknown as { getHttpInfo(): Promise<{ statusCode: number | null; contentType: string }> }
+			).getHttpInfo();
 
-			expect(result).toBe(200);
+			expect(result.statusCode).toBe(200);
+			expect(result.contentType).toBe("text/html");
 			// Verify that the normalized path is used
 			expect(mockExistsSync).toHaveBeenCalled();
 		});
@@ -623,14 +624,15 @@ describe("PlaywrightFetcher", () => {
 			} as SpawnResult);
 
 			mockExistsSync.mockReturnValue(true);
-			mockRuntime.readFile = vi.fn().mockResolvedValue("status: 404");
+			mockRuntime.readFile = vi.fn().mockResolvedValue("status: 404\ncontent-type: application/json");
 
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
 			const result = await (
-				fetcher as unknown as { getHttpStatusCode(): Promise<number | null> }
-			).getHttpStatusCode();
+				fetcher as unknown as { getHttpInfo(): Promise<{ statusCode: number | null; contentType: string }> }
+			).getHttpInfo();
 
-			expect(result).toBe(404);
+			expect(result.statusCode).toBe(404);
+			expect(result.contentType).toBe("application/json");
 		});
 
 		it("should handle normalized paths correctly", async () => {
@@ -646,17 +648,18 @@ describe("PlaywrightFetcher", () => {
 			} as SpawnResult);
 
 			mockExistsSync.mockReturnValue(true);
-			mockRuntime.readFile = vi.fn().mockResolvedValue("status: 301");
+			mockRuntime.readFile = vi.fn().mockResolvedValue("status: 301\ncontent-type: application/yaml");
 
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
 			const result = await (
-				fetcher as unknown as { getHttpStatusCode(): Promise<number | null> }
-			).getHttpStatusCode();
+				fetcher as unknown as { getHttpInfo(): Promise<{ statusCode: number | null; contentType: string }> }
+			).getHttpInfo();
 
-			expect(result).toBe(301);
+			expect(result.statusCode).toBe(301);
+			expect(result.contentType).toBe("application/yaml");
 		});
 
-		it("should return null when network log file does not exist", async () => {
+		it("should return null status and default contentType when network log file does not exist", async () => {
 			const config = createMockConfig();
 			const mockRuntime = createMockRuntime();
 
@@ -671,10 +674,11 @@ describe("PlaywrightFetcher", () => {
 
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
 			const result = await (
-				fetcher as unknown as { getHttpStatusCode(): Promise<number | null> }
-			).getHttpStatusCode();
+				fetcher as unknown as { getHttpInfo(): Promise<{ statusCode: number | null; contentType: string }> }
+			).getHttpInfo();
 
-			expect(result).toBeNull();
+			expect(result.statusCode).toBeNull();
+			expect(result.contentType).toBe("text/html");
 		});
 
 		it("should return null when network command fails (line 84-85)", async () => {
@@ -878,7 +882,7 @@ describe("PlaywrightFetcher", () => {
 			expect(result).not.toBeNull();
 		});
 
-		it("should handle exceptions in getHttpStatusCode gracefully (line 130)", async () => {
+		it("should handle exceptions in getHttpInfo gracefully", async () => {
 			const config = createMockConfig();
 			const mockRuntime = createMockRuntime();
 			let callCount = 0;
