@@ -22,6 +22,11 @@ export interface RuntimeAdapter {
 	 * ファイルを読み込む
 	 */
 	readFile(path: string): Promise<string>;
+
+	/**
+	 * カレントワーキングディレクトリを取得する
+	 */
+	cwd(): string;
 }
 
 /** Bun APIのサブセット（テスト用モック可能にするため） */
@@ -62,6 +67,10 @@ export class BunRuntimeAdapter implements RuntimeAdapter {
 	async readFile(path: string): Promise<string> {
 		const file = this.bunApi.file(path);
 		return file.text();
+	}
+
+	cwd(): string {
+		return process.cwd();
 	}
 }
 
@@ -111,6 +120,10 @@ export class NodeRuntimeAdapter implements RuntimeAdapter {
 	async readFile(path: string): Promise<string> {
 		const { readFile } = await import("node:fs/promises");
 		return readFile(path, "utf-8");
+	}
+
+	cwd(): string {
+		return process.cwd();
 	}
 }
 
