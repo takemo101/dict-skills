@@ -103,11 +103,9 @@ function restoreCodeBlocks(html: string, codeBlockMap: Map<string, string>): str
 
 /** フォールバック抽出時にコードブロックを保護 */
 function extractAndPreserveCodeBlocks(
-	html: string,
-	url: string,
+	doc: Document,
 ): { title: string | null; content: string | null } {
-	const dom = new JSDOM(html, { url });
-	const body = dom.window.document.body;
+	const body = doc.body;
 
 	// コードブロックを収集（削除前に保存）
 	const codeBlocks: string[] = [];
@@ -124,7 +122,7 @@ function extractAndPreserveCodeBlocks(
 	}
 
 	const main =
-		dom.window.document.querySelector("main, article, [role='main'], .content, #content") || body;
+		doc.querySelector("main, article, [role='main'], .content, #content") || body;
 	let content = main?.innerHTML || null;
 
 	// コンテンツにコードブロックが含まれていない場合、収集したものを追加
@@ -179,7 +177,5 @@ export function extractContent(dom: JSDOM): { title: string | null; content: str
 	}
 
 	// フォールバック: main タグなどから抽出（コードブロックも保持）
-	// 注意: フォールバック時は新たにJSDOMを生成する（例外的なケース）
-	const html = dom.serialize();
-	return extractAndPreserveCodeBlocks(html, actualUrl);
+	return extractAndPreserveCodeBlocks(dom.window.document);
 }
