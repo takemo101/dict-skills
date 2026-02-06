@@ -407,17 +407,29 @@ describe("CrawlerEngine Integration", () => {
 			expect(index2.pages).toHaveLength(3);
 
 			// Changed page should have new hash
-			const page1After = index2.pages.find((p: { url: string }) => p.url === "https://example.com/page1");
-			const page1Before = index1.pages.find((p: { url: string }) => p.url === "https://example.com/page1");
+			const page1After = index2.pages.find(
+				(p: { url: string }) => p.url === "https://example.com/page1",
+			);
+			const page1Before = index1.pages.find(
+				(p: { url: string }) => p.url === "https://example.com/page1",
+			);
 			expect(page1After.hash).not.toBe(page1Before.hash);
 
 			// Unchanged pages should have old hash
-			const homePageAfter = index2.pages.find((p: { url: string }) => p.url === "https://example.com");
-			const homePageBefore = index1.pages.find((p: { url: string }) => p.url === "https://example.com");
+			const homePageAfter = index2.pages.find(
+				(p: { url: string }) => p.url === "https://example.com",
+			);
+			const homePageBefore = index1.pages.find(
+				(p: { url: string }) => p.url === "https://example.com",
+			);
 			expect(homePageAfter.hash).toBe(homePageBefore.hash);
 
-			const page2After = index2.pages.find((p: { url: string }) => p.url === "https://example.com/page2");
-			const page2Before = index1.pages.find((p: { url: string }) => p.url === "https://example.com/page2");
+			const page2After = index2.pages.find(
+				(p: { url: string }) => p.url === "https://example.com/page2",
+			);
+			const page2Before = index1.pages.find(
+				(p: { url: string }) => p.url === "https://example.com/page2",
+			);
 			expect(page2After.hash).toBe(page2Before.hash);
 		});
 
