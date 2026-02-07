@@ -19,6 +19,7 @@ crawl <url> [options]
 | オプション | 短縮 | デフォルト | 説明 |
 |-----------|------|-----------|------|
 | `--depth <num>` | `-d` | `1` | 最大クロール深度（上限10） |
+| `--max-pages <num>` | | `無制限` | 最大クロールページ数（0=無制限） |
 | `--delay <ms>` | | `500` | リクエスト間隔（ミリ秒） |
 | `--timeout <sec>` | | `30` | リクエストタイムアウト（秒） |
 | `--wait <ms>` | | `2000` | ページレンダリング待機時間（ミリ秒） |
@@ -117,6 +118,12 @@ crawl https://slow-site.example.com --wait 5000
 
 # サーバー負荷軽減のためリクエスト間隔延長
 crawl https://docs.example.com --delay 2000
+
+# 最大100ページまでクロール
+crawl https://docs.example.com --max-pages 100
+
+# 深度は大きくてもページ数で制限
+crawl https://docs.example.com -d 10 --max-pages 50
 ```
 
 ---
