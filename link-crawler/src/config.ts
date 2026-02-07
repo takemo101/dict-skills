@@ -35,7 +35,7 @@ function parsePattern(pattern: string | undefined, name: string): RegExp | null 
 	}
 }
 
-export function parseConfig(options: Record<string, unknown>, startUrl: string): CrawlConfig {
+export function parseConfig(options: Record<string, unknown>, startUrl: string, version: string): CrawlConfig {
 	// Validate startUrl format
 	let parsed: URL;
 	try {
@@ -96,6 +96,7 @@ export function parseConfig(options: Record<string, unknown>, startUrl: string):
 		chunks: options.chunks === true,
 		keepSession: Boolean(options.keepSession),
 		respectRobots: options.robots !== false,
+		version,
 	};
 
 	// Warn when all output formats are disabled

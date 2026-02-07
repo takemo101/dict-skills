@@ -22,6 +22,8 @@ export interface CrawlConfig {
 	keepSession: boolean;
 	/** robots.txt を尊重するか（デフォルト: true） */
 	respectRobots: boolean;
+	/** クローラーのバージョン（package.jsonから取得） */
+	version: string;
 }
 
 /** フェッチ結果 */

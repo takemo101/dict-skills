@@ -28,6 +28,7 @@ describe("CrawlLogger", () => {
 			chunks: false,
 			keepSession: false,
 			respectRobots: true,
+			version: "2.0.0",
 		};
 	});
 
@@ -40,7 +41,7 @@ describe("CrawlLogger", () => {
 			const logger = new CrawlLogger(baseConfig);
 			logger.logStart();
 
-			expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining("🕷️  Link Crawler v2.0"));
+			expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining("🕷️  Link Crawler v2.0.0"));
 			expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining("https://example.com"));
 		});
 

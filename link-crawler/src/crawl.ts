@@ -83,7 +83,7 @@ async function main(): Promise<void> {
 	);
 
 	try {
-		const config = parseConfig(options, startUrl);
+		const config = parseConfig(options, startUrl, packageJson.version);
 		crawler = new Crawler(config);
 		await crawler.run();
 		process.exit(EXIT_CODES.SUCCESS);
