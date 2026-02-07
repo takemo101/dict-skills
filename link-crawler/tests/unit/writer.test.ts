@@ -339,8 +339,8 @@ describe("OutputWriter", () => {
 				{ ...defaultMetadata, title: "日本語タイトル" },
 				null,
 			);
-			// Japanese characters are removed by slugify (non-ascii), so only the sequential number remains
-			expect(pageFile).toBe("pages/page-001.md");
+			// Japanese characters are now preserved by slugify
+			expect(pageFile).toBe("pages/page-001-日本語タイトル.md");
 		});
 
 		it("should handle mixed alphanumeric and Japanese", () => {
@@ -353,8 +353,105 @@ describe("OutputWriter", () => {
 				{ ...defaultMetadata, title: "日本語Englishタイトル123" },
 				null,
 			);
-			// Only ascii alphanumeric characters remain (Japanese chars removed, no hyphen added between English and numbers)
-			expect(pageFile).toBe("pages/page-001-english123.md");
+			// Both ASCII and Japanese characters are preserved
+			expect(pageFile).toBe("pages/page-001-日本語englishタイトル123.md");
+		});
+
+		it("should handle Chinese titles (simplified)", () => {
+			const writer = new OutputWriter(defaultConfig);
+			const pageFile = writer.savePage(
+				"https://example.com",
+				"# Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "配置指南" },
+				null,
+			);
+			expect(pageFile).toBe("pages/page-001-配置指南.md");
+		});
+
+		it("should handle Chinese titles (traditional)", () => {
+			const writer = new OutputWriter(defaultConfig);
+			const pageFile = writer.savePage(
+				"https://example.com",
+				"# Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "設定指南" },
+				null,
+			);
+			expect(pageFile).toBe("pages/page-001-設定指南.md");
+		});
+
+		it("should handle Korean titles", () => {
+			const writer = new OutputWriter(defaultConfig);
+			const pageFile = writer.savePage(
+				"https://example.com",
+				"# Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "시작하기 가이드" },
+				null,
+			);
+			expect(pageFile).toBe("pages/page-001-시작하기-가이드.md");
+		});
+
+		it("should remove emoji from titles", () => {
+			const writer = new OutputWriter(defaultConfig);
+			const pageFile = writer.savePage(
+				"https://example.com",
+				"# Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "Getting Started 🚀 Guide 😊" },
+				null,
+			);
+			// Emoji are removed, but spaces between words become hyphens
+			expect(pageFile).toBe("pages/page-001-getting-started-guide.md");
+		});
+
+		it("should truncate long non-ASCII titles without breaking characters", () => {
+			const writer = new OutputWriter(defaultConfig);
+			// 60 characters: each Japanese character is one character
+			const longTitle =
+				"これは非常に長いタイトルで最大文字数の制限を超えていますので切り詰められる必要があります";
+			const pageFile = writer.savePage(
+				"https://example.com",
+				"# Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: longTitle },
+				null,
+			);
+			// Should be truncated to 50 characters
+			const expectedSlug = longTitle.slice(0, 50);
+			expect(pageFile).toBe(`pages/page-001-${expectedSlug}.md`);
+		});
+
+		it("should handle Arabic titles", () => {
+			const writer = new OutputWriter(defaultConfig);
+			const pageFile = writer.savePage(
+				"https://example.com",
+				"# Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "دليل البدء" },
+				null,
+			);
+			expect(pageFile).toBe("pages/page-001-دليل-البدء.md");
+		});
+
+		it("should handle Cyrillic titles", () => {
+			const writer = new OutputWriter(defaultConfig);
+			const pageFile = writer.savePage(
+				"https://example.com",
+				"# Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "Руководство по началу работы" },
+				null,
+			);
+			expect(pageFile).toBe("pages/page-001-руководство-по-началу-работы.md");
 		});
 	});
 
@@ -540,7 +637,7 @@ describe("OutputWriter", () => {
 			expect(readFileSync(pagePath, "utf-8")).toContain("# Old Content");
 
 			// 2. 2回目のクロール（非 diff モード）
-			const writer2 = new OutputWriter({ ...defaultConfig, diff: false });
+			const _writer2 = new OutputWriter({ ...defaultConfig, diff: false });
 
 			// ディレクトリが削除されたため、ファイルが存在しないことを確認
 			expect(() => readFileSync(pagePath, "utf-8")).toThrow();

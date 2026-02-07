@@ -15,7 +15,7 @@ function slugify(text: string | null | undefined, maxLength = 50): string {
 	return text
 		.toLowerCase()
 		.trim()
-		.replace(/[^\w\s-]/g, "") // 英数字・スペース・ハイフン以外を除去
+		.replace(/[^\p{L}\p{N}\s_-]/gu, "") // Unicode文字・数字・スペース・アンダースコア・ハイフン以外を除去
 		.replace(/[\s_]+/g, "-") // スペースとアンダースコアをハイフンに
 		.replace(/-+/g, "-") // 連続するハイフンを1つに
 		.replace(/^-+|-+$/g, "") // 先頭・末尾のハイフンを除去
