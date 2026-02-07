@@ -524,8 +524,8 @@ class PlaywrightFetcher implements Fetcher {
 
     // HTTPメタデータ（ステータスコード・content-type）を取得
     const { statusCode, contentType } = await this.getHttpMetadata();
-    if (statusCode !== null && statusCode !== 200) {
-      // 200以外はスキップ
+    if (statusCode !== null && (statusCode < 200 || statusCode >= 300)) {
+      // 2xx範囲外はスキップ
       return null;
     }
 
@@ -610,7 +610,7 @@ class PlaywrightFetcher implements Fetcher {
 **実装の主な特徴：**
 - `runtime.spawn()` によるコマンド実行（stdout/stderrを分離取得）
 - タイムアウト処理（`Promise.race` による競合）
-- HTTPステータスコード確認（200以外をスキップ）
+- HTTPステータスコード確認（2xx範囲外をスキップ）
 - エラーページ検出（chrome-error://をスキップ）
 - セッション後のクリーンアップ（`.playwright-cli` ディレクトリ削除）
 
