@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { Chunker } from "../output/chunker.js";
 import { Merger } from "../output/merger.js";
@@ -46,16 +46,15 @@ export class PostProcessor {
 		// Merger実行 (--no-merge時はスキップ)
 		if (this.config.merge) {
 			this.logger.logMergerStart();
-			const fullPath = this.merger.writeFull(pages, contents);
-			this.logger.logMergerComplete(fullPath);
-
-			// Chunker用に内容を読み込み
-			try {
-				fullMdContent = readFileSync(fullPath, "utf-8");
-			} catch (error) {
-				this.logger.logDebug("Failed to read full.md", { path: fullPath, error: String(error) });
-				fullMdContent = "";
-			}
+			
+			// メモリ上で内容を生成
+			fullMdContent = this.merger.buildFullContent(pages, contents);
+			
+			// ディスクに書き込み
+			const outputPath = join(this.config.outputDir, "full.md");
+			writeFileSync(outputPath, fullMdContent);
+			
+			this.logger.logMergerComplete(outputPath);
 		} else if (this.config.chunks) {
 			// mergeなしでchunksのみの場合は、Mergerを使ってメモリから結合内容を生成
 			fullMdContent = this.merger.buildFullContent(pages, contents);
