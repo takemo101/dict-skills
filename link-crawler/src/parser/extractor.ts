@@ -67,9 +67,11 @@ function protectCodeBlocks(doc: Document): Map<string, string> {
 			placeholder.setAttribute("data-codeblock-id", markerId);
 			placeholder.setAttribute("data-codeblock-placeholder", "true");
 			placeholder.textContent = marker;
+
+			// 元の要素を記録してから置換（ネスト検出のため）
+			processedElements.add(el);
 			el.replaceWith(placeholder);
 
-			processedElements.add(placeholder);
 			index++;
 		}
 	}
