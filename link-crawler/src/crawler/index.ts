@@ -85,6 +85,27 @@ export class Crawler {
 		this.logger.logComplete(result.totalPages, result.specs.length, indexPath);
 	}
 
+	/** グレースフルシャットダウン（シグナルハンドラから呼ばれる） */
+	async cleanup(): Promise<void> {
+		this.logger.logDebug("Cleanup initiated");
+
+		try {
+			// 1. 途中結果を保存
+			if (this.config.diff) {
+				this.writer.setVisitedUrls(this.visited);
+			}
+			const indexPath = this.writer.saveIndex();
+			this.logger.logDebug("Saved partial index", { path: indexPath });
+
+			// 2. Fetcher をクローズ
+			await this.fetcher?.close?.();
+			this.logger.logDebug("Closed fetcher");
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
+			this.logger.logDebug("Cleanup error (non-fatal)", { error: message });
+		}
+	}
+
 	/** 再帰クロール */
 	private async crawl(url: string, depth: number): Promise<void> {
 		if (depth > this.config.maxDepth || this.visited.has(url)) {
