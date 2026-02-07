@@ -239,10 +239,7 @@ describe("NodeRuntimeAdapter", () => {
 			const { join } = await import("node:path");
 			const { tmpdir } = await import("node:os");
 
-			const nonExistentFile = join(
-				tmpdir(),
-				`non-existent-${Date.now()}.txt`,
-			);
+			const nonExistentFile = join(tmpdir(), `non-existent-${Date.now()}.txt`);
 
 			await expect(adapter.readFile(nonExistentFile)).rejects.toThrow();
 		});
