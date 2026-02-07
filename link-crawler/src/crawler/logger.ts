@@ -14,7 +14,7 @@ export class CrawlLogger implements Logger {
 
 	/** クロール開始ログ */
 	logStart(): void {
-		console.log(`\n🕷️  Link Crawler v2.0`);
+		console.log(`\n🕷️  Link Crawler v${this.config.version}`);
 		console.log(`   URL: ${this.config.startUrl}`);
 		console.log(`   Depth: ${this.config.maxDepth}`);
 		if (this.config.maxPages !== null) {

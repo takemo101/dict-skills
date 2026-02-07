@@ -101,6 +101,7 @@ const getDefaultConfig = (): CrawlConfig => ({
 	chunks: true,
 	keepSession: false,
 	respectRobots: true,
+	version: "test-version",
 });
 
 describe("CrawlerEngine Integration", () => {
