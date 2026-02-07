@@ -507,7 +507,101 @@ git push origin main --tags
 
 ---
 
-## 10. 設計ドキュメント
+## 10. npm パッケージ配布
+
+### 10.1 現状
+
+`link-crawler` は現在、npm パッケージとして配布されていません。
+主な利用形態：
+- プロジェクトローカルでの実行（`bun run src/crawl.ts`）
+- pi スキルとしてシンボリックリンク経由での利用
+
+### 10.2 npm publish 時の注意事項
+
+⚠️ **ドキュメントリンクの問題**
+
+`link-crawler/SKILL.md` および `link-crawler/README.md` は、相対パス (`../docs/`) を使用してルートディレクトリの docs/ を参照しています。
+
+| リンク | GitHub | npm package |
+|--------|--------|-------------|
+| `[CLI仕様書](../docs/cli-spec.md)` | ✅ 動作 | ❌ 破損 |
+| `[設計書](../docs/design.md)` | ✅ 動作 | ❌ 破損 |
+
+#### publish 前の対応が必要
+
+npm publish を行う場合、以下のいずれかの対応を実施してください：
+
+**Option A: GitHub URLへの変更**
+```markdown
+<!-- Before -->
+[CLI仕様書](../docs/cli-spec.md)
+
+<!-- After -->
+[CLI仕様書](https://github.com/takemo101/dict-skills/blob/main/docs/cli-spec.md)
+```
+
+**Option B: docs/ のコピー**
+```bash
+# link-crawler/ 内に docs/ をコピー
+cp -r docs link-crawler/docs
+
+# リンクを更新
+../docs/ → ./docs/
+```
+
+**Option C: package.json での files 制御**
+```json
+{
+  "files": [
+    "dist",
+    "README.md",
+    "SKILL.md",
+    "../docs"
+  ]
+}
+```
+
+#### 推奨: Option A（GitHub URL）
+
+理由：
+- パッケージサイズが増えない
+- ドキュメントの重複管理が不要
+- GitHub上のドキュメントが常に最新
+
+### 10.3 publish手順（将来用）
+
+```bash
+# 1. ドキュメントリンクの確認・更新
+# link-crawler/SKILL.md と link-crawler/README.md のリンクを GitHub URL に変更
+
+# 2. テスト・品質チェック
+cd link-crawler
+bun run test
+bun run check
+bun run typecheck
+
+# 3. ビルド
+bun run build
+
+# 4. package.json の確認
+# - version
+# - files フィールド
+# - bin フィールド
+
+# 5. npm publish（dry-run）
+npm publish --dry-run
+
+# 6. npm publish
+npm publish
+
+# 7. インストールテスト
+npm install -g link-crawler
+crawl --version
+```
+
+---
+
+## 11. 設計ドキュメント
 
 | ドキュメント | 内容 |
 |-------------|------|

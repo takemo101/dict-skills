@@ -29,20 +29,12 @@ export default async function globalSetup() {
 	console.log("🧹 Cleaning up old test directories before running tests...");
 
 	// Clean up test-output-* directories in link-crawler root
-	cleanupTestDirectories(
-		linkCrawlerDir,
-		(entry) => entry.startsWith("test-output-"),
-		"",
-	);
+	cleanupTestDirectories(linkCrawlerDir, (entry) => entry.startsWith("test-output-"), "");
 
 	const testsUnitDir = join(linkCrawlerDir, "tests", "unit");
 
 	// Clean up all .test-* directories in tests/unit
-	cleanupTestDirectories(
-		testsUnitDir,
-		(entry) => entry.startsWith(".test-"),
-		"tests/unit/",
-	);
+	cleanupTestDirectories(testsUnitDir, (entry) => entry.startsWith(".test-"), "tests/unit/");
 
 	// Clean up .test-output-* directories in tests/integration
 	const integrationDir = join(linkCrawlerDir, "tests", "integration");
