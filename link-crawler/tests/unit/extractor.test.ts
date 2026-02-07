@@ -1165,6 +1165,197 @@ describe("extractContent - fallback code block preservation", () => {
 	});
 });
 
+describe("extractContent - code block detection accuracy (Issue #523)", () => {
+	it("should not detect 'previous' as code block (false positive prevention)", () => {
+		// Content with "previous" but no actual code blocks
+		// This should trigger fallback, collect no code blocks, and NOT match hasCodeBlock
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<style>y</style>
+			<main>
+				<p>In the previous section, we discussed preparation for the presentation.</p>
+				<p>Please decode this message carefully.</p>
+			</main>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/no-false-positive" });
+		const result = extractContent(dom);
+
+		// Should extract content without treating "previous" as code block
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			expect(result.content).toContain("previous");
+			// Should NOT have duplicate "previous" (which would happen if falsely detected as code)
+			const matches = result.content.match(/previous/gi);
+			expect(matches?.length).toBeLessThanOrEqual(1);
+		}
+	});
+
+	it("should detect actual <pre> tag as code block", () => {
+		// Actual <pre> tag should be detected
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<style>y</style>
+			<main>
+				<p>Example with previous text.</p>
+				<pre><code>npm install</code></pre>
+			</main>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/has-pre-tag" });
+		const result = extractContent(dom);
+
+		// Should detect the <pre> tag
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			expect(result.content).toContain("<pre>");
+			expect(result.content).toContain("npm install");
+		}
+	});
+
+	it("should detect <code> tag as code block", () => {
+		// Actual <code> tag should be detected
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<style>y</style>
+			<main>
+				<p>Use the decode function.</p>
+				<code>decode(input)</code>
+			</main>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/has-code-tag" });
+		const result = extractContent(dom);
+
+		// Should detect the <code> tag
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			expect(result.content).toContain("<code>");
+		}
+	});
+
+	it("should detect code block with class='highlight'", () => {
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<style>y</style>
+			<main>
+				<p>Text without code.</p>
+				<div class="highlight"><pre>code here</pre></div>
+			</main>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/has-highlight-class" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			expect(result.content).toMatch(/class="highlight"/i);
+		}
+	});
+
+	it("should detect code block with class='hljs'", () => {
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<style>y</style>
+			<main>
+				<p>Text content.</p>
+				<div class="hljs"><code>code</code></div>
+			</main>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/has-hljs-class" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			expect(result.content).toMatch(/class="hljs"/i);
+		}
+	});
+
+	it("should detect code block with data-language attribute", () => {
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<style>y</style>
+			<main>
+				<p>Example:</p>
+				<pre data-language="python"><code>print("hello")</code></pre>
+			</main>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/has-data-language" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			expect(result.content).toMatch(/data-language=/i);
+		}
+	});
+
+	it("should detect code block with data-rehype-pretty-code attribute", () => {
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<style>y</style>
+			<main>
+				<p>Next.js example:</p>
+				<div data-rehype-pretty-code-fragment=""><pre>code</pre></div>
+			</main>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/has-rehype" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			expect(result.content).toMatch(/data-rehype-pretty-code/i);
+		}
+	});
+
+	it("should handle content with both false-positive words and real code blocks", () => {
+		// Mixed: has "previous" word AND actual code block
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<style>y</style>
+			<main>
+				<p>In the previous chapter, we learned about preparation.</p>
+				<pre><code>npm test</code></pre>
+				<p>Please decode this carefully.</p>
+			</main>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/mixed-content" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			// Should have actual code block
+			expect(result.content).toContain("<pre>");
+			expect(result.content).toContain("npm test");
+			// Should also have regular text
+			expect(result.content).toContain("previous");
+		}
+	});
+
+	it("should handle null content gracefully", () => {
+		// Empty HTML triggers fallback with empty content
+		const html = `<!DOCTYPE html><html><body></body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/empty-content" });
+		const result = extractContent(dom);
+
+		// Should not throw, even with null content
+		expect(result).toHaveProperty("content");
+	});
+
+	it("should handle content with class containing multiple code-related keywords", () => {
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<style>y</style>
+			<main>
+				<p>Example:</p>
+				<div class="code-block syntax-highlight"><pre>code</pre></div>
+			</main>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/multi-class" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			expect(result.content).toMatch(/class="code-block/i);
+		}
+	});
+});
+
 describe("extractContent - fallback edge cases for coverage", () => {
 	// These tests target uncovered lines in extractAndPreserveCodeBlocks:
 	// Lines 110, 113-117, 123, 132-136
