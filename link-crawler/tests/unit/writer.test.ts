@@ -24,6 +24,7 @@ const defaultConfig: CrawlConfig = {
 	chunks: true,
 	keepSession: false,
 	respectRobots: true,
+	version: "test-version",
 };
 
 const defaultMetadata: PageMetadata = {

@@ -55,6 +55,7 @@ describe("Crawler", () => {
 			chunks: false,
 			keepSession: false,
 			respectRobots: true,
+			version: "test-version",
 		};
 	});
 

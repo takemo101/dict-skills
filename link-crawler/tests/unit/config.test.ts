@@ -265,37 +265,37 @@ describe("parseConfig - output format warnings", () => {
 describe("parseConfig - URL validation", () => {
 	it("should throw ConfigError for invalid URL", () => {
 		expect(() => {
-			parseConfig({}, "not-a-url");
+			parseConfig({}, "not-a-url", "test-version");
 		}).toThrow(ConfigError);
 
 		expect(() => {
-			parseConfig({}, "not-a-url");
+			parseConfig({}, "not-a-url", "test-version");
 		}).toThrowError(/Invalid URL: not-a-url/);
 	});
 
 	it("should throw ConfigError for empty string URL", () => {
 		expect(() => {
-			parseConfig({}, "");
+			parseConfig({}, "", "test-version");
 		}).toThrow(ConfigError);
 
 		expect(() => {
-			parseConfig({}, "");
+			parseConfig({}, "", "test-version");
 		}).toThrowError(/Invalid URL/);
 	});
 
 	it("should throw ConfigError for malformed URL", () => {
 		expect(() => {
-			parseConfig({}, "://missing-protocol");
+			parseConfig({}, "://missing-protocol", "test-version");
 		}).toThrow(ConfigError);
 
 		expect(() => {
-			parseConfig({}, "just some text");
+			parseConfig({}, "just some text", "test-version");
 		}).toThrow(ConfigError);
 	});
 
 	it("should set configKey to 'startUrl' in ConfigError", () => {
 		try {
-			parseConfig({}, "invalid-url");
+			parseConfig({}, "invalid-url", "test-version");
 			expect.fail("Should have thrown ConfigError");
 		} catch (error) {
 			expect(error).toBeInstanceOf(ConfigError);
@@ -529,47 +529,47 @@ describe("parseConfig - URL scheme validation", () => {
 
 	it("should reject file:// URLs", () => {
 		expect(() => {
-			parseConfig({}, "file:///etc/passwd");
+			parseConfig({}, "file:///etc/passwd", "test-version");
 		}).toThrow(ConfigError);
 
 		expect(() => {
-			parseConfig({}, "file:///etc/passwd");
+			parseConfig({}, "file:///etc/passwd", "test-version");
 		}).toThrowError(/Unsupported protocol.*file:/);
 	});
 
 	it("should reject javascript: URLs", () => {
 		expect(() => {
-			parseConfig({}, "javascript:alert(1)");
+			parseConfig({}, "javascript:alert(1)", "test-version");
 		}).toThrow(ConfigError);
 
 		expect(() => {
-			parseConfig({}, "javascript:alert(1)");
+			parseConfig({}, "javascript:alert(1)", "test-version");
 		}).toThrowError(/Unsupported protocol.*javascript:/);
 	});
 
 	it("should reject ftp:// URLs", () => {
 		expect(() => {
-			parseConfig({}, "ftp://example.com");
+			parseConfig({}, "ftp://example.com", "test-version");
 		}).toThrow(ConfigError);
 
 		expect(() => {
-			parseConfig({}, "ftp://example.com");
+			parseConfig({}, "ftp://example.com", "test-version");
 		}).toThrowError(/Unsupported protocol.*ftp:/);
 	});
 
 	it("should reject data: URLs", () => {
 		expect(() => {
-			parseConfig({}, "data:text/html,<html></html>");
+			parseConfig({}, "data:text/html,<html></html>", "test-version");
 		}).toThrow(ConfigError);
 
 		expect(() => {
-			parseConfig({}, "data:text/html,<html></html>");
+			parseConfig({}, "data:text/html,<html></html>", "test-version");
 		}).toThrowError(/Unsupported protocol.*data:/);
 	});
 
 	it("should set configKey to 'startUrl' in ConfigError for unsupported protocol", () => {
 		try {
-			parseConfig({}, "file:///etc/passwd");
+			parseConfig({}, "file:///etc/passwd", "test-version");
 			expect.fail("Should have thrown ConfigError");
 		} catch (error) {
 			expect(error).toBeInstanceOf(ConfigError);

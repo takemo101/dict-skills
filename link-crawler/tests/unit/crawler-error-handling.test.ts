@@ -30,6 +30,7 @@ describe("Crawler - Error Handling", () => {
 			headed: false,
 			keepSession: false,
 			respectRobots: true,
+			version: "test-version",
 		};
 
 		// Fetcherモック
