@@ -83,6 +83,17 @@ export class PlaywrightFetcher implements Fetcher {
 	 * これにより並列クロールはできないが、通常の逐次クロールでは問題なし。
 	 */
 	private async executeFetch(url: string): Promise<FetchResult | null> {
+		// 防御的チェック: http/httpsのみ許可
+		try {
+			const parsed = new URL(url);
+			if (!["http:", "https:"].includes(parsed.protocol)) {
+				return null;
+			}
+		} catch {
+			// URL解析に失敗した場合もnullを返す
+			return null;
+		}
+
 		// デフォルトセッションを使用（--session省略）
 		const openArgs = ["open", url];
 		if (this.config.headed) {
