@@ -16,7 +16,11 @@ agent:
     - claude-sonnet-4-5
 
 parallel:
-  max_concurrent: 2
+  max_concurrent: 5
+
+auto:
+  provider: anthropic
+  model: claude-haiku-4-5
 
 workflows:
   default:
