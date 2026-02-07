@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Crawler } from "../../src/crawler/index.js";
 import type { CrawlConfig, Fetcher, FetchResult } from "../../src/types.js";
 
@@ -550,7 +550,10 @@ info:
 			const crawler = new Crawler(baseConfig, errorFetcher);
 
 			// Cleanup should handle the error gracefully (even if close() throws)
-			await expect(crawler.cleanup()).resolves.not.toThrow();
+			// Should not throw - completes successfully
+			await crawler.cleanup();
+			// Test passes if no exception is thrown
+			expect(true).toBe(true);
 		});
 	});
 
@@ -606,6 +609,184 @@ info:
 
 			// mockFetcherのclose()が呼ばれたことを確認
 			expect(mockFetcher.isClosed()).toBe(true);
+		});
+	});
+
+	describe("fetchRobotsTxt error handling", () => {
+		it("should handle non-text/plain robots.txt response", async () => {
+			// robots.txt が text/plain 以外を返す
+			mockFetcher.setResponse("https://example.com/robots.txt", {
+				html: "<html><body>404 Not Found</body></html>",
+				finalUrl: "https://example.com/robots.txt",
+				contentType: "text/html",
+			});
+
+			// ルートページ
+			mockFetcher.setResponse("https://example.com", {
+				html: "<html><head><title>Root</title></head><body><p>Content</p></body></html>",
+				finalUrl: "https://example.com",
+				contentType: "text/html",
+			});
+
+			const config = { ...baseConfig, respectRobots: true };
+			const crawler = new Crawler(config, mockFetcher);
+			await crawler.run();
+
+			// robots.txt がロードされなくても正常にクロール完了
+			const indexPath = join(testDir, "index.json");
+			expect(existsSync(indexPath)).toBe(true);
+
+			const indexData = JSON.parse(await readFile(indexPath, "utf-8"));
+			expect(indexData.totalPages).toBe(1);
+		});
+
+		it("should handle robots.txt fetch error gracefully", async () => {
+			// robots.txt の fetch が失敗する
+			class ErrorFetcher implements Fetcher {
+				async fetch(url: string): Promise<FetchResult | null> {
+					if (url.includes("robots.txt")) {
+						throw new Error("Network error");
+					}
+					return {
+						html: "<html><head><title>Root</title></head><body><p>Content</p></body></html>",
+						finalUrl: url,
+						contentType: "text/html",
+					};
+				}
+
+				async close(): Promise<void> {}
+			}
+
+			const errorFetcher = new ErrorFetcher();
+			const config = { ...baseConfig, respectRobots: true };
+			const crawler = new Crawler(config, errorFetcher);
+			await crawler.run();
+
+			// エラーが発生しても正常にクロール完了
+			const indexPath = join(testDir, "index.json");
+			expect(existsSync(indexPath)).toBe(true);
+
+			const indexData = JSON.parse(await readFile(indexPath, "utf-8"));
+			expect(indexData.totalPages).toBe(1);
+		});
+	});
+
+	describe("processHtmlPage with null content", () => {
+		it("should handle empty/null content from extractContent", async () => {
+			// extractContent が null content を返すようなHTMLを用意
+			// <body> タグがない、または空のHTMLでテスト
+			const html = "<html><head><title>Empty Page</title></head></html>";
+
+			mockFetcher.setResponse("https://example.com", {
+				html,
+				finalUrl: "https://example.com",
+				contentType: "text/html",
+			});
+
+			const crawler = new Crawler(baseConfig, mockFetcher);
+			await crawler.run();
+
+			// ページは保存されるが、contentは空文字列
+			const indexPath = join(testDir, "index.json");
+			const indexData = JSON.parse(await readFile(indexPath, "utf-8"));
+			expect(indexData.totalPages).toBe(1);
+			expect(indexData.pages[0].title).toBe("Empty Page");
+
+			// ページファイルが作成され、frontmatterのみまたは空コンテンツ
+			const pageFile = indexData.pages[0].file;
+			const pagePath = join(testDir, pageFile);
+			expect(existsSync(pagePath)).toBe(true);
+		});
+	});
+
+	describe("initFetcher with existing fetcher", () => {
+		it("should return existing fetcher without re-initialization", async () => {
+			const crawler = new Crawler(baseConfig, mockFetcher);
+
+			// fetcherが既に設定されている状態でinitFetcher()を呼ぶ
+			// @ts-expect-error - private method access for testing
+			const result = await crawler.initFetcher();
+
+			// 既存のfetcherが返される
+			expect(result).toBe(mockFetcher);
+
+			// fetcherPromiseは存在しない（undefinedのまま）
+			// @ts-expect-error - private property access for testing
+			expect(crawler.fetcherPromise).toBeUndefined();
+		});
+	});
+
+	describe("maxPages logging deduplication", () => {
+		it("should log maxPages reached only once despite multiple checks", async () => {
+			const rootHtml = `
+        <html>
+          <head><title>Root</title></head>
+          <body>
+            <a href="/page1">Page 1</a>
+            <a href="/page2">Page 2</a>
+            <a href="/page3">Page 3</a>
+            <a href="/page4">Page 4</a>
+          </body>
+        </html>
+      `;
+
+			mockFetcher.setResponse("https://example.com", {
+				html: rootHtml,
+				finalUrl: "https://example.com",
+				contentType: "text/html",
+			});
+
+			const config = { ...baseConfig, maxPages: 1 };
+			const crawler = new Crawler(config, mockFetcher);
+
+			// ロガーのlogMaxPagesReachedをスパイ
+			// @ts-expect-error - private property access for testing
+			const logger = crawler.logger;
+			const logSpy = vi.spyOn(logger, "logMaxPagesReached");
+
+			await crawler.run();
+
+			// logMaxPagesReached() は1回だけ呼ばれる（複数のリンクがあっても）
+			expect(logSpy).toHaveBeenCalledTimes(1);
+			expect(logSpy).toHaveBeenCalledWith(1);
+		});
+	});
+
+	describe("savePage in no-pages mode", () => {
+		it("should store page in memory and register with writer", async () => {
+			const html = `
+        <html>
+          <head><title>Test Page</title></head>
+          <body><p>Test content</p></body>
+        </html>
+      `;
+
+			mockFetcher.setResponse("https://example.com", {
+				html,
+				finalUrl: "https://example.com",
+				contentType: "text/html",
+			});
+
+			const config = { ...baseConfig, pages: false };
+			const crawler = new Crawler(config, mockFetcher);
+			await crawler.run();
+
+			// Index should be created with page info
+			const indexPath = join(testDir, "index.json");
+			const indexData = JSON.parse(await readFile(indexPath, "utf-8"));
+
+			expect(indexData.totalPages).toBe(1);
+			expect(indexData.pages[0].url).toBe("https://example.com");
+			expect(indexData.pages[0].title).toBe("Test Page");
+
+			// pageContentsにデータが保存されている（内部状態の確認は困難だが、indexには登録される）
+			// ページファイルは作成されない
+			const pagesDir = join(testDir, "pages");
+			if (existsSync(pagesDir)) {
+				const files = await readdir(pagesDir);
+				const pageFiles = files.filter((f) => f.startsWith("page-") && f.endsWith(".md"));
+				expect(pageFiles).toHaveLength(0);
+			}
 		});
 	});
 });
