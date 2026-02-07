@@ -413,7 +413,7 @@ info:
 
 			// fetcherPromiseを解決
 			if (resolveFetcher) {
-				resolveFetcher(mockFetcher);
+				(resolveFetcher as (value: Fetcher) => void)(mockFetcher);
 			}
 
 			// cleanup()が完了するまで待機
