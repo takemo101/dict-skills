@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { FILENAME, SPEC_PATTERNS } from "../constants.js";
 import type { CrawlLogger } from "../crawler/logger.js";
@@ -42,9 +42,19 @@ export class OutputWriter {
 			this.logger,
 		);
 
-		// ディレクトリ作成
-		mkdirSync(join(config.outputDir, FILENAME.PAGES_DIR), { recursive: true });
-		mkdirSync(join(config.outputDir, FILENAME.SPECS_DIR), { recursive: true });
+		// ディレクトリをクリーンアップしてから作成
+		const pagesDir = join(config.outputDir, FILENAME.PAGES_DIR);
+		const specsDir = join(config.outputDir, FILENAME.SPECS_DIR);
+
+		if (existsSync(pagesDir)) {
+			rmSync(pagesDir, { recursive: true, force: true });
+		}
+		if (existsSync(specsDir)) {
+			rmSync(specsDir, { recursive: true, force: true });
+		}
+
+		mkdirSync(pagesDir, { recursive: true });
+		mkdirSync(specsDir, { recursive: true });
 	}
 
 	/** 既存ページのハッシュを取得 */
