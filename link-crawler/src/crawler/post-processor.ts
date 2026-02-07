@@ -41,21 +41,23 @@ export class PostProcessor {
 			? this.loadPageContentsFromDisk(pages)
 			: (pageContents ?? new Map<string, string>());
 
-		let fullMdContent = "";
+		// コンテンツ結合が必要かどうかを明示的に判定
+		// - merge: full.md出力のため
+		// - chunks: チャンク分割のため
+		const needsFullContent = this.config.merge || this.config.chunks;
+		const fullMdContent = needsFullContent
+			? this.merger.buildFullContent(pages, contents)
+			: "";
 
-		// Merger実行 (--no-merge時はスキップ)
-		if (this.config.merge) {
+		// Merger出力 (full.md書き込み)
+		if (this.config.merge && fullMdContent) {
 			this.logger.logMergerStart();
-			fullMdContent = this.merger.buildFullContent(pages, contents);
 			const outputPath = join(this.config.outputDir, "full.md");
 			writeFileSync(outputPath, fullMdContent);
 			this.logger.logMergerComplete(outputPath);
-		} else if (this.config.chunks) {
-			// mergeなしでchunksのみの場合は、Mergerを使ってメモリから結合内容を生成
-			fullMdContent = this.merger.buildFullContent(pages, contents);
 		}
 
-		// Chunker実行 (--no-chunks時はスキップ)
+		// Chunker出力
 		if (this.config.chunks && fullMdContent) {
 			this.logger.logChunkerStart();
 			const chunkFiles = this.chunker.chunkAndWrite(fullMdContent);
