@@ -12,7 +12,35 @@ export class RobotsChecker {
 
 	constructor(robotsTxt: string, userAgent = "*") {
 		this.userAgent = userAgent;
-		this.parse(robotsTxt);
+		// HTMLタグを除去してからパース（playwright-cli互換性のため）
+		const plainText = this.stripHtml(robotsTxt);
+		this.parse(plainText);
+	}
+
+	/** HTMLタグを除去してプレーンテキストを抽出 */
+	private stripHtml(text: string): string {
+		// <pre> タグで囲まれている場合は中身を抽出
+		const preMatch = text.match(/<pre[^>]*>([\s\S]*?)<\/pre>/i);
+		if (preMatch) {
+			return this.decodeHtmlEntities(preMatch[1]);
+		}
+
+		// <br> タグを改行に変換（<br>, <br/>, <br />, <BR> など）
+		let processed = text.replace(/<br\s*\/?>/gi, "\n");
+
+		// その他のHTMLタグを除去
+		processed = processed.replace(/<[^>]*>/g, "");
+		return this.decodeHtmlEntities(processed);
+	}
+
+	/** HTML エンティティをデコード */
+	private decodeHtmlEntities(text: string): string {
+		return text
+			.replace(/&lt;/g, "<")
+			.replace(/&gt;/g, ">")
+			.replace(/&amp;/g, "&")
+			.replace(/&quot;/g, '"')
+			.replace(/&#39;/g, "'");
 	}
 
 	/** robots.txt をパース */

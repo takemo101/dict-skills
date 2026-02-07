@@ -425,4 +425,66 @@ Disallow: /path(test)*
 			expect(checker.isAllowed("https://example.com/site/admin/docs/file.txt")).toBe(true);
 		});
 	});
+
+	describe("HTML-wrapped robots.txt (playwright-cli compatibility)", () => {
+		it("should parse HTML-wrapped robots.txt from playwright", () => {
+			const wrappedRobotsTxt = `<html><head></head><body><pre>User-agent: *
+Disallow: /admin/
+Disallow: /private/</pre></body></html>`;
+
+			const checker = new RobotsChecker(wrappedRobotsTxt);
+			expect(checker.isAllowed("https://example.com/")).toBe(true);
+			expect(checker.isAllowed("https://example.com/admin/")).toBe(false);
+			expect(checker.isAllowed("https://example.com/private/")).toBe(false);
+			expect(checker.isAllowed("https://example.com/public/")).toBe(true);
+		});
+
+		it("should handle HTML-wrapped robots.txt with HTML entities", () => {
+			const wrappedRobotsTxt = `<html><head></head><body><pre>User-agent: *
+Disallow: /search?q=&amp;test</pre></body></html>`;
+
+			const checker = new RobotsChecker(wrappedRobotsTxt);
+			expect(checker.isAllowed("https://example.com/search?q=&test")).toBe(false);
+		});
+
+		it("should handle plain text robots.txt (backward compatibility)", () => {
+			const plainRobotsTxt = `User-agent: *
+Disallow: /admin/`;
+
+			const checker = new RobotsChecker(plainRobotsTxt);
+			expect(checker.isAllowed("https://example.com/admin/")).toBe(false);
+			expect(checker.isAllowed("https://example.com/public/")).toBe(true);
+		});
+
+		it("should handle HTML without pre tags", () => {
+			const htmlRobotsTxt = `<html><body>User-agent: *<br>Disallow: /admin/</body></html>`;
+
+			const checker = new RobotsChecker(htmlRobotsTxt);
+			expect(checker.isAllowed("https://example.com/admin/")).toBe(false);
+		});
+
+		it("should handle complex HTML-wrapped robots.txt with multiple rules", () => {
+			const wrappedRobotsTxt = `<html><head></head><body><pre>User-agent: *
+Disallow: /admin/
+Allow: /admin/public/
+Disallow: /api/internal/
+Allow: /api/</pre></body></html>`;
+
+			const checker = new RobotsChecker(wrappedRobotsTxt);
+			expect(checker.isAllowed("https://example.com/admin/")).toBe(false);
+			expect(checker.isAllowed("https://example.com/admin/public/")).toBe(true);
+			expect(checker.isAllowed("https://example.com/api/v1/")).toBe(true);
+			expect(checker.isAllowed("https://example.com/api/internal/")).toBe(false);
+		});
+
+		it("should decode multiple HTML entities", () => {
+			// Test with &amp; which is commonly HTML-encoded in robots.txt
+			const wrappedRobotsTxt = `<html><body><pre>User-agent: *
+Disallow: /search?q=test&amp;value=1</pre></body></html>`;
+
+			const checker = new RobotsChecker(wrappedRobotsTxt);
+			expect(checker.isAllowed("https://example.com/search?q=test&value=1")).toBe(false);
+			expect(checker.isAllowed("https://example.com/search?q=other")).toBe(true);
+		});
+	});
 });
