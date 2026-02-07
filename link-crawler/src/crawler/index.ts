@@ -146,60 +146,92 @@ export class Crawler {
 
 	/** 再帰クロール */
 	private async crawl(url: string, depth: number): Promise<void> {
-		// Check max pages limit (if set)
+		// 1. 事前チェック
+		if (!this.shouldCrawlUrl(url, depth)) {
+			return;
+		}
+
+		// 2. 訪問済みマーク
+		this.visited.add(url); // URL単位で訪問済みを管理（深度は無関係）
+		this.logger.logCrawlStart(url, depth);
+
+		// 3. フェッチ
+		const result = await this.fetchPage(url, depth);
+		if (!result) {
+			return;
+		}
+
+		// 4. コンテンツタイプ判定
+		if (!result.contentType.includes("text/html")) {
+			this.handleSpecFile(url, result.html);
+			return;
+		}
+
+		// 5. HTML処理（抽出、変換、保存、再帰）
+		await this.processHtmlPage(url, result.html, depth);
+	}
+
+	/** クロール可否チェック */
+	private shouldCrawlUrl(url: string, depth: number): boolean {
+		// maxPages制限チェック
 		if (this.config.maxPages !== null && this.visited.size >= this.config.maxPages) {
 			if (!this.maxPagesReachedLogged) {
 				this.logger.logMaxPagesReached(this.config.maxPages);
 				this.maxPagesReachedLogged = true;
 			}
-			return;
+			return false;
 		}
 
+		// depth制限と訪問済みチェック
 		if (depth > this.config.maxDepth || this.visited.has(url)) {
-			return;
+			return false;
 		}
 
 		// robots.txt チェック
 		if (this.robotsChecker && !this.robotsChecker.isAllowed(url)) {
 			this.logger.logDebug("Blocked by robots.txt", { url });
-			return; // スキップ
+			return false;
 		}
 
-		this.visited.add(url); // URL単位で訪問済みを管理（深度は無関係）
-		this.logger.logCrawlStart(url, depth);
+		return true;
+	}
 
-		let result: FetchResult | null;
+	/** ページフェッチとエラーハンドリング */
+	private async fetchPage(url: string, depth: number): Promise<FetchResult | null> {
 		try {
-			result = await this.fetcher.fetch(url);
+			const result = await this.fetcher.fetch(url);
 			if (!result) {
 				// fetch()がnullを返した場合：404やエラーページ
 				this.logger.logFetchError(url, "Page not available (404 or error page)", depth);
-				return;
+				return null;
 			}
+
+			this.logger.logDebug("Page fetched", {
+				url,
+				depth,
+				contentType: result.contentType,
+				htmlLength: result.html.length,
+			});
+
+			return result;
 		} catch (error) {
 			// fetch()が例外をスローした場合：FetchError, TimeoutError等
 			const message = error instanceof Error ? error.message : String(error);
 			this.logger.logFetchError(url, message, depth);
-			return; // スキップして続行（クロール全体は停止しない）
+			return null; // スキップして続行（クロール全体は停止しない）
 		}
+	}
 
-		const { html, contentType } = result;
-		this.logger.logDebug("Page fetched", {
-			url,
-			depth,
-			contentType,
-			htmlLength: html.length,
-		});
-
-		// API仕様ファイルの場合
-		if (!contentType.includes("text/html")) {
-			const specResult = this.writer.handleSpec(url, html);
-			if (specResult) {
-				this.logger.logSpecDetected(specResult.type, specResult.filename);
-			}
-			return;
+	/** API仕様ファイル処理 */
+	private handleSpecFile(url: string, html: string): void {
+		const specResult = this.writer.handleSpec(url, html);
+		if (specResult) {
+			this.logger.logSpecDetected(specResult.type, specResult.filename);
 		}
+	}
 
+	/** HTMLページの処理 */
+	private async processHtmlPage(url: string, html: string, depth: number): Promise<void> {
 		// JSDOM を1回だけ生成
 		const dom = new JSDOM(html, { url });
 
@@ -226,6 +258,17 @@ export class Crawler {
 		const hash = computeHash(markdown);
 		this.logger.logDebug("Content hash computed", { hash: `${hash.substring(0, 16)}...` });
 
+		// 差分チェックと保存
+		if (this.shouldSavePage(url, hash, depth)) {
+			this.savePage(url, markdown, depth, links, metadata, title, hash);
+		}
+
+		// 再帰クロール
+		await this.crawlLinks(links, depth);
+	}
+
+	/** 差分モードでの保存判定 */
+	private shouldSavePage(url: string, hash: string, depth: number): boolean {
 		// 差分モード時：変更がなければスキップ
 		if (this.config.diff && this.hasher && !this.hasher.isChanged(url, hash)) {
 			this.logger.logDebug("Page unchanged (skipping)", {
@@ -233,28 +276,46 @@ export class Crawler {
 				hash: `${hash.substring(0, 16)}...`,
 			});
 			this.logger.logSkipped(depth);
-		} else {
-			if (this.config.diff && this.hasher) {
-				this.logger.logDebug("Page changed (processing)", {
-					url,
-					hash: `${hash.substring(0, 16)}...`,
-				});
-			}
-			// ページ出力 (--no-pages時はスキップ)
-			if (this.config.pages) {
-				const pageFile = this.writer.savePage(url, markdown, depth, links, metadata, title, hash);
-				this.logger.logPageSaved(pageFile, depth, links.length);
-			} else {
-				// メモリに保存 (Merger/Chunker用)
-				const pageFile = this.writer.buildPageFilename(metadata, title);
-				const frontmatter = this.writer.buildFrontmatter(url, metadata, title, depth, hash);
-				this.pageContents.set(pageFile, frontmatter + markdown);
-				// writerにもページ情報を追加（ファイルは書き込まない）
-				this.writer.registerPage(url, pageFile, depth, links, metadata, title, hash);
-				this.logger.logPageSaved(pageFile, depth, links.length, true);
-			}
+			return false;
 		}
 
+		if (this.config.diff && this.hasher) {
+			this.logger.logDebug("Page changed (processing)", {
+				url,
+				hash: `${hash.substring(0, 16)}...`,
+			});
+		}
+
+		return true;
+	}
+
+	/** ページ保存処理 */
+	private savePage(
+		url: string,
+		markdown: string,
+		depth: number,
+		links: string[],
+		metadata: any,
+		title: string | null,
+		hash: string,
+	): void {
+		// ページ出力 (--no-pages時はスキップ)
+		if (this.config.pages) {
+			const pageFile = this.writer.savePage(url, markdown, depth, links, metadata, title, hash);
+			this.logger.logPageSaved(pageFile, depth, links.length);
+		} else {
+			// メモリに保存 (Merger/Chunker用)
+			const pageFile = this.writer.buildPageFilename(metadata, title);
+			const frontmatter = this.writer.buildFrontmatter(url, metadata, title, depth, hash);
+			this.pageContents.set(pageFile, frontmatter + markdown);
+			// writerにもページ情報を追加（ファイルは書き込まない）
+			this.writer.registerPage(url, pageFile, depth, links, metadata, title, hash);
+			this.logger.logPageSaved(pageFile, depth, links.length, true);
+		}
+	}
+
+	/** リンクの再帰クロール */
+	private async crawlLinks(links: string[], depth: number): Promise<void> {
 		// 再帰
 		if (depth < this.config.maxDepth) {
 			for (const link of links) {
