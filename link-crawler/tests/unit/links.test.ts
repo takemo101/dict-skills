@@ -305,6 +305,74 @@ describe("extractLinks", () => {
 		expect(links[0]).toBe("https://example.com/page");
 	});
 
+	it("should exclude tel: links", () => {
+		const html = `
+			<html>
+				<body>
+					<a href="tel:+1234567890">Call</a>
+					<a href="/page">Page</a>
+				</body>
+			</html>
+		`;
+		const visited = new Set<string>();
+		const dom = new JSDOM(html, { url: "https://example.com" });
+		const links = extractLinks(dom, visited, baseConfig);
+
+		expect(links).toHaveLength(1);
+		expect(links[0]).toBe("https://example.com/page");
+	});
+
+	it("should exclude data: URIs", () => {
+		const html = `
+			<html>
+				<body>
+					<a href="data:text/html,<h1>Test</h1>">Data URI</a>
+					<a href="/page">Page</a>
+				</body>
+			</html>
+		`;
+		const visited = new Set<string>();
+		const dom = new JSDOM(html, { url: "https://example.com" });
+		const links = extractLinks(dom, visited, baseConfig);
+
+		expect(links).toHaveLength(1);
+		expect(links[0]).toBe("https://example.com/page");
+	});
+
+	it("should exclude blob: URLs", () => {
+		const html = `
+			<html>
+				<body>
+					<a href="blob:https://example.com/some-guid">Blob</a>
+					<a href="/page">Page</a>
+				</body>
+			</html>
+		`;
+		const visited = new Set<string>();
+		const dom = new JSDOM(html, { url: "https://example.com" });
+		const links = extractLinks(dom, visited, baseConfig);
+
+		expect(links).toHaveLength(1);
+		expect(links[0]).toBe("https://example.com/page");
+	});
+
+	it("should exclude ftp: links", () => {
+		const html = `
+			<html>
+				<body>
+					<a href="ftp://ftp.example.com/file.txt">FTP</a>
+					<a href="/page">Page</a>
+				</body>
+			</html>
+		`;
+		const visited = new Set<string>();
+		const dom = new JSDOM(html, { url: "https://example.com" });
+		const links = extractLinks(dom, visited, baseConfig);
+
+		expect(links).toHaveLength(1);
+		expect(links[0]).toBe("https://example.com/page");
+	});
+
 	it("should exclude visited links", () => {
 		const html = `
 			<html>

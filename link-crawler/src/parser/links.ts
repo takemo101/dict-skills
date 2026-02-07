@@ -49,7 +49,11 @@ export function extractLinks(dom: JSDOM, visited: Set<string>, config: CrawlConf
 			!href ||
 			href.startsWith("#") ||
 			href.startsWith("javascript:") ||
-			href.startsWith("mailto:")
+			href.startsWith("mailto:") ||
+			href.startsWith("tel:") ||
+			href.startsWith("data:") ||
+			href.startsWith("blob:") ||
+			href.startsWith("ftp:")
 		) {
 			continue;
 		}
