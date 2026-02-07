@@ -45,6 +45,18 @@ describe("parseConfig", () => {
 		expect(config.maxDepth).toBe(10);
 	});
 
+	it("should handle depth 0 correctly", () => {
+		const config = parseConfig({ depth: 0 }, "https://example.com");
+
+		expect(config.maxDepth).toBe(0);
+	});
+
+	it("should handle depth as string '0' correctly", () => {
+		const config = parseConfig({ depth: "0" }, "https://example.com");
+
+		expect(config.maxDepth).toBe(0);
+	});
+
 	it("should parse include/exclude patterns", () => {
 		const config = parseConfig(
 			{
