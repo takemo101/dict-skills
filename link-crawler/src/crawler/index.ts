@@ -197,5 +197,6 @@ export class Crawler {
 async function createPlaywrightFetcher(config: CrawlConfig): Promise<Fetcher> {
 	// 動的インポートを使用してBun依存のモジュールを遅延ロード
 	const mod = await import("./fetcher.js");
-	return new mod.PlaywrightFetcher(config);
+	const debug = process.env.DEBUG === "1";
+	return new mod.PlaywrightFetcher(config, undefined, undefined, debug);
 }
