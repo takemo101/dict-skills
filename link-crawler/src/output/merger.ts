@@ -1,5 +1,3 @@
-import { writeFileSync } from "node:fs";
-import { join } from "node:path";
 import type { CrawledPage } from "../types.js";
 
 /**
@@ -7,7 +5,8 @@ import type { CrawledPage } from "../types.js";
  * 全ページを結合してfull.mdを生成
  */
 export class Merger {
-	constructor(private outputDir: string) {}
+	// biome-ignore lint/complexity/noUselessConstructor: Maintaining API compatibility
+	constructor(_outputDir: string) {}
 
 	/**
 	 * Markdownから先頭のH1タイトルを除去
@@ -59,19 +58,5 @@ export class Merger {
 		}
 
 		return sections.join("\n\n---\n\n");
-	}
-
-	/**
-	 * full.mdを出力
-	 * @param pages クロール済みページ一覧
-	 * @param pageContents ページ内容のMap (file -> markdown)
-	 * @returns 出力ファイルパス
-	 */
-	writeFull(pages: CrawledPage[], pageContents: Map<string, string>): string {
-		const fullContent = this.buildFullContent(pages, pageContents);
-		const outputPath = join(this.outputDir, "full.md");
-		writeFileSync(outputPath, fullContent);
-
-		return outputPath;
 	}
 }

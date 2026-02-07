@@ -27,11 +27,7 @@ export default async function globalTeardown() {
 	const linkCrawlerDir = join(import.meta.dirname, "..");
 
 	// Clean up test-output-* directories in link-crawler root
-	cleanupTestDirectories(
-		linkCrawlerDir,
-		(entry) => entry.startsWith("test-output-"),
-		"",
-	);
+	cleanupTestDirectories(linkCrawlerDir, (entry) => entry.startsWith("test-output-"), "");
 
 	const testsUnitDir = join(linkCrawlerDir, "tests", "unit");
 
@@ -40,11 +36,7 @@ export default async function globalTeardown() {
 	// - .test-index-manager-*
 	// - .test-crawler*
 	// - any other test temporary directories
-	cleanupTestDirectories(
-		testsUnitDir,
-		(entry) => entry.startsWith(".test-"),
-		"tests/unit/",
-	);
+	cleanupTestDirectories(testsUnitDir, (entry) => entry.startsWith(".test-"), "tests/unit/");
 
 	// Clean up .test-output-* directories in tests/integration
 	const integrationDir = join(linkCrawlerDir, "tests", "integration");
