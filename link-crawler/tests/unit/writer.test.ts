@@ -166,7 +166,7 @@ describe("OutputWriter", () => {
 		// Verify hash is a SHA-256 hex string (64 characters)
 		const hashMatch = content.match(/hash: "([a-f0-9]{64})"/);
 		expect(hashMatch).toBeTruthy();
-		expect(hashMatch![1]).toHaveLength(64);
+		expect(hashMatch?.[1]).toHaveLength(64);
 	});
 
 	describe("filename with title", () => {
