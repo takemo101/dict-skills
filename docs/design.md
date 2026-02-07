@@ -243,8 +243,11 @@ interface CrawlConfig {
   sameDomain: boolean;
   includePattern: RegExp | null;
   excludePattern: RegExp | null;
+  /** リクエスト間隔（ミリ秒） */
   delay: number;
+  /** リクエストタイムアウト（ミリ秒） */
   timeout: number;
+  /** SPAページ待機時間（ミリ秒） */
   spaWait: number;
   headed: boolean;
   diff: boolean;
@@ -284,8 +287,8 @@ interface CrawledPage {
 interface CrawlResult {
   crawledAt: string;
   baseUrl: string;
-  /** クロール設定の一部（実際にはmaxDepthとsameDomainのみ保存される） */
-  config: Partial<CrawlConfig>;
+  /** 保存対象の設定項目（maxDepth, sameDomain のみ） */
+  config: Pick<CrawlConfig, "maxDepth" | "sameDomain">;
   totalPages: number;
   pages: CrawledPage[];
   specs: DetectedSpec[];
