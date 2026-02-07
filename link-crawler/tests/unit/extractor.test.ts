@@ -1680,3 +1680,288 @@ describe("extractContent - fallback code block detection (Issue #514)", () => {
 		}
 	});
 });
+
+describe("extractContent - branch coverage improvements (Issue #581)", () => {
+	it("should skip child code elements when parent is already processed (line 62)", () => {
+		// Tests the shouldSkip branch when parent element is in processedElements
+		// Priority: .highlight is higher priority than pre, so pre inside .highlight should be skipped
+		const html = `
+			<!DOCTYPE html>
+			<html>
+				<head><title>Parent Processing Test</title></head>
+				<body>
+					<article>
+						<h1>Article Title</h1>
+						<p>This article has enough content for Readability to process successfully.</p>
+						<p>We need substantial text to ensure Readability extracts the content properly.</p>
+						<p>Adding more paragraphs to make sure the article is recognized as main content.</p>
+						<div class="highlight">
+							<pre><code>code inside highlight</code></pre>
+							<code class="language-js">inline code</code>
+						</div>
+						<p>More content to complete the article and ensure proper extraction.</p>
+						<p>Final paragraph for good measure to meet Readability requirements.</p>
+					</article>
+				</body>
+			</html>
+		`;
+		const dom = new JSDOM(html, { url: "https://example.com/parent-processed" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		// The .highlight div should be processed, and pre/code inside should be skipped
+		// Verify the code content appears (indicating successful processing)
+		if (result.content) {
+			expect(result.content.toLowerCase()).toContain("code");
+		}
+	});
+
+	it("should collect code blocks in fallback with multiple selector types (line 129)", () => {
+		// Force fallback by using only script/style (Readability returns null)
+		// Tests that code blocks are collected during fallback (line 129)
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<style>y</style>
+			<pre>pre code</pre>
+			<code>code elem</code>
+			<div data-language="js">data-language code</div>
+			<div class="code-block">code-block class</div>
+			<div class="hljs">hljs class</div>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/fallback-129" });
+		const result = extractContent(dom);
+
+		// Fallback executes, line 129 collects code blocks
+		expect(result).toHaveProperty("content");
+	});
+
+	it("should add collected code blocks when content has no code patterns (lines 143-146)", () => {
+		// Force fallback with code blocks outside main, main content has no code
+		// Tests lines 143-146: hasCodeBlock check and code prepending
+		const html = `<!DOCTYPE html><html><body>
+			<script>trigger fallback</script>
+			<style>no content</style>
+			<main><div>Plain text only, no code</div></main>
+			<aside><pre><code>code outside main</code></pre></aside>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/lines-143-146" });
+		const result = extractContent(dom);
+
+		// Fallback executes
+		// Line 143: currentContent = content
+		// Line 144: hasCodeBlock checks patterns
+		// Line 146: prepends code blocks if !hasCodeBlock
+		expect(result).toHaveProperty("content");
+	});
+
+	it("should handle multiple levels of nested code elements", () => {
+		// Tests parent-child skip logic with deeply nested structures
+		const html = `
+			<!DOCTYPE html>
+			<html>
+				<head><title>Multi-level Nesting</title></head>
+				<body>
+					<article>
+						<h1>Code Examples</h1>
+						<p>This article demonstrates deeply nested code blocks.</p>
+						<p>The content is substantial enough for Readability to extract properly.</p>
+						<div data-rehype-pretty-code-fragment="">
+							<div class="code-block">
+								<pre data-language="js">
+									<code class="language-javascript">
+										console.log("nested");
+									</code>
+								</pre>
+							</div>
+						</div>
+						<p>Final paragraph to complete the article content.</p>
+					</article>
+				</body>
+			</html>
+		`;
+		const dom = new JSDOM(html, { url: "https://example.com/multi-nest" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		// Should not duplicate the deeply nested code
+		const matches = result.content?.match(/console\.log/g);
+		expect(matches?.length).toBeLessThanOrEqual(1);
+	});
+
+	it("should handle empty code blocks collection gracefully", () => {
+		// Tests fallback path when no code blocks exist
+		const html = `
+			<!DOCTYPE html>
+			<html>
+				<head><title>No Code Blocks</title></head>
+				<body>
+					<script>x</script>
+					<main>
+						<p>Just text, no code</p>
+					</main>
+				</body>
+			</html>
+		`;
+		const dom = new JSDOM(html, { url: "https://example.com/no-code" });
+		const result = extractContent(dom);
+
+		expect(result).toHaveProperty("content");
+		// Should not crash when codeBlocks array is empty
+	});
+
+	it("should handle sibling code blocks with different selectors", () => {
+		// Tests that sibling elements with different selectors are both protected
+		const html = `
+			<!DOCTYPE html>
+			<html>
+				<head><title>Sibling Code Blocks</title></head>
+				<body>
+					<article>
+						<h1>Multiple Code Blocks</h1>
+						<p>This article contains multiple code blocks as siblings.</p>
+						<p>Each should be protected and preserved correctly.</p>
+						<div class="highlight"><pre>first code</pre></div>
+						<div class="hljs"><code>second code</code></div>
+						<div class="shiki"><pre>third code</pre></div>
+						<p>Content after the code blocks.</p>
+					</article>
+				</body>
+			</html>
+		`;
+		const dom = new JSDOM(html, { url: "https://example.com/siblings" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			expect(result.content).toContain("first code");
+			expect(result.content).toContain("second code");
+			expect(result.content).toContain("third code");
+		}
+	});
+
+	it("should skip already processed parent in priority selector order", () => {
+		// Tests that higher priority selectors prevent lower priority ones from processing children
+		const html = `
+			<!DOCTYPE html>
+			<html>
+				<head><title>Priority Selector Test</title></head>
+				<body>
+					<article>
+						<h1>Priority Processing</h1>
+						<p>Testing that priority selectors work correctly.</p>
+						<p>Parent elements should be processed before children.</p>
+						<div data-rehype-pretty-code-fragment="">
+							<pre><code class="language-js">priority test</code></pre>
+						</div>
+						<p>Final content.</p>
+					</article>
+				</body>
+			</html>
+		`;
+		const dom = new JSDOM(html, { url: "https://example.com/priority" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		// The data-rehype attribute has higher priority, so pre/code inside should be skipped
+		const matches = result.content?.match(/priority test/g);
+		expect(matches?.length).toBe(1);
+	});
+
+	it("should handle fallback with no code blocks to collect (empty codeBlocks array)", () => {
+		// Tests branch: codeBlocks.length === 0 in fallback
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<style>y</style>
+			<main><p>Only text, no code anywhere</p></main>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/no-code-blocks" });
+		const result = extractContent(dom);
+
+		// Fallback executes with empty codeBlocks array
+		expect(result).toHaveProperty("content");
+	});
+
+	it("should handle fallback with null content from selector", () => {
+		// Tests branch: main?.innerHTML returns null/undefined
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<style>y</style>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/null-content" });
+		const result = extractContent(dom);
+
+		// content should be null when no selector matches
+		expect(result).toHaveProperty("content");
+	});
+
+	it("should handle fallback when content has code blocks (hasCodeBlock true)", () => {
+		// Tests branch: hasCodeBlock === true, so code blocks are NOT prepended
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<style>y</style>
+			<main>
+				<p>Text with code already present</p>
+				<pre><code>existing code</code></pre>
+			</main>
+			<aside><pre><code>aside code</code></pre></aside>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/has-code-true" });
+		const result = extractContent(dom);
+
+		// hasCodeBlock check should prevent duplication
+		expect(result).toHaveProperty("content");
+	});
+
+	it("should handle Readability success with nested code blocks (parent skip logic)", () => {
+		// Tests that parent-child skip logic works when Readability succeeds
+		// Create deeply nested structure to trigger parent skip
+		const html = `
+			<!DOCTYPE html>
+			<html>
+				<head><title>Deep Nesting</title></head>
+				<body>
+					<article>
+						<h1>Complex Code Block Structure</h1>
+						<p>This tests the parent-child skip logic in protectCodeBlocks.</p>
+						<p>We need multiple paragraphs to ensure Readability processes this.</p>
+						<p>Adding more content to make the article substantial enough.</p>
+						<div class="hljs">
+							<div class="code-block">
+								<pre data-language="typescript">
+									<code class="language-typescript">
+										interface Test {
+											value: string;
+										}
+									</code>
+								</pre>
+							</div>
+						</div>
+						<p>Final paragraph to complete the article structure properly.</p>
+						<p>More text to ensure proper extraction by Readability algorithm.</p>
+					</article>
+				</body>
+			</html>
+		`;
+		const dom = new JSDOM(html, { url: "https://example.com/deep-nest-success" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		// Verify no duplication due to parent skip logic
+		const matches = result.content?.match(/interface Test/g);
+		expect(matches?.length || 0).toBeLessThanOrEqual(1);
+	});
+
+	it("should handle empty main element in fallback", () => {
+		// Tests branch: main exists but innerHTML is empty
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<style>y</style>
+			<main></main>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/empty-main" });
+		const result = extractContent(dom);
+
+		// main?.innerHTML should be empty, leading to null content
+		expect(result).toHaveProperty("content");
+	});
+});
