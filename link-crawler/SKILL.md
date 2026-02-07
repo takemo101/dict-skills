@@ -72,6 +72,7 @@ bun run src/crawl.ts https://nextjs.org/docs -d 2
 | `full.md` | 全ページ結合（AIコンテキスト用） |
 | `chunks/*.md` | 見出しベース分割（`--chunks`有効時） |
 | `pages/*.md` | ページ単位 |
+| `specs/*.yaml` | API仕様ファイル（検出時のみ） |
 | `index.json` | メタデータ・ハッシュ |
 
 **詳細な仕様は [CLI仕様書](../docs/cli-spec.md) を参照してください。**
