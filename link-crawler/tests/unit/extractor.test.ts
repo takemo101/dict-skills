@@ -2498,7 +2498,7 @@ describe("extractContent - Readability edge cases (line 171)", () => {
 		// Readability should extract content successfully
 		expect(result.content).not.toBeNull();
 		expect(result.content).toContain("substantial paragraph");
-		
+
 		// Title may be empty string or null when no title tag exists
 		// This tests the ?? null fallback path on line 171
 		expect(result.title === "" || result.title === null).toBe(true);
@@ -2528,7 +2528,7 @@ describe("extractContent - Readability edge cases (line 171)", () => {
 
 		expect(result.content).not.toBeNull();
 		expect(result.content).toContain("substantial text");
-		
+
 		// Empty title tag results in empty string or null
 		expect(result.title === "" || result.title === null).toBe(true);
 	});
