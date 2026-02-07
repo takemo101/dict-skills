@@ -243,6 +243,8 @@ try {
 
 ### 5.2 Vitest設定
 
+<!-- Verified 2026-02-08: Configuration matches link-crawler/vitest.config.ts (Issue #809) -->
+
 ```typescript
 // vitest.config.ts
 import { defineConfig } from "vitest/config";
