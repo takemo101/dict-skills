@@ -32,4 +32,19 @@ export default async function globalTeardown() {
 	} catch (error) {
 		console.warn("Warning: Failed to clean up .test-index-manager-* directories", error);
 	}
+
+	// Clean up .test-output-* directories in tests/integration
+	try {
+		const integrationDir = join(linkCrawlerDir, "tests", "integration");
+		const entries = readdirSync(integrationDir);
+		for (const entry of entries) {
+			if (entry.startsWith(".test-output-")) {
+				const fullPath = join(integrationDir, entry);
+				rmSync(fullPath, { recursive: true, force: true });
+				console.log(`✓ Cleaned up: tests/integration/${entry}`);
+			}
+		}
+	} catch (error) {
+		console.warn("Warning: Failed to clean up integration test directories", error);
+	}
 }
