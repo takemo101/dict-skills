@@ -242,13 +242,13 @@ export class Crawler {
 			description: metadata.description?.substring(0, 100),
 		});
 
+		// リンク抽出（extractContent() が DOM を破壊的に変更する可能性があるため先に実行）
+		const links = extractLinks(dom, this.visited, this.config);
+		this.logger.logDebug("Links extracted", { linkCount: links.length, links: links.slice(0, 5) });
+
 		// コンテンツ抽出（JSDOMを渡す）
 		const { title, content } = extractContent(dom);
 		this.logger.logDebug("Content extracted", { title, contentLength: content?.length || 0 });
-
-		// リンク抽出（JSDOMを渡す）
-		const links = extractLinks(dom, this.visited, this.config);
-		this.logger.logDebug("Links extracted", { linkCount: links.length, links: links.slice(0, 5) });
 
 		// Markdown変換
 		const markdown = content ? htmlToMarkdown(content) : "";
