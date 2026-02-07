@@ -87,7 +87,8 @@ link-crawler/
 │   │   ├── index.ts            # CrawlerEngine
 │   │   ├── fetcher.ts          # PlaywrightFetcher
 │   │   ├── logger.ts           # ログ出力
-│   │   └── post-processor.ts   # 後処理
+│   │   ├── post-processor.ts   # 後処理
+│   │   └── robots.ts           # RobotsChecker
 │   │
 │   ├── parser/
 │   │   ├── extractor.ts        # HTML → 本文抽出
@@ -125,6 +126,7 @@ link-crawler/
 | `Errors` | エラークラス定義（CrawlError, FetchError, ConfigError等） | Error情報 | Typed Error |
 | `CrawlerEngine` | クロール制御、再帰管理 | URL, Config | CrawledPages |
 | `PlaywrightFetcher` | ページ取得 | URL | HTML |
+| `RobotsChecker` | robots.txt パース・クロール可否判定 | robots.txt, URL | Allowed/Disallowed |
 | `CrawlLogger` | クロールログ出力（開始、進捗、完了、エラー等） | Config, Events | コンソール出力 |
 | `PostProcessor` | 後処理実行（Merger/Chunker呼び出し、ページ内容読み込み） | CrawledPages | full.md, chunks/ |
 | `Extractor` | 本文抽出 | HTML | ContentHTML |
@@ -436,12 +438,14 @@ interface RuntimeAdapter {
 **主要な処理フロー:**
 
 1. **初期化**: playwright-cliの存在確認（初回のみ）
-2. **ページオープン**: `playwright-cli open <url>` でページを開く
-3. **メタデータ取得**: `playwright-cli network` でステータスコード・content-typeを取得
-4. **レンダリング待機**: SPAの動的レンダリング完了を待つ
-5. **HTML取得**: `playwright-cli eval` でDOMを取得
-6. **エラーハンドリング**: 404やタイムアウトを適切に処理
-7. **クリーンアップ**: セッション終了、一時ディレクトリ削除
+2. **robots.txt 取得**: 初回クロール時に robots.txt を取得しパース（`--no-robots`未指定時）
+3. **robots.txt チェック**: URLがrobots.txtで許可されているか確認（`--no-robots`未指定時、不許可ならスキップ）
+4. **ページオープン**: `playwright-cli open <url>` でページを開く
+5. **メタデータ取得**: `playwright-cli network` でステータスコード・content-typeを取得
+6. **レンダリング待機**: SPAの動的レンダリング完了を待つ
+7. **HTML取得**: `playwright-cli eval` でDOMを取得
+8. **エラーハンドリング**: 404やタイムアウトを適切に処理
+9. **クリーンアップ**: セッション終了、一時ディレクトリ削除
 
 **playwright-cli 0.0.63+ 互換性について:**
 
@@ -716,6 +720,5 @@ pi> Next.jsのドキュメントをクロールして設計の参考にしたい
 |------|------|--------|
 | sitemap.xml対応 | サイトマップからURL取得 | 中 |
 | 認証対応 | Cookie/Bearer/Basic | 中 |
-| robots.txt対応 | クロール可否判定 | 低 |
 | 並列クロール | 複数ページ同時取得 | 低 |
 | 設定ファイル | crawl.config.json | 低 |
