@@ -56,6 +56,7 @@ describe("PostProcessor", () => {
 			chunks: true,
 			keepSession: false,
 			respectRobots: true,
+			version: "test-version",
 		};
 
 		// Create a mock logger

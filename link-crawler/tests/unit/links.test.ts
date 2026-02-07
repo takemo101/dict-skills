@@ -97,6 +97,7 @@ describe("shouldCrawl", () => {
 		chunks: true,
 		keepSession: false,
 		respectRobots: true,
+		version: "test-version",
 	};
 
 	it("should return true for unvisited URL", () => {
@@ -199,6 +200,7 @@ describe("extractLinks", () => {
 		chunks: true,
 		keepSession: false,
 		respectRobots: true,
+		version: "test-version",
 	};
 
 	it("should extract links from HTML", () => {
