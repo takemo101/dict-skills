@@ -82,6 +82,7 @@ link-crawler/
 │   ├── types.ts                # 型定義
 │   ├── constants.ts            # 定数定義
 │   ├── errors.ts               # エラークラス
+│   ├── error-handler.ts        # エラーハンドリング
 │   │
 │   ├── crawler/
 │   │   ├── index.ts            # CrawlerEngine
@@ -124,6 +125,7 @@ link-crawler/
 |-----------|------|------|------|
 | `Constants` | 定数定義（デフォルト値、ファイル名、パターン、終了コード） | - | 定数オブジェクト |
 | `Errors` | エラークラス定義（CrawlError, FetchError, ConfigError等） | Error情報 | Typed Error |
+| `ErrorHandler` | エラー種別判定、メッセージ生成、終了コード決定 | Error | ErrorHandlerResult |
 | `CrawlerEngine` | クロール制御、再帰管理 | URL, Config | CrawledPages |
 | `PlaywrightFetcher` | ページ取得 | URL | HTML |
 | `RobotsChecker` | robots.txt のパースとURL許可判定 | robots.txt, URL | boolean |

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Cleanup script for development artifacts (.improve-logs, .worktrees)
+# Cleanup script for development artifacts (primarily .worktrees)
 set -euo pipefail
 
 # Configuration
@@ -18,7 +18,7 @@ show_help() {
     cat << EOF
 Usage: $(basename "$0") [OPTIONS]
 
-Clean up development artifacts (.improve-logs, old worktrees)
+Clean up development artifacts (worktrees and optional pi-runner logs)
 
 Options:
     -h, --help          Show this help message
@@ -31,14 +31,11 @@ Examples:
     # See what would be deleted (dry-run)
     $(basename "$0")
 
-    # Actually delete files older than 30 days
-    $(basename "$0") --force
-
-    # Delete files older than 7 days
-    $(basename "$0") --days 7 --force
-
-    # Verbose dry-run
+    # Check for stale worktrees
     $(basename "$0") --verbose
+
+    # Clean up old logs (if .improve-logs exists)
+    $(basename "$0") --days 7 --force
 EOF
 }
 
@@ -106,14 +103,15 @@ format_size() {
     fi
 }
 
-# Main cleanup function
+# Cleanup .improve-logs (if exists)
+# Note: This directory is created by pi-runner but is not commonly used
 cleanup_improve_logs() {
-    log_info "Cleaning up .improve-logs/ (retention: ${RETENTION_DAYS} days)..."
-    
     if [[ ! -d ".improve-logs" ]]; then
-        log_verbose ".improve-logs/ directory does not exist"
+        log_verbose ".improve-logs/ directory does not exist (no action needed)"
         return 0
     fi
+
+    log_verbose "Checking .improve-logs/ (retention: ${RETENTION_DAYS} days)..."
 
     local file_count=0
     local total_size=0
@@ -124,20 +122,18 @@ cleanup_improve_logs() {
         size=$(stat -f%z "$file" 2>/dev/null || stat -c%s "$file" 2>/dev/null || echo 0)
         ((total_size+=size))
         
-        log_verbose "  - $file ($(format_size "$size"))"
+        log_verbose "  - $file"
         
         if [[ "$DRY_RUN" == "false" ]]; then
             rm -f "$file"
         fi
-    done < <(find .improve-logs/ -type f -mtime +"${RETENTION_DAYS}" -print0)
+    done < <(find .improve-logs/ -type f -mtime +"${RETENTION_DAYS}" -print0 2>/dev/null) || true
 
-    if [[ $file_count -eq 0 ]]; then
-        log_info "No files older than ${RETENTION_DAYS} days found in .improve-logs/"
-    else
+    if [[ $file_count -gt 0 ]]; then
         local size_human
         size_human=$(format_size "$total_size")
         if [[ "$DRY_RUN" == "true" ]]; then
-            log_warn "Would delete ${file_count} files (${size_human}) from .improve-logs/"
+            log_info "Would delete ${file_count} files (${size_human}) from .improve-logs/"
         else
             log_info "Deleted ${file_count} files (${size_human}) from .improve-logs/"
         fi
