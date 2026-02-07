@@ -446,17 +446,20 @@ class PlaywrightFetcher implements Fetcher {
   private playwrightPath: string = "playwright-cli";
   private runtime: RuntimeAdapter;
   private pathConfig: PlaywrightPathConfig;
+  private debug: boolean;
 
   constructor(
     private config: CrawlConfig,
     runtime?: RuntimeAdapter,
     pathConfig?: PlaywrightPathConfig,
+    debug?: boolean,
   ) {
     this.runtime = runtime ?? createRuntimeAdapter();
     this.pathConfig = pathConfig ?? {
       nodePaths: PATHS.NODE_PATHS,
       cliPaths: PATHS.PLAYWRIGHT_PATHS,
     };
+    this.debug = debug ?? false;
   }
 
   /** CLIコマンドを実行（内部ヘルパー） */
@@ -476,15 +479,50 @@ class PlaywrightFetcher implements Fetcher {
       this.initialized = true;
     }
 
-    // タイムアウト処理（簡略版）
-    // Note: 実際の実装では clearTimeout でタイマーをクリアしています
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => {
-        reject(new TimeoutError(`Request timeout after ${this.config.timeout}ms`, this.config.timeout));
-      }, this.config.timeout);
-    });
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    try {
+      // タイムアウト用のPromiseを作成
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(
+            new TimeoutError(
+              `Request timeout after ${this.config.timeout / 1000}s (${this.config.timeout}ms)`,
+              this.config.timeout,
+            ),
+          );
+        }, this.config.timeout);
+      });
 
-    return Promise.race([this.executeFetch(url), timeoutPromise]);
+      // fetchとタイムアウトを競争させる
+      const result = await Promise.race([this.executeFetch(url), timeoutPromise]);
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId);
+      }
+      return result;
+    } catch (error) {
+      // エラー時もタイマーをクリア
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId);
+      }
+
+      // タイムアウトエラーの場合はセッションをクリーンアップ
+      if (error instanceof TimeoutError) {
+        try {
+          await this.runCli(["session-stop"]);
+        } catch (cleanupError) {
+          // クリーンアップエラーは無視（セッションが既に閉じている可能性）
+          if (this.debug) {
+            console.log(`[DEBUG] session-stop on timeout failed: ${cleanupError}`);
+          }
+        }
+      }
+
+      if (error instanceof FetchError || error instanceof TimeoutError) {
+        throw error;
+      }
+      const message = error instanceof Error ? error.message : String(error);
+      throw new FetchError(message, url, error instanceof Error ? error : undefined);
+    }
   }
 
   /**
@@ -589,19 +627,25 @@ class PlaywrightFetcher implements Fetcher {
       // Note: 以前は ["close", "--session", sessionId] だったが、
       // playwright-cli 0.0.63+ では session-stop コマンドを使用
       await this.runCli(["session-stop"]);
-    } catch {
-      // セッションが既に閉じている場合は無視
+    } catch (error) {
+      // セッションが既に閉じている場合は無視（デバッグログのみ）
+      if (this.debug) {
+        console.log(`[DEBUG] session-stop failed (expected if already closed): ${error}`);
+      }
     }
 
     // .playwright-cli ディレクトリをクリーンアップ
     if (!this.config.keepSession) {
       try {
-        const cliDir = join(process.cwd(), ".playwright-cli");
+        const cliDir = join(this.runtime.cwd(), ".playwright-cli");
         if (existsSync(cliDir)) {
           rmSync(cliDir, { recursive: true, force: true });
         }
-      } catch {
-        // クリーンアップ失敗は無視
+      } catch (error) {
+        // クリーンアップ失敗は無視（デバッグログのみ）
+        if (this.debug) {
+          console.log(`[DEBUG] .playwright-cli cleanup failed: ${error}`);
+        }
       }
     }
   }
@@ -610,10 +654,12 @@ class PlaywrightFetcher implements Fetcher {
 
 **実装の主な特徴：**
 - `runtime.spawn()` によるコマンド実行（stdout/stderrを分離取得）
-- タイムアウト処理（`Promise.race` による競合）
+- タイムアウト処理（`Promise.race` による競合、`clearTimeout` で適切にクリーンアップ）
 - HTTPステータスコード確認（2xx範囲外をスキップ）
 - エラーページ検出（chrome-error://をスキップ）
 - セッション後のクリーンアップ（`.playwright-cli` ディレクトリ削除）
+- `this.runtime.cwd()` の使用（テスタビリティ向上、PR #474で修正）
+- デバッグログ（`debug` フラグ有効時にセッション停止やクリーンアップのエラーを出力）
 
 詳細な実装は `src/crawler/fetcher.ts` および `src/utils/runtime.ts` を参照してください。
 
