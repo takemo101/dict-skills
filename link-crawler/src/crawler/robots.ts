@@ -122,6 +122,15 @@ export class RobotsChecker {
 			return false;
 		}
 
+		// 防御: パターン長とワイルドカード数を制限（ReDoS対策）
+		if (rulePath.length > 500) {
+			return false;
+		}
+		const wildcardCount = (rulePath.match(/\*/g) || []).length;
+		if (wildcardCount > 10) {
+			return false;
+		}
+
 		// $ 終端マーカーの処理
 		const exactEnd = rulePath.endsWith("$");
 		const pattern = exactEnd ? rulePath.slice(0, -1) : rulePath;
