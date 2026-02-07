@@ -149,5 +149,5 @@ chmod +x .git/hooks/post-merge
 ## 参考リンク
 
 - [Git Worktree Documentation](https://git-scm.com/docs/git-worktree)
-- [プロジェクトの .gitignore](./.gitignore)
-- [クリーンアップスクリプト](./scripts/cleanup-dev-artifacts.sh)
+- [プロジェクトの .gitignore](../.gitignore)
+- [クリーンアップスクリプト](../scripts/cleanup-dev-artifacts.sh)
