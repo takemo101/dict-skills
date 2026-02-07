@@ -40,18 +40,6 @@ export class ConfigError extends CrawlError {
 	}
 }
 
-/** ファイル入出力エラー */
-export class FileError extends CrawlError {
-	constructor(
-		message: string,
-		public readonly filePath: string,
-		cause?: Error,
-	) {
-		super(message, "FILE_ERROR", cause);
-		this.name = "FileError";
-	}
-}
-
 /** 依存関係エラー */
 export class DependencyError extends CrawlError {
 	constructor(

@@ -4,7 +4,6 @@ import {
 	CrawlError,
 	DependencyError,
 	FetchError,
-	FileError,
 	TimeoutError,
 } from "../../src/errors.js";
 
@@ -85,31 +84,6 @@ describe("ConfigError", () => {
 
 	it("should inherit from CrawlError", () => {
 		const error = new ConfigError("Test");
-
-		expect(error).toBeInstanceOf(CrawlError);
-	});
-});
-
-describe("FileError", () => {
-	it("should create file error with filePath", () => {
-		const error = new FileError("Cannot read file", "/path/to/file.txt");
-
-		expect(error.message).toBe("Cannot read file");
-		expect(error.filePath).toBe("/path/to/file.txt");
-		expect(error.code).toBe("FILE_ERROR");
-		expect(error.name).toBe("FileError");
-	});
-
-	it("should create file error with cause", () => {
-		const cause = new Error("Permission denied");
-		const error = new FileError("Cannot write file", "/path/to/file.txt", cause);
-
-		expect(error.cause).toBe(cause);
-		expect(error.toString()).toContain("Permission denied");
-	});
-
-	it("should inherit from CrawlError", () => {
-		const error = new FileError("Test", "/path");
 
 		expect(error).toBeInstanceOf(CrawlError);
 	});
