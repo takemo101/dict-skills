@@ -126,8 +126,17 @@ export class Crawler {
 			const indexPath = this.writer.saveIndex();
 			this.logger.logDebug("Saved partial index", { path: indexPath });
 
-			// 2. Fetcher をクローズ
-			await this.fetcher?.close?.();
+			// 2. Fetcher をクローズ（初期化中の場合も待機）
+			if (this.fetcherPromise) {
+				try {
+					const fetcher = await this.fetcherPromise;
+					await fetcher.close?.();
+				} catch {
+					// 初期化失敗は無視
+				}
+			} else {
+				await this.fetcher?.close?.();
+			}
 			this.logger.logDebug("Closed fetcher");
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);

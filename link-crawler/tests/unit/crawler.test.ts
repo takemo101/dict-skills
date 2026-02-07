@@ -392,4 +392,59 @@ info:
 			expect(existsSync(indexPath)).toBe(true);
 		});
 	});
+
+	describe("cleanup method", () => {
+		it("should wait for fetcherPromise to resolve during cleanup", async () => {
+			// fetcherの初期化を遅延させるモック
+			let resolveFetcher: ((value: Fetcher) => void) | null = null;
+			const delayedFetcherPromise = new Promise<Fetcher>((resolve) => {
+				resolveFetcher = resolve;
+			});
+
+			// コンストラクタでfetcherを渡さず、fetcherPromiseが作成される状態をシミュレート
+			const crawler = new Crawler(baseConfig);
+
+			// fetcherPromiseを手動で設定（テスト用）
+			// @ts-expect-error - private property access for testing
+			crawler.fetcherPromise = delayedFetcherPromise;
+
+			// cleanup()を呼び出す（fetcherPromiseが未解決の状態で）
+			const cleanupPromise = crawler.cleanup();
+
+			// fetcherPromiseを解決
+			if (resolveFetcher) {
+				resolveFetcher(mockFetcher);
+			}
+
+			// cleanup()が完了するまで待機
+			await cleanupPromise;
+
+			// mockFetcherのclose()が呼ばれたことを確認
+			expect(mockFetcher.isClosed()).toBe(true);
+		});
+
+		it("should handle fetcher initialization failure during cleanup", async () => {
+			// fetcherの初期化が失敗するケース
+			const failedFetcherPromise = Promise.reject(new Error("Fetcher init failed"));
+
+			const crawler = new Crawler(baseConfig);
+
+			// fetcherPromiseを手動で設定（テスト用）
+			// @ts-expect-error - private property access for testing
+			crawler.fetcherPromise = failedFetcherPromise;
+
+			// cleanup()が例外をスローせずに完了することを確認
+			await expect(crawler.cleanup()).resolves.toBeUndefined();
+		});
+
+		it("should close fetcher when fetcherPromise is already resolved", async () => {
+			const crawler = new Crawler(baseConfig, mockFetcher);
+
+			// cleanup()を呼び出す
+			await crawler.cleanup();
+
+			// mockFetcherのclose()が呼ばれたことを確認
+			expect(mockFetcher.isClosed()).toBe(true);
+		});
+	});
 });
