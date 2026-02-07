@@ -45,9 +45,34 @@ if (!startUrl) {
 }
 
 async function main(): Promise<void> {
+	let crawler: Crawler | undefined;
+	let cleanupInProgress = false;
+
+	// シグナルハンドラを設定
+	const handleShutdown = async (signal: string) => {
+		if (cleanupInProgress) {
+			// 2回目以降のシグナルは即座に終了
+			console.log("\n⚠️  Force exit");
+			process.exit(EXIT_CODES.GENERAL_ERROR);
+		}
+
+		cleanupInProgress = true;
+		console.log(`\n⚠️  Received ${signal}. Cleaning up...`);
+
+		if (crawler) {
+			await crawler.cleanup();
+		}
+
+		console.log("✓ Cleanup complete");
+		process.exit(EXIT_CODES.GENERAL_ERROR);
+	};
+
+	process.on("SIGINT", () => handleShutdown("SIGINT"));
+	process.on("SIGTERM", () => handleShutdown("SIGTERM"));
+
 	try {
 		const config = parseConfig(options, startUrl);
-		const crawler = new Crawler(config);
+		crawler = new Crawler(config);
 		await crawler.run();
 		process.exit(EXIT_CODES.SUCCESS);
 	} catch (error) {
