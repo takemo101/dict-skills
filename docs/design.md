@@ -285,17 +285,20 @@ interface DetectedSpec {
 
 ```
 .context/
-├── index.json       # メタデータ・ハッシュ
-├── full.md          # 結合ファイル（AIコンテキスト用）
-├── chunks/          # 見出しベース分割
-│   ├── chunk-001.md
-│   └── ...
-├── pages/           # ページ単位
-│   ├── page-001.md
-│   └── ...
-└── specs/           # API仕様
-    └── ...
+└── <サイト名>/      # URLから自動生成（詳細は cli-spec.md 参照）
+    ├── index.json       # メタデータ・ハッシュ
+    ├── full.md          # 結合ファイル（AIコンテキスト用）
+    ├── chunks/          # 見出しベース分割
+    │   ├── chunk-001.md
+    │   └── ...
+    ├── pages/           # ページ単位
+    │   ├── page-001.md
+    │   └── ...
+    └── specs/           # API仕様
+        └── ...
 ```
+
+**Note**: ディレクトリ構成の詳細、サイト名の命名規則、各ファイルの役割については [docs/cli-spec.md](cli-spec.md) のセクション5を参照してください。
 
 ### 5.3 full.md 形式
 
@@ -424,244 +427,43 @@ interface RuntimeAdapter {
 - Bun環境: `BunRuntimeAdapter` (Bun.spawnを使用)
 - Node.js環境: `NodeRuntimeAdapter` (child_process.spawnを使用)
 
-#### PlaywrightFetcherの実装
+#### PlaywrightFetcherの概要
 
-```typescript
-/**
- * Playwright-CLI Fetcher (全サイト対応)
- *
- * ## playwright-cli 0.0.63+ 互換性について (2026-02-05)
- *
- * ### --session オプションの仕様変更
- * playwright-cli 0.0.63+ では、`--session=xxx` でセッション作成後、
- * 2回目以降のコマンドで同じ `--session=xxx` を使うと
- * "The session is already configured" エラーが発生する。
- * → デフォルトセッション(--session省略)を使用するよう変更
- *    - open, eval, network: --session オプションを削除
- *    - close: session-stop コマンドに変更
- */
-class PlaywrightFetcher implements Fetcher {
-  private initialized = false;
-  private nodePath: string = "node";
-  private playwrightPath: string = "playwright-cli";
-  private runtime: RuntimeAdapter;
-  private pathConfig: PlaywrightPathConfig;
-  private debug: boolean;
+**設計概要:**
 
-  constructor(
-    private config: CrawlConfig,
-    runtime?: RuntimeAdapter,
-    pathConfig?: PlaywrightPathConfig,
-    debug?: boolean,
-  ) {
-    this.runtime = runtime ?? createRuntimeAdapter();
-    this.pathConfig = pathConfig ?? {
-      nodePaths: PATHS.NODE_PATHS,
-      cliPaths: PATHS.PLAYWRIGHT_PATHS,
-    };
-    this.debug = debug ?? false;
-  }
+`PlaywrightFetcher` クラスは `RuntimeAdapter` を使用してplaywright-cliコマンドを実行し、ページのHTMLを取得します。
 
-  /** CLIコマンドを実行（内部ヘルパー） */
-  private async runCli(args: string[]): Promise<SpawnResult> {
-    return this.runtime.spawn(this.nodePath, [this.playwrightPath, ...args]);
-  }
+**主要な処理フロー:**
 
-  async fetch(url: string): Promise<FetchResult | null> {
-    if (!this.initialized) {
-      const hasPlaywright = await this.checkPlaywrightCli();
-      if (!hasPlaywright) {
-        throw new DependencyError(
-          "playwright-cli not found. Install with: npm install -g @playwright/cli",
-          "playwright-cli",
-        );
-      }
-      this.initialized = true;
-    }
+1. **初期化**: playwright-cliの存在確認（初回のみ）
+2. **ページオープン**: `playwright-cli open <url>` でページを開く
+3. **メタデータ取得**: `playwright-cli network` でステータスコード・content-typeを取得
+4. **レンダリング待機**: SPAの動的レンダリング完了を待つ
+5. **HTML取得**: `playwright-cli eval` でDOMを取得
+6. **エラーハンドリング**: 404やタイムアウトを適切に処理
+7. **クリーンアップ**: セッション終了、一時ディレクトリ削除
 
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
-    try {
-      // タイムアウト用のPromiseを作成
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        timeoutId = setTimeout(() => {
-          reject(
-            new TimeoutError(
-              `Request timeout after ${this.config.timeout / 1000}s (${this.config.timeout}ms)`,
-              this.config.timeout,
-            ),
-          );
-        }, this.config.timeout);
-      });
+**playwright-cli 0.0.63+ 互換性について:**
 
-      // fetchとタイムアウトを競争させる
-      const result = await Promise.race([this.executeFetch(url), timeoutPromise]);
-      if (timeoutId !== undefined) {
-        clearTimeout(timeoutId);
-      }
-      return result;
-    } catch (error) {
-      // エラー時もタイマーをクリア
-      if (timeoutId !== undefined) {
-        clearTimeout(timeoutId);
-      }
+playwright-cli 0.0.63+ では、名前付きセッション（`--session=xxx`）を2回目以降のコマンドで使用すると "The session is already configured" エラーが発生します。そのため、デフォルトセッション（`--session`省略）を使用する実装となっています。これにより並列クロールはできませんが、通常の逐次クロールでは問題ありません。
 
-      // タイムアウトエラーの場合はセッションをクリーンアップ
-      if (error instanceof TimeoutError) {
-        try {
-          await this.runCli(["session-stop"]);
-        } catch (cleanupError) {
-          // クリーンアップエラーは無視（セッションが既に閉じている可能性）
-          if (this.debug) {
-            console.log(`[DEBUG] session-stop on timeout failed: ${cleanupError}`);
-          }
-        }
-      }
+詳細は [docs/decisions/001-playwright-cli-session.md](decisions/001-playwright-cli-session.md) を参照してください。
 
-      if (error instanceof FetchError || error instanceof TimeoutError) {
-        throw error;
-      }
-      const message = error instanceof Error ? error.message : String(error);
-      throw new FetchError(message, url, error instanceof Error ? error : undefined);
-    }
-  }
+**実装の主な特徴:**
 
-  /**
-   * フェッチを実行
-   *
-   * Note: playwright-cli 0.0.63+ では名前付きセッション(--session=xxx)が
-   * 2回目以降のコマンドで使えないため、デフォルトセッションを使用。
-   * これにより並列クロールはできないが、通常の逐次クロールでは問題なし。
-   */
-  private async executeFetch(url: string): Promise<FetchResult | null> {
-    // デフォルトセッションを使用（--session省略）
-    const openArgs = ["open", url];
-    if (this.config.headed) {
-      openArgs.push("--headed");
-    }
-
-    // ページを開く
-    const openResult = await this.runCli(openArgs);
-
-    // 404等でページが開けない場合はnullを返してスキップ
-    if (!openResult.success) {
-      if (
-        openResult.stderr.includes("ERR_HTTP_RESPONSE_CODE_FAILURE") ||
-        openResult.stdout.includes("chrome-error://")
-      ) {
-        return null;
-      }
-      throw new FetchError(`Failed to open page: ${openResult.stderr}`, url);
-    }
-
-    // エラーページにリダイレクトされた場合はスキップ
-    if (
-      openResult.stdout.includes("chrome-error://") ||
-      openResult.stdout.includes("Page URL: chrome-error://")
-    ) {
-      return null;
-    }
-
-    // HTTPメタデータ（ステータスコード・content-type）を取得
-    const { statusCode, contentType } = await this.getHttpMetadata();
-    if (statusCode !== null && (statusCode < 200 || statusCode >= 300)) {
-      // 2xx範囲外はスキップ
-      return null;
-    }
-
-    // レンダリング待機
-    await this.runtime.sleep(this.config.spaWait);
-
-    // コンテンツ取得
-    const result = await this.runCli(["eval", "document.documentElement.outerHTML"]);
-    if (!result.success) {
-      throw new FetchError(`Failed to get content: ${result.stderr}`, url);
-    }
-
-    const html = parseCliOutput(result.stdout);
-
-    return {
-      html,
-      finalUrl: url,
-      contentType,
-    };
-  }
-
-  /** HTTPメタデータ（ステータスコード・content-type）を取得 */
-  private async getHttpMetadata(): Promise<{ statusCode: number | null; contentType: string }> {
-    try {
-      const networkResult = await this.runCli(["network"]);
-      if (!networkResult.success) {
-        return { statusCode: null, contentType: "text/html" };
-      }
-
-      // networkログファイルのパスを抽出
-      const logMatch = networkResult.stdout.match(/\[Network\]\(([^)]+)\)/);
-      if (logMatch) {
-        // 相対パスから絶対パスを構築
-        const logPath = normalize(logMatch[1]);
-        const fullPath = join(this.runtime.cwd(), logPath);
-
-        if (existsSync(fullPath)) {
-          const logContent = await this.runtime.readFile(fullPath);
-
-          // ステータスコード抽出
-          const statusMatch = logContent.match(/status:\s*(\d+)/);
-          const statusCode = statusMatch ? parseInt(statusMatch[1], 10) : null;
-
-          // content-type 抽出（大文字小文字を区別しない、セミコロン以降は除外）
-          const contentTypeMatch = logContent.match(/content-type:\s*([^\n\r;]+)/i);
-          const contentType = contentTypeMatch ? contentTypeMatch[1].trim() : "text/html";
-
-          return { statusCode, contentType };
-        }
-      }
-      return { statusCode: null, contentType: "text/html" };
-    } catch {
-      return { statusCode: null, contentType: "text/html" };
-    }
-  }
-
-  async close(): Promise<void> {
-    try {
-      // デフォルトセッションを停止
-      // Note: 以前は ["close", "--session", sessionId] だったが、
-      // playwright-cli 0.0.63+ では session-stop コマンドを使用
-      await this.runCli(["session-stop"]);
-    } catch (error) {
-      // セッションが既に閉じている場合は無視（デバッグログのみ）
-      if (this.debug) {
-        console.log(`[DEBUG] session-stop failed (expected if already closed): ${error}`);
-      }
-    }
-
-    // .playwright-cli ディレクトリをクリーンアップ
-    if (!this.config.keepSession) {
-      try {
-        const cliDir = join(this.runtime.cwd(), ".playwright-cli");
-        if (existsSync(cliDir)) {
-          rmSync(cliDir, { recursive: true, force: true });
-        }
-      } catch (error) {
-        // クリーンアップ失敗は無視（デバッグログのみ）
-        if (this.debug) {
-          console.log(`[DEBUG] .playwright-cli cleanup failed: ${error}`);
-        }
-      }
-    }
-  }
-}
-```
-
-**実装の主な特徴：**
 - `runtime.spawn()` によるコマンド実行（stdout/stderrを分離取得）
 - タイムアウト処理（`Promise.race` による競合、`clearTimeout` で適切にクリーンアップ）
 - HTTPステータスコード確認（2xx範囲外をスキップ）
 - エラーページ検出（chrome-error://をスキップ）
 - セッション後のクリーンアップ（`.playwright-cli` ディレクトリ削除）
-- `this.runtime.cwd()` の使用（テスタビリティ向上、PR #474で修正）
+- `this.runtime.cwd()` の使用（テスタビリティ向上）
 - デバッグログ（`debug` フラグ有効時にセッション停止やクリーンアップのエラーを出力）
 
-詳細な実装は `src/crawler/fetcher.ts` および `src/utils/runtime.ts` を参照してください。
+**実装詳細:**
+
+詳細な実装は以下のファイルを参照してください：
+- `link-crawler/src/crawler/fetcher.ts` - PlaywrightFetcherの完全な実装
+- `link-crawler/src/utils/runtime.ts` - RuntimeAdapterの実装
 
 ---
 
@@ -704,7 +506,7 @@ crawl https://docs.example.com --keep-session
 import { createHash } from "crypto";
 
 function computeHash(content: string): string {
-  return createHash("sha256").update(content).digest("hex");
+  return createHash("sha256").update(content, "utf8").digest("hex");
 }
 ```
 
