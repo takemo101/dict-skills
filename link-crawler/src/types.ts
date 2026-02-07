@@ -2,6 +2,8 @@
 export interface CrawlConfig {
 	startUrl: string;
 	maxDepth: number;
+	/** 最大クロールページ数（nullは無制限） */
+	maxPages: number | null;
 	outputDir: string;
 	sameDomain: boolean;
 	includePattern: RegExp | null;
@@ -18,6 +20,8 @@ export interface CrawlConfig {
 	merge: boolean;
 	chunks: boolean;
 	keepSession: boolean;
+	/** robots.txt を尊重するか（デフォルト: true） */
+	respectRobots: boolean;
 }
 
 /** フェッチ結果 */
