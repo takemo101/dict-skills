@@ -1,5 +1,5 @@
-import { ConfigError, CrawlError, DependencyError, FetchError, TimeoutError } from "./errors.js";
 import { EXIT_CODES } from "./constants.js";
+import { ConfigError, CrawlError, DependencyError, FetchError, TimeoutError } from "./errors.js";
 
 export interface ErrorHandlerResult {
 	message: string;

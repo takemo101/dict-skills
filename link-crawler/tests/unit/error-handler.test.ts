@@ -7,9 +7,15 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { handleError } from "../../src/error-handler.js";
-import { ConfigError, CrawlError, DependencyError, FetchError, TimeoutError } from "../../src/errors.js";
 import { EXIT_CODES } from "../../src/constants.js";
+import { handleError } from "../../src/error-handler.js";
+import {
+	ConfigError,
+	CrawlError,
+	DependencyError,
+	FetchError,
+	TimeoutError,
+} from "../../src/errors.js";
 
 describe("Error Handler", () => {
 	describe("DependencyError handling", () => {
@@ -53,7 +59,9 @@ describe("Error Handler", () => {
 			const error = new FetchError("HTTP 404 Not Found", "https://example.com/missing");
 			const result = handleError(error);
 
-			expect(result.message).toBe("✗ Fetch error at https://example.com/missing: HTTP 404 Not Found");
+			expect(result.message).toBe(
+				"✗ Fetch error at https://example.com/missing: HTTP 404 Not Found",
+			);
 			expect(result.exitCode).toBe(EXIT_CODES.CRAWL_ERROR);
 		});
 
