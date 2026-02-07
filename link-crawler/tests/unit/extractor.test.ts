@@ -1682,76 +1682,96 @@ describe("extractContent - fallback code block detection (Issue #514)", () => {
 });
 
 describe("extractContent - branch coverage improvements (Issue #581)", () => {
-	it("should skip child code elements when parent is already processed (line 62)", () => {
-		// Tests the shouldSkip branch when parent element is in processedElements
-		// Priority: .highlight is higher priority than pre, so pre inside .highlight should be skipped
+	it("should skip child code elements when parent is already processed (lines 48-62)", () => {
+		// Tests both branches: processedElements.has(el) and processedElements.has(parent)
+		// Create nested elements that match the SAME selector
+		// When parent is processed first, child should be skipped
 		const html = `
 			<!DOCTYPE html>
 			<html>
-				<head><title>Parent Processing Test</title></head>
+				<head><title>Nested Same Selector Test</title></head>
 				<body>
 					<article>
-						<h1>Article Title</h1>
-						<p>This article has enough content for Readability to process successfully.</p>
-						<p>We need substantial text to ensure Readability extracts the content properly.</p>
-						<p>Adding more paragraphs to make sure the article is recognized as main content.</p>
-						<div class="highlight">
-							<pre><code>code inside highlight</code></pre>
-							<code class="language-js">inline code</code>
+						<h1>Testing Nested Code Blocks</h1>
+						<p>This article has enough content for Readability to process successfully with multiple paragraphs.</p>
+						<p>We need substantial text to ensure Readability extracts the content properly and recognizes this.</p>
+						<p>Adding more paragraphs to make sure the article is recognized as main content by the algorithm.</p>
+						<div class="hljs">
+							<div class="hljs">
+								<div class="hljs">
+									Triple nested hljs divs
+								</div>
+							</div>
 						</div>
-						<p>More content to complete the article and ensure proper extraction.</p>
-						<p>Final paragraph for good measure to meet Readability requirements.</p>
+						<p>More content to complete the article and ensure proper extraction happens correctly.</p>
+						<p>Final paragraph for good measure to meet Readability minimum requirements for extraction.</p>
+						<p>Additional content paragraph to be absolutely certain Readability processes this correctly.</p>
 					</article>
 				</body>
 			</html>
 		`;
-		const dom = new JSDOM(html, { url: "https://example.com/parent-processed" });
+		const dom = new JSDOM(html, { url: "https://example.com/nested-same-selector" });
 		const result = extractContent(dom);
 
 		expect(result.content).not.toBeNull();
-		// The .highlight div should be processed, and pre/code inside should be skipped
-		// Verify the code content appears (indicating successful processing)
+		// The outermost .hljs div should be processed first,
+		// then inner .hljs divs should check their parent and skip (line 55-62)
 		if (result.content) {
-			expect(result.content.toLowerCase()).toContain("code");
+			expect(result.content.toLowerCase()).toContain("triple");
 		}
 	});
 
-	it("should collect code blocks in fallback with multiple selector types (line 129)", () => {
-		// Force fallback by using only script/style (Readability returns null)
-		// Tests that code blocks are collected during fallback (line 129)
-		const html = `<!DOCTYPE html><html><body>
-			<script>x</script>
-			<style>y</style>
-			<pre>pre code</pre>
-			<code>code elem</code>
-			<div data-language="js">data-language code</div>
-			<div class="code-block">code-block class</div>
-			<div class="hljs">hljs class</div>
-		</body></html>`;
-		const dom = new JSDOM(html, { url: "https://example.com/fallback-129" });
+	it("should collect code blocks in fallback with multiple selector types (lines 126-130)", () => {
+		// Force fallback: aside-only content makes Readability return NULL
+		// But we need code blocks to be collected BEFORE aside is removed
+		// Tests that code blocks are collected during fallback (lines 126-130)
+		const html = `<!DOCTYPE html><html><head><title></title></head><body><aside><pre>aside code</pre></aside><footer><code>footer code</code></footer></body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/fallback-collect" });
 		const result = extractContent(dom);
 
-		// Fallback executes, line 129 collects code blocks
+		// Readability returns NULL for aside/footer only -> fallback is triggered
+		// Lines 126-130: collect code blocks from body (including inside aside/footer)
+		// Line 134: removes aside, footer, etc (code blocks already collected)
+		// Line 138: selects body (now empty after removals)
+		// Lines 142-146: should prepend collected code blocks to empty content
 		expect(result).toHaveProperty("content");
+		// Since body is empty after removals, collected code blocks should still be there
+		if (result.content) {
+			const hasCodeContent =
+				result.content.includes("aside code") ||
+				result.content.includes("footer code") ||
+				result.content.includes("<pre>") ||
+				result.content.includes("<code>");
+			expect(hasCodeContent).toBe(true);
+		}
 	});
 
-	it("should add collected code blocks when content has no code patterns (lines 143-146)", () => {
-		// Force fallback with code blocks outside main, main content has no code
-		// Tests lines 143-146: hasCodeBlock check and code prepending
-		const html = `<!DOCTYPE html><html><body>
-			<script>trigger fallback</script>
-			<style>no content</style>
-			<main><div>Plain text only, no code</div></main>
-			<aside><pre><code>code outside main</code></pre></aside>
+	it("should add collected code blocks when content has no code patterns (lines 142-146)", () => {
+		// Force fallback: script/style only triggers Readability NULL
+		// Code blocks in body, main element has plain text without code patterns
+		// Tests lines 142-146: if (content && codeBlocks.length > 0) && if (!hasCodeBlock)
+		const html = `<!DOCTYPE html><html><head><title></title></head><body>
+			<script>x</script>
+			<style>y</style>
+			<main><span>Plain text without code</span></main>
+			<pre><code>code block to collect</code></pre>
 		</body></html>`;
-		const dom = new JSDOM(html, { url: "https://example.com/lines-143-146" });
+		const dom = new JSDOM(html, { url: "https://example.com/fallback-append" });
 		const result = extractContent(dom);
 
-		// Fallback executes
-		// Line 143: currentContent = content
-		// Line 144: hasCodeBlock checks patterns
-		// Line 146: prepends code blocks if !hasCodeBlock
+		// Readability returns NULL -> fallback executes
+		// Lines 126-130: collect code blocks (the <pre><code> above)
+		// Line 134: remove script, style, aside, etc (script/style removed)
+		// Line 138: main element is selected
+		// Line 139: content = main.innerHTML (plain text)
+		// Line 142: content exists && codeBlocks.length > 0 -> enters if block
+		// Line 144: hasCodeBlock = false (no code patterns in "Plain text")
+		// Line 145-146: !hasCodeBlock -> prepend code blocks
 		expect(result).toHaveProperty("content");
+		if (result.content) {
+			expect(result.content).toContain("code block to collect");
+			expect(result.content).toContain("Plain text");
+		}
 	});
 
 	it("should handle multiple levels of nested code elements", () => {
