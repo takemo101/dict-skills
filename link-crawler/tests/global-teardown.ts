@@ -45,6 +45,6 @@ export default async function globalTeardown() {
 			}
 		}
 	} catch (error) {
-		console.warn("Warning: Failed to clean up integration test directories", error);
+		console.warn("Warning: Failed to clean up integration test output directories", error);
 	}
 }
