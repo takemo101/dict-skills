@@ -72,13 +72,13 @@ describe("parseConfig", () => {
 	it("should handle timeout 0 correctly", () => {
 		const config = parseConfig({ timeout: 0 }, "https://example.com");
 
-		expect(config.timeout).toBe(0);
+		expect(config.timeout).toBe(1000); // Minimum timeout is 1 second
 	});
 
 	it("should handle timeout as string '0' correctly", () => {
 		const config = parseConfig({ timeout: "0" }, "https://example.com");
 
-		expect(config.timeout).toBe(0);
+		expect(config.timeout).toBe(1000); // Minimum timeout is 1 second
 	});
 
 	it("should handle spaWait 0 correctly", () => {
@@ -309,5 +309,93 @@ describe("parseConfig - URL validation", () => {
 
 		const config3 = parseConfig({}, "https://example.com/path/to/page");
 		expect(config3.startUrl).toBe("https://example.com/path/to/page");
+	});
+});
+
+describe("parseConfig - negative value validation", () => {
+	it("should clamp negative delay to 0", () => {
+		const config = parseConfig({ delay: -100 }, "https://example.com");
+		expect(config.delay).toBe(0);
+	});
+
+	it("should clamp negative timeout to 1 second (1000ms)", () => {
+		const config = parseConfig({ timeout: -10 }, "https://example.com");
+		expect(config.timeout).toBe(1000);
+	});
+
+	it("should clamp negative spaWait to 0", () => {
+		const config = parseConfig({ wait: -500 }, "https://example.com");
+		expect(config.spaWait).toBe(0);
+	});
+
+	it("should clamp negative depth to 0", () => {
+		const config = parseConfig({ depth: -5 }, "https://example.com");
+		expect(config.maxDepth).toBe(0);
+	});
+
+	it("should clamp very large negative values appropriately", () => {
+		const config = parseConfig(
+			{
+				delay: -999999,
+				timeout: -999999,
+				wait: -999999,
+				depth: -999999,
+			},
+			"https://example.com",
+		);
+
+		expect(config.delay).toBe(0);
+		expect(config.timeout).toBe(1000);
+		expect(config.spaWait).toBe(0);
+		expect(config.maxDepth).toBe(0);
+	});
+});
+
+describe("parseConfig - boundary value validation", () => {
+	it("should allow delay of exactly 0", () => {
+		const config = parseConfig({ delay: 0 }, "https://example.com");
+		expect(config.delay).toBe(0);
+	});
+
+	it("should allow depth of exactly 0", () => {
+		const config = parseConfig({ depth: 0 }, "https://example.com");
+		expect(config.maxDepth).toBe(0);
+	});
+
+	it("should allow spaWait of exactly 0", () => {
+		const config = parseConfig({ wait: 0 }, "https://example.com");
+		expect(config.spaWait).toBe(0);
+	});
+
+	it("should enforce minimum timeout of 1 second (1000ms)", () => {
+		const config = parseConfig({ timeout: 0.5 }, "https://example.com");
+		expect(config.timeout).toBe(1000);
+	});
+
+	it("should allow timeout of exactly 1 second", () => {
+		const config = parseConfig({ timeout: 1 }, "https://example.com");
+		expect(config.timeout).toBe(1000);
+	});
+
+	it("should allow timeout greater than 1 second", () => {
+		const config = parseConfig({ timeout: 5 }, "https://example.com");
+		expect(config.timeout).toBe(5000);
+	});
+
+	it("should allow positive values for all numeric options", () => {
+		const config = parseConfig(
+			{
+				delay: 100,
+				timeout: 10,
+				wait: 3000,
+				depth: 5,
+			},
+			"https://example.com",
+		);
+
+		expect(config.delay).toBe(100);
+		expect(config.timeout).toBe(10000);
+		expect(config.spaWait).toBe(3000);
+		expect(config.maxDepth).toBe(5);
 	});
 });
