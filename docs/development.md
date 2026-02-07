@@ -65,13 +65,19 @@ link-crawler/
 │       └── site-name.ts        # サイト名生成
 │
 ├── tests/                       # テストファイル
+│   ├── global-setup.ts          # テスト全体のセットアップ
+│   ├── global-teardown.ts       # テスト全体のクリーンアップ
 │   ├── unit/                    # ユニットテスト
 │   │   ├── chunker.test.ts
+│   │   ├── cli-options.test.ts
 │   │   ├── config.test.ts
 │   │   ├── constants.test.ts
 │   │   ├── converter.test.ts
+│   │   ├── crawl.test.ts
 │   │   ├── crawler.test.ts
 │   │   ├── crawler-error-handling.test.ts
+│   │   ├── crawler-link-extraction-order.test.ts
+│   │   ├── error-handler.test.ts
 │   │   ├── errors.test.ts
 │   │   ├── extractor.test.ts
 │   │   ├── fetcher.test.ts
@@ -87,7 +93,8 @@ link-crawler/
 │   │   ├── site-name.test.ts
 │   │   └── writer.test.ts
 │   └── integration/             # 統合テスト
-│       └── crawler.test.ts
+│       ├── crawler.test.ts
+│       └── crawl-cli.test.ts
 │
 ├── vitest.config.ts             # Vitest設定
 ├── package.json
