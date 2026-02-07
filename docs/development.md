@@ -67,8 +67,10 @@ link-crawler/
 │   ├── unit/                    # ユニットテスト
 │   │   ├── chunker.test.ts
 │   │   ├── config.test.ts
+│   │   ├── constants.test.ts
 │   │   ├── converter.test.ts
 │   │   ├── crawler.test.ts
+│   │   ├── crawler-error-handling.test.ts
 │   │   ├── errors.test.ts
 │   │   ├── extractor.test.ts
 │   │   ├── fetcher.test.ts
