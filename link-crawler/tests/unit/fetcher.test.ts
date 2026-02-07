@@ -18,6 +18,7 @@ const mockRmSync = fs.rmSync as ReturnType<typeof vi.fn>;
 const createMockConfig = (overrides: Partial<CrawlConfig> = {}): CrawlConfig => ({
 	startUrl: "https://example.com",
 	maxDepth: 1,
+	maxPages: null,
 	outputDir: "./output",
 	sameDomain: true,
 	includePattern: null,
@@ -31,6 +32,7 @@ const createMockConfig = (overrides: Partial<CrawlConfig> = {}): CrawlConfig => 
 	merge: true,
 	chunks: true,
 	keepSession: false,
+	respectRobots: true,
 	...overrides,
 });
 

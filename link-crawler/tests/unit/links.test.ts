@@ -82,6 +82,7 @@ describe("shouldCrawl", () => {
 	const baseConfig: CrawlConfig = {
 		startUrl: "https://example.com",
 		maxDepth: 2,
+		maxPages: null,
 		outputDir: "./output",
 		sameDomain: true,
 		includePattern: null,
@@ -95,6 +96,7 @@ describe("shouldCrawl", () => {
 		merge: true,
 		chunks: true,
 		keepSession: false,
+		respectRobots: true,
 	};
 
 	it("should return true for unvisited URL", () => {
@@ -182,6 +184,7 @@ describe("extractLinks", () => {
 	const baseConfig: CrawlConfig = {
 		startUrl: "https://example.com",
 		maxDepth: 2,
+		maxPages: null,
 		outputDir: "./output",
 		sameDomain: true,
 		includePattern: null,
@@ -195,6 +198,7 @@ describe("extractLinks", () => {
 		merge: true,
 		chunks: true,
 		keepSession: false,
+		respectRobots: true,
 	};
 
 	it("should extract links from HTML", () => {
