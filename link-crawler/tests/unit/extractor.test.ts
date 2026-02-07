@@ -2226,3 +2226,246 @@ describe("extractContent - Issue #622: fallback path marker restoration", () => 
 		}
 	});
 });
+
+describe("extractContent - nested code block deduplication (Issue #631)", () => {
+	it("should not duplicate nested code blocks with specific selectors", () => {
+		// .highlight > pre > code のようなネスト構造で重複しないこと
+		const html = `
+			<!DOCTYPE html>
+			<html>
+				<head><title>Nested Code Test</title></head>
+				<body>
+					<article>
+						<h1>Code Example</h1>
+						<p>Example with nested code blocks that should not be duplicated:</p>
+						<div class="highlight">
+							<pre data-language="javascript">
+								<code class="language-javascript">const x = 1;</code>
+							</pre>
+						</div>
+						<p>More content here to make this substantial for Readability.</p>
+						<p>Additional paragraph to ensure proper content extraction.</p>
+					</article>
+				</body>
+			</html>
+		`;
+		const dom = new JSDOM(html, { url: "https://example.com/nested" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			// コードは1回だけ出現すべき（重複なし）
+			const codeMatches = result.content.match(/const x = 1/g);
+			expect(codeMatches).toBeTruthy();
+			expect(codeMatches?.length).toBe(1);
+		}
+	});
+
+	it("should handle nested elements with same selector (same class)", () => {
+		// 同じクラスを持つネストされた要素（ネスト検出の主要なユースケース）
+		const html = `
+			<!DOCTYPE html>
+			<html>
+				<head><title>Same Selector Nesting</title></head>
+				<body>
+					<article>
+						<h1>Nested Same Class Test</h1>
+						<p>Testing nested divs with the same class name:</p>
+						<div class="highlight" id="outer-div">
+							Outer content
+							<div class="highlight" id="inner-div">
+								Inner content
+								<pre><code>nested code in same selector</code></pre>
+							</div>
+						</div>
+						<p>More content to ensure proper extraction.</p>
+						<p>Additional paragraph for content weight.</p>
+					</article>
+				</body>
+			</html>
+		`;
+		const dom = new JSDOM(html, { url: "https://example.com/same-selector" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			// ネストされた要素が重複処理されないことを確認
+			// 外側のdivが処理され、内側は自動的に含まれる
+			const hasContent =
+				result.content.includes("nested code") ||
+				result.content.includes("Outer content") ||
+				result.content.includes("Inner content");
+			expect(hasContent).toBe(true);
+		}
+	});
+
+	it("should handle deeply nested elements with same class", () => {
+		// 3レベル以上のネスト with 同じセレクタ
+		const html = `
+			<!DOCTYPE html>
+			<html>
+				<head><title>Deep Nesting Same Class</title></head>
+				<body>
+					<article>
+						<h1>Deep Nesting Test</h1>
+						<p>Testing multiple levels of nesting with same class:</p>
+						<div class="code-block" id="level1">
+							Level 1
+							<div class="code-block" id="level2">
+								Level 2
+								<div class="code-block" id="level3">
+									Level 3
+									<pre><code>deeply nested code</code></pre>
+								</div>
+							</div>
+						</div>
+						<p>Content after nested structure.</p>
+						<p>More paragraphs for proper extraction.</p>
+					</article>
+				</body>
+			</html>
+		`;
+		const dom = new JSDOM(html, { url: "https://example.com/deep-nesting" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			// 深くネストされたコードブロックも正しく処理される
+			const hasNested =
+				result.content.includes("deeply nested") || result.content.includes("Level");
+			expect(hasNested).toBe(true);
+		}
+	});
+
+	it("should handle deeply nested code blocks correctly", () => {
+		// data-rehype-pretty-code-fragment > pre > code のような深いネスト
+		const html = `
+			<!DOCTYPE html>
+			<html>
+				<head><title>Deep Nesting Test</title></head>
+				<body>
+					<article>
+						<h1>Deep Nesting Example</h1>
+						<p>Testing deep nesting with multiple matching selectors:</p>
+						<div data-rehype-pretty-code-fragment="">
+							<pre data-language="typescript">
+								<code>const y: number = 42;</code>
+							</pre>
+						</div>
+						<p>More text to ensure Readability processes this correctly.</p>
+						<p>Another paragraph for content weight.</p>
+					</article>
+				</body>
+			</html>
+		`;
+		const dom = new JSDOM(html, { url: "https://example.com/deep-nest" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			// コードは1回だけ出現すべき
+			const codeMatches = result.content.match(/const y: number = 42/g);
+			expect(codeMatches).toBeTruthy();
+			expect(codeMatches?.length).toBe(1);
+		}
+	});
+
+	it("should handle multiple independent code blocks without interference", () => {
+		// 独立した複数のコードブロックは全て保持されること
+		const html = `
+			<!DOCTYPE html>
+			<html>
+				<head><title>Multiple Independent Blocks</title></head>
+				<body>
+					<article>
+						<h1>Multiple Code Examples</h1>
+						<p>First example:</p>
+						<pre><code>code block 1</code></pre>
+						<p>Second example:</p>
+						<pre><code>code block 2</code></pre>
+						<p>Third example:</p>
+						<div class="highlight"><pre><code>code block 3</code></pre></div>
+						<p>Additional content to ensure Readability extracts properly.</p>
+					</article>
+				</body>
+			</html>
+		`;
+		const dom = new JSDOM(html, { url: "https://example.com/multiple-independent" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			// 全てのコードブロックが保持されている
+			expect(result.content).toContain("code block 1");
+			expect(result.content).toContain("code block 2");
+			expect(result.content).toContain("code block 3");
+
+			// 重複していない
+			expect(result.content.match(/code block 1/g)?.length).toBe(1);
+			expect(result.content.match(/code block 2/g)?.length).toBe(1);
+			expect(result.content.match(/code block 3/g)?.length).toBe(1);
+		}
+	});
+
+	it("should handle same element matching multiple selectors", () => {
+		// 同じ要素が複数のセレクタにマッチする場合
+		const html = `
+			<!DOCTYPE html>
+			<html>
+				<head><title>Multiple Selector Match</title></head>
+				<body>
+					<article>
+						<h1>Example</h1>
+						<p>Code block that matches multiple selectors:</p>
+						<pre class="highlight" data-language="python">
+							<code>print("hello world")</code>
+						</pre>
+						<p>More content for Readability.</p>
+						<p>Additional paragraph.</p>
+					</article>
+				</body>
+			</html>
+		`;
+		const dom = new JSDOM(html, { url: "https://example.com/multi-selector" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			// コードは1回だけ出現（重複処理されていない）
+			const codeMatches = result.content.match(/print\("hello world"\)/g);
+			expect(codeMatches).toBeTruthy();
+			expect(codeMatches?.length).toBe(1);
+		}
+	});
+
+	it("should skip child elements when parent is already processed", () => {
+		// 親要素が処理済みの場合、子要素をスキップすること
+		const html = `
+			<!DOCTYPE html>
+			<html>
+				<head><title>Parent-Child Skip Test</title></head>
+				<body>
+					<article>
+						<h1>Nesting with Priority</h1>
+						<p>Testing parent-child relationship:</p>
+						<div class="code-block">
+							<pre><code>nested code</code></pre>
+						</div>
+						<p>More content here.</p>
+						<p>Another paragraph.</p>
+					</article>
+				</body>
+			</html>
+		`;
+		const dom = new JSDOM(html, { url: "https://example.com/parent-skip" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			// 親要素（.code-block）が処理され、子要素（pre, code）は重複処理されない
+			const codeMatches = result.content.match(/nested code/g);
+			expect(codeMatches).toBeTruthy();
+			expect(codeMatches?.length).toBe(1);
+		}
+	});
+});
