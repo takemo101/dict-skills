@@ -164,6 +164,15 @@ describe("PlaywrightFetcher", () => {
 					} as SpawnResult);
 				}
 				if (callCount === 2) {
+					// network command (getHttpMetadata)
+					return Promise.resolve({
+						success: true,
+						stdout: "[Network](../path/to/network.log)",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				if (callCount === 3) {
 					// eval window.location.href
 					return Promise.resolve({
 						success: true,
@@ -181,6 +190,8 @@ describe("PlaywrightFetcher", () => {
 				} as SpawnResult);
 			});
 			mockRuntime.sleep = vi.fn().mockResolvedValue(undefined);
+			mockRuntime.readFile = vi.fn().mockResolvedValue("status: 200\ncontent-type: text/html");
+			mockExistsSync.mockReturnValue(true);
 
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
 			const result = await (
@@ -213,6 +224,15 @@ describe("PlaywrightFetcher", () => {
 					} as SpawnResult);
 				}
 				if (callCount === 2) {
+					// network command
+					return Promise.resolve({
+						success: true,
+						stdout: "[Network](../path/to/network.log)",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				if (callCount === 3) {
 					// eval window.location.href
 					return Promise.resolve({
 						success: true,
@@ -230,6 +250,8 @@ describe("PlaywrightFetcher", () => {
 				} as SpawnResult);
 			});
 			mockRuntime.sleep = vi.fn().mockResolvedValue(undefined);
+			mockRuntime.readFile = vi.fn().mockResolvedValue("status: 200\ncontent-type: text/html");
+			mockExistsSync.mockReturnValue(true);
 
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
 			await (fetcher as unknown as { executeFetch(url: string): Promise<unknown> }).executeFetch(
@@ -271,6 +293,15 @@ describe("PlaywrightFetcher", () => {
 					} as SpawnResult);
 				}
 				if (callCount === 2) {
+					// network command
+					return Promise.resolve({
+						success: true,
+						stdout: "[Network](../path/to/network.log)",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				if (callCount === 3) {
 					// eval window.location.href
 					return Promise.resolve({
 						success: true,
@@ -288,6 +319,8 @@ describe("PlaywrightFetcher", () => {
 				} as SpawnResult);
 			});
 			mockRuntime.sleep = vi.fn().mockResolvedValue(undefined);
+			mockRuntime.readFile = vi.fn().mockResolvedValue("status: 200\ncontent-type: text/html");
+			mockExistsSync.mockReturnValue(true);
 
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
 			await expect(
@@ -313,6 +346,15 @@ describe("PlaywrightFetcher", () => {
 					} as SpawnResult);
 				}
 				if (callCount === 2) {
+					// network command
+					return Promise.resolve({
+						success: true,
+						stdout: "[Network](../path/to/network.log)",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				if (callCount === 3) {
 					// eval window.location.href
 					return Promise.resolve({
 						success: true,
@@ -330,6 +372,8 @@ describe("PlaywrightFetcher", () => {
 				} as SpawnResult);
 			});
 			mockRuntime.sleep = vi.fn().mockResolvedValue(undefined);
+			mockRuntime.readFile = vi.fn().mockResolvedValue("status: 200\ncontent-type: text/html");
+			mockExistsSync.mockReturnValue(true);
 
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
 			await (fetcher as unknown as { executeFetch(url: string): Promise<unknown> }).executeFetch(
@@ -355,6 +399,15 @@ describe("PlaywrightFetcher", () => {
 					} as SpawnResult);
 				}
 				if (callCount === 2) {
+					// network command
+					return Promise.resolve({
+						success: true,
+						stdout: "[Network](../path/to/network.log)",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				if (callCount === 3) {
 					// eval window.location.href - returns https://
 					return Promise.resolve({
 						success: true,
@@ -372,6 +425,8 @@ describe("PlaywrightFetcher", () => {
 				} as SpawnResult);
 			});
 			mockRuntime.sleep = vi.fn().mockResolvedValue(undefined);
+			mockRuntime.readFile = vi.fn().mockResolvedValue("status: 200\ncontent-type: text/html");
+			mockExistsSync.mockReturnValue(true);
 
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
 			const result = await (
@@ -402,6 +457,15 @@ describe("PlaywrightFetcher", () => {
 					} as SpawnResult);
 				}
 				if (callCount === 2) {
+					// network command
+					return Promise.resolve({
+						success: true,
+						stdout: "[Network](../path/to/network.log)",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				if (callCount === 3) {
 					// eval window.location.href - redirected to /new
 					return Promise.resolve({
 						success: true,
@@ -419,6 +483,8 @@ describe("PlaywrightFetcher", () => {
 				} as SpawnResult);
 			});
 			mockRuntime.sleep = vi.fn().mockResolvedValue(undefined);
+			mockRuntime.readFile = vi.fn().mockResolvedValue("status: 200\ncontent-type: text/html");
+			mockExistsSync.mockReturnValue(true);
 
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
 			const result = await (
@@ -449,6 +515,15 @@ describe("PlaywrightFetcher", () => {
 					} as SpawnResult);
 				}
 				if (callCount === 2) {
+					// network command
+					return Promise.resolve({
+						success: true,
+						stdout: "[Network](../path/to/network.log)",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				if (callCount === 3) {
 					// eval window.location.href - fails
 					return Promise.resolve({
 						success: false,
@@ -466,6 +541,8 @@ describe("PlaywrightFetcher", () => {
 				} as SpawnResult);
 			});
 			mockRuntime.sleep = vi.fn().mockResolvedValue(undefined);
+			mockRuntime.readFile = vi.fn().mockResolvedValue("status: 200\ncontent-type: text/html");
+			mockExistsSync.mockReturnValue(true);
 
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
 			const result = await (
@@ -496,6 +573,15 @@ describe("PlaywrightFetcher", () => {
 					} as SpawnResult);
 				}
 				if (callCount === 2) {
+					// network command
+					return Promise.resolve({
+						success: true,
+						stdout: "[Network](../path/to/network.log)",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				if (callCount === 3) {
 					// eval window.location.href - with query params
 					return Promise.resolve({
 						success: true,
@@ -513,6 +599,8 @@ describe("PlaywrightFetcher", () => {
 				} as SpawnResult);
 			});
 			mockRuntime.sleep = vi.fn().mockResolvedValue(undefined);
+			mockRuntime.readFile = vi.fn().mockResolvedValue("status: 200\ncontent-type: text/html");
+			mockExistsSync.mockReturnValue(true);
 
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
 			const result = await (
@@ -543,6 +631,15 @@ describe("PlaywrightFetcher", () => {
 					} as SpawnResult);
 				}
 				if (callCount === 2) {
+					// network command
+					return Promise.resolve({
+						success: true,
+						stdout: "[Network](../path/to/network.log)",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				if (callCount === 3) {
 					// eval window.location.href - with fragment
 					return Promise.resolve({
 						success: true,
@@ -560,6 +657,8 @@ describe("PlaywrightFetcher", () => {
 				} as SpawnResult);
 			});
 			mockRuntime.sleep = vi.fn().mockResolvedValue(undefined);
+			mockRuntime.readFile = vi.fn().mockResolvedValue("status: 200\ncontent-type: text/html");
+			mockExistsSync.mockReturnValue(true);
 
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
 			const result = await (
