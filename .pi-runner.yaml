@@ -18,16 +18,16 @@ agent:
 parallel:
   max_concurrent: 2
 
-workflow:
-  name: default
-  steps:
-    - plan
-    - implement
-    - test
-    - review
-    - merge
-
 workflows:
+  default:
+    description: "Standard workflow - plan, implement, test, review, merge"
+    steps:
+      - plan
+      - implement
+      - test
+      - review
+      - merge
+
   quick:
     description: "Quick validation - linting and type checking only (no tests)"
     steps:
