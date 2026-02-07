@@ -585,7 +585,8 @@ describe("PlaywrightFetcher", () => {
 					// eval window.location.href - with query params
 					return Promise.resolve({
 						success: true,
-						stdout: '### Result\n"https://example.com/page?utm_source=test&ref=home"\n### Ran Playwright code',
+						stdout:
+							'### Result\n"https://example.com/page?utm_source=test&ref=home"\n### Ran Playwright code',
 						stderr: "",
 						exitCode: 0,
 					} as SpawnResult);
