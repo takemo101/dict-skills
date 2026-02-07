@@ -284,6 +284,7 @@ interface CrawledPage {
 interface CrawlResult {
   crawledAt: string;
   baseUrl: string;
+  /** クロール設定の一部（実際にはmaxDepthとsameDomainのみ保存される） */
   config: Partial<CrawlConfig>;
   totalPages: number;
   pages: CrawledPage[];
