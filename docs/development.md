@@ -314,7 +314,7 @@ Content1
 
 Content2`;
 
-    const chunker = new Chunker();
+    const chunker = new Chunker("/tmp/test");
     const chunks = chunker.chunk(input);
 
     expect(chunks).toHaveLength(2);
@@ -327,7 +327,7 @@ Content2`;
 
 Content`;
 
-    const chunker = new Chunker();
+    const chunker = new Chunker("/tmp/test");
     const chunks = chunker.chunk(input);
 
     expect(chunks).toHaveLength(1);
