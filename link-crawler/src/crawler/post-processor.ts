@@ -45,9 +45,7 @@ export class PostProcessor {
 		// - merge: full.md出力のため
 		// - chunks: チャンク分割のため
 		const needsFullContent = this.config.merge || this.config.chunks;
-		const fullMdContent = needsFullContent
-			? this.merger.buildFullContent(pages, contents)
-			: "";
+		const fullMdContent = needsFullContent ? this.merger.buildFullContent(pages, contents) : "";
 
 		// Merger出力 (full.md書き込み)
 		if (this.config.merge && fullMdContent) {
