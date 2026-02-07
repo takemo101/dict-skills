@@ -1703,10 +1703,10 @@ describe("extractContent - protectCodeBlocks nested elements (lines 53, 62)", ()
 				<p>Additional content to ensure Readability processes this as main content.</p>
 			</article>
 		</body></html>`;
-		
+
 		const dom = new JSDOM(html, { url: "https://example.com/nested-skip" });
 		const result = extractContent(dom);
-		
+
 		expect(result.content).not.toBeNull();
 		if (result.content) {
 			expect(result.content).toContain("nested");
@@ -1736,17 +1736,17 @@ describe("extractContent - protectCodeBlocks nested elements (lines 53, 62)", ()
 				<p>Additional content for Readability.</p>
 			</article>
 		</body></html>`;
-		
+
 		const dom = new JSDOM(html, { url: "https://example.com/multi-nested" });
 		const result = extractContent(dom);
-		
+
 		expect(result.content).not.toBeNull();
 		if (result.content) {
 			// Each code block should appear only once
 			const firstMatches = result.content.match(/print\("first"\)/g);
 			const secondMatches = result.content.match(/const second/g);
 			const thirdMatches = result.content.match(/third example/g);
-			
+
 			expect(firstMatches?.length).toBe(1);
 			expect(secondMatches?.length).toBe(1);
 			expect(thirdMatches?.length).toBe(1);
@@ -1774,10 +1774,10 @@ describe("extractContent - protectCodeBlocks nested elements (lines 53, 62)", ()
 				<p>Additional paragraph for content detection.</p>
 			</article>
 		</body></html>`;
-		
+
 		const dom = new JSDOM(html, { url: "https://example.com/deep-nested" });
 		const result = extractContent(dom);
-		
+
 		expect(result.content).not.toBeNull();
 		if (result.content) {
 			expect(result.content).toContain("deep nesting");
@@ -1800,10 +1800,10 @@ describe("extractContent - CODE_BLOCK_HTML_PATTERNS detection (line 144)", () =>
 				<pre><code>existing pre tag</code></pre>
 			</main>
 		</body></html>`;
-		
+
 		const dom = new JSDOM(html, { url: "https://example.com/detect-pre" });
 		const result = extractContent(dom);
-		
+
 		expect(result.content).not.toBeNull();
 		if (result.content) {
 			// Main content should have existing code
@@ -1823,10 +1823,10 @@ describe("extractContent - CODE_BLOCK_HTML_PATTERNS detection (line 144)", () =>
 				<p>Inline <code>code example</code> in text</p>
 			</main>
 		</body></html>`;
-		
+
 		const dom = new JSDOM(html, { url: "https://example.com/detect-code-tag" });
 		const result = extractContent(dom);
-		
+
 		expect(result.content).not.toBeNull();
 		if (result.content) {
 			expect(result.content).toContain("code example");
@@ -1844,10 +1844,10 @@ describe("extractContent - CODE_BLOCK_HTML_PATTERNS detection (line 144)", () =>
 				<pre data-language="bash"><code>echo "test"</code></pre>
 			</main>
 		</body></html>`;
-		
+
 		const dom = new JSDOM(html, { url: "https://example.com/detect-data-lang" });
 		const result = extractContent(dom);
-		
+
 		expect(result.content).not.toBeNull();
 		if (result.content) {
 			expect(result.content).toContain("data-language");
@@ -1864,10 +1864,10 @@ describe("extractContent - CODE_BLOCK_HTML_PATTERNS detection (line 144)", () =>
 				<div data-rehype-pretty-code-fragment=""><pre>code</pre></div>
 			</main>
 		</body></html>`;
-		
+
 		const dom = new JSDOM(html, { url: "https://example.com/detect-rehype-attr" });
 		const result = extractContent(dom);
-		
+
 		expect(result.content).not.toBeNull();
 		if (result.content) {
 			expect(result.content).toContain("data-rehype-pretty-code-fragment");
@@ -1884,10 +1884,10 @@ describe("extractContent - CODE_BLOCK_HTML_PATTERNS detection (line 144)", () =>
 				<div class="code-block"><pre>example</pre></div>
 			</main>
 		</body></html>`;
-		
+
 		const dom = new JSDOM(html, { url: "https://example.com/detect-code-block-class" });
 		const result = extractContent(dom);
-		
+
 		expect(result.content).not.toBeNull();
 		if (result.content) {
 			expect(result.content).toContain("code-block");
@@ -1904,10 +1904,10 @@ describe("extractContent - CODE_BLOCK_HTML_PATTERNS detection (line 144)", () =>
 				<div class="highlight"><pre>highlighted</pre></div>
 			</main>
 		</body></html>`;
-		
+
 		const dom = new JSDOM(html, { url: "https://example.com/detect-highlight-class" });
 		const result = extractContent(dom);
-		
+
 		expect(result.content).not.toBeNull();
 		if (result.content) {
 			expect(result.content).toContain("highlight");
@@ -1924,10 +1924,10 @@ describe("extractContent - CODE_BLOCK_HTML_PATTERNS detection (line 144)", () =>
 				<div class="hljs"><code>hljs code</code></div>
 			</main>
 		</body></html>`;
-		
+
 		const dom = new JSDOM(html, { url: "https://example.com/detect-hljs-class" });
 		const result = extractContent(dom);
-		
+
 		expect(result.content).not.toBeNull();
 		if (result.content) {
 			expect(result.content).toContain("hljs");
@@ -1944,10 +1944,10 @@ describe("extractContent - CODE_BLOCK_HTML_PATTERNS detection (line 144)", () =>
 				<div class="prism-code"><code>prism</code></div>
 			</main>
 		</body></html>`;
-		
+
 		const dom = new JSDOM(html, { url: "https://example.com/detect-prism-class" });
 		const result = extractContent(dom);
-		
+
 		expect(result.content).not.toBeNull();
 		if (result.content) {
 			expect(result.content).toContain("prism-code");
@@ -1964,10 +1964,10 @@ describe("extractContent - CODE_BLOCK_HTML_PATTERNS detection (line 144)", () =>
 				<div class="shiki"><code>shiki code</code></div>
 			</main>
 		</body></html>`;
-		
+
 		const dom = new JSDOM(html, { url: "https://example.com/detect-shiki-class" });
 		const result = extractContent(dom);
-		
+
 		expect(result.content).not.toBeNull();
 		if (result.content) {
 			expect(result.content).toContain("shiki");
@@ -1984,17 +1984,20 @@ describe("extractContent - CODE_BLOCK_HTML_PATTERNS detection (line 144)", () =>
 			<pre><code>collected code block</code></pre>
 			<main><span>x</span></main>
 		</body></html>`;
-		
+
 		const dom = new JSDOM(html, { url: "https://example.com/fallback-collect-add" });
 		const result = extractContent(dom);
-		
+
 		// Fallback should execute and collect code blocks (line 576/129)
 		// Then check if content has code patterns (line 590-591/143-144)
 		// Since main has no code pattern, prepend collected blocks (line 593/146)
 		expect(result.content).not.toBeNull();
 		if (result.content) {
 			// Should include collected code block
-			const hasCode = result.content.includes("collected") || result.content.includes("code block") || result.content.includes("<pre>");
+			const hasCode =
+				result.content.includes("collected") ||
+				result.content.includes("code block") ||
+				result.content.includes("<pre>");
 			expect(hasCode).toBe(true);
 		}
 	});
@@ -2010,14 +2013,17 @@ describe("extractContent - CODE_BLOCK_HTML_PATTERNS detection (line 144)", () =>
 			<div data-language="python">third block</div>
 			<main><span>y</span></main>
 		</body></html>`;
-		
+
 		const dom = new JSDOM(html, { url: "https://example.com/fallback-multi-collect" });
 		const result = extractContent(dom);
-		
+
 		expect(result.content).not.toBeNull();
 		if (result.content) {
 			// Should collect and include multiple code blocks
-			const hasAny = result.content.includes("block") || result.content.includes("<pre>") || result.content.includes("hljs");
+			const hasAny =
+				result.content.includes("block") ||
+				result.content.includes("<pre>") ||
+				result.content.includes("hljs");
 			expect(hasAny).toBe(true);
 		}
 	});
@@ -2037,10 +2043,10 @@ describe("extractContent - CODE_BLOCK_HTML_PATTERNS detection (line 144)", () =>
 				<p>Text after</p>
 			</main>
 		</body></html>`;
-		
+
 		const dom = new JSDOM(html, { url: "https://example.com/has-inline-code" });
 		const result = extractContent(dom);
-		
+
 		expect(result.content).not.toBeNull();
 		if (result.content) {
 			// Should have inline code from main
