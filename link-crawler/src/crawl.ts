@@ -19,6 +19,7 @@ program
 	.description("Crawl technical documentation sites recursively")
 	.argument("<url>", "Starting URL to crawl")
 	.option("-d, --depth <num>", "Maximum crawl depth", "1")
+	.option("--max-pages <num>", "Maximum number of pages to crawl (0 = unlimited)")
 	.option("-o, --output <dir>", "Output directory (default: ./.context/<site-name>/)")
 	.option("--same-domain", "Only follow same-domain links", true)
 	.option("--no-same-domain", "Follow cross-domain links")
@@ -33,6 +34,7 @@ program
 	.option("--no-merge", "Skip merged output file")
 	.option("--chunks", "Enable chunked output files", false)
 	.option("--keep-session", "Keep .playwright-cli directory after crawl (for debugging)", false)
+	.option("--no-robots", "Ignore robots.txt (not recommended)", false)
 	.version(packageJson.version)
 	.parse();
 
@@ -45,9 +47,34 @@ if (!startUrl) {
 }
 
 async function main(): Promise<void> {
+	let crawler: Crawler | undefined;
+	let cleanupInProgress = false;
+
+	// シグナルハンドラを設定
+	const handleShutdown = async (signal: string) => {
+		if (cleanupInProgress) {
+			// 2回目以降のシグナルは即座に終了
+			console.log("\n⚠️  Force exit");
+			process.exit(EXIT_CODES.GENERAL_ERROR);
+		}
+
+		cleanupInProgress = true;
+		console.log(`\n⚠️  Received ${signal}. Cleaning up...`);
+
+		if (crawler) {
+			await crawler.cleanup();
+		}
+
+		console.log("✓ Cleanup complete");
+		process.exit(EXIT_CODES.GENERAL_ERROR);
+	};
+
+	process.on("SIGINT", () => handleShutdown("SIGINT"));
+	process.on("SIGTERM", () => handleShutdown("SIGTERM"));
+
 	try {
 		const config = parseConfig(options, startUrl);
-		const crawler = new Crawler(config);
+		crawler = new Crawler(config);
 		await crawler.run();
 		process.exit(EXIT_CODES.SUCCESS);
 	} catch (error) {

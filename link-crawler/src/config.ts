@@ -66,9 +66,15 @@ export function parseConfig(options: Record<string, unknown>, startUrl: string):
 		Math.min(Number.isNaN(depthValue) ? DEFAULTS.MAX_DEPTH : depthValue, DEFAULTS.MAX_DEPTH_LIMIT),
 	);
 
+	// Parse maxPages value safely (0 or negative = unlimited)
+	const maxPagesValue = Number(options.maxPages);
+	const maxPages =
+		Number.isNaN(maxPagesValue) || maxPagesValue <= 0 ? null : Math.floor(maxPagesValue);
+
 	const config: CrawlConfig = {
 		startUrl,
 		maxDepth,
+		maxPages,
 		outputDir,
 		sameDomain: options.sameDomain !== false,
 		includePattern: parsePattern(options.include as string | undefined, "include"),
@@ -92,6 +98,7 @@ export function parseConfig(options: Record<string, unknown>, startUrl: string):
 		merge: options.merge !== false,
 		chunks: options.chunks === true,
 		keepSession: Boolean(options.keepSession),
+		respectRobots: options.robots !== false,
 	};
 
 	// Warn when all output formats are disabled
