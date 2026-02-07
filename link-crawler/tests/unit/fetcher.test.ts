@@ -675,6 +675,198 @@ describe("PlaywrightFetcher", () => {
 			expect(result.html).toBe("<html>Page with fragment</html>");
 			expect(result.finalUrl).toBe("https://example.com/page#section");
 		});
+
+		it("should reject javascript: protocol", async () => {
+			const config = createMockConfig();
+			const mockRuntime = createMockRuntime();
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			const result = await (
+				fetcher as unknown as {
+					executeFetch(url: string): Promise<{ html: string; finalUrl: string } | null>;
+				}
+			).executeFetch("javascript:alert('xss')");
+
+			expect(result).toBeNull();
+			// Verify that spawn was never called (URL rejected before any network activity)
+			expect(mockRuntime.spawn).not.toHaveBeenCalled();
+		});
+
+		it("should reject file: protocol", async () => {
+			const config = createMockConfig();
+			const mockRuntime = createMockRuntime();
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			const result = await (
+				fetcher as unknown as {
+					executeFetch(url: string): Promise<{ html: string; finalUrl: string } | null>;
+				}
+			).executeFetch("file:///etc/passwd");
+
+			expect(result).toBeNull();
+			expect(mockRuntime.spawn).not.toHaveBeenCalled();
+		});
+
+		it("should reject ftp: protocol", async () => {
+			const config = createMockConfig();
+			const mockRuntime = createMockRuntime();
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			const result = await (
+				fetcher as unknown as {
+					executeFetch(url: string): Promise<{ html: string; finalUrl: string } | null>;
+				}
+			).executeFetch("ftp://ftp.example.com/file.txt");
+
+			expect(result).toBeNull();
+			expect(mockRuntime.spawn).not.toHaveBeenCalled();
+		});
+
+		it("should reject data: protocol", async () => {
+			const config = createMockConfig();
+			const mockRuntime = createMockRuntime();
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			const result = await (
+				fetcher as unknown as {
+					executeFetch(url: string): Promise<{ html: string; finalUrl: string } | null>;
+				}
+			).executeFetch("data:text/html,<script>alert('xss')</script>");
+
+			expect(result).toBeNull();
+			expect(mockRuntime.spawn).not.toHaveBeenCalled();
+		});
+
+		it("should reject malformed URLs", async () => {
+			const config = createMockConfig();
+			const mockRuntime = createMockRuntime();
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			const result = await (
+				fetcher as unknown as {
+					executeFetch(url: string): Promise<{ html: string; finalUrl: string } | null>;
+				}
+			).executeFetch("not-a-valid-url");
+
+			expect(result).toBeNull();
+			expect(mockRuntime.spawn).not.toHaveBeenCalled();
+		});
+
+		it("should accept http: protocol", async () => {
+			const config = createMockConfig();
+			const mockRuntime = createMockRuntime();
+			let callCount = 0;
+			mockRuntime.spawn = vi.fn().mockImplementation(() => {
+				callCount++;
+				if (callCount === 1) {
+					// open command
+					return Promise.resolve({
+						success: true,
+						stdout: "",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				if (callCount === 2) {
+					// network command
+					return Promise.resolve({
+						success: true,
+						stdout: "[Network](../path/to/network.log)",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				if (callCount === 3) {
+					// eval window.location.href
+					return Promise.resolve({
+						success: true,
+						stdout: '### Result\n"http://example.com"\n### Ran Playwright code',
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				// eval document.documentElement.outerHTML
+				return Promise.resolve({
+					success: true,
+					stdout: '### Result\n"<html>HTTP Content</html>"\n### Ran Playwright code',
+					stderr: "",
+					exitCode: 0,
+				} as SpawnResult);
+			});
+			mockRuntime.sleep = vi.fn().mockResolvedValue(undefined);
+			mockRuntime.readFile = vi.fn().mockResolvedValue("status: 200\ncontent-type: text/html");
+			mockExistsSync.mockReturnValue(true);
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			const result = await (
+				fetcher as unknown as {
+					executeFetch(
+						url: string,
+					): Promise<{ html: string; finalUrl: string; contentType: string } | null>;
+				}
+			).executeFetch("http://example.com");
+
+			expect(result).not.toBeNull();
+			expect(result?.html).toBe("<html>HTTP Content</html>");
+		});
+
+		it("should accept https: protocol", async () => {
+			const config = createMockConfig();
+			const mockRuntime = createMockRuntime();
+			let callCount = 0;
+			mockRuntime.spawn = vi.fn().mockImplementation(() => {
+				callCount++;
+				if (callCount === 1) {
+					// open command
+					return Promise.resolve({
+						success: true,
+						stdout: "",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				if (callCount === 2) {
+					// network command
+					return Promise.resolve({
+						success: true,
+						stdout: "[Network](../path/to/network.log)",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				if (callCount === 3) {
+					// eval window.location.href
+					return Promise.resolve({
+						success: true,
+						stdout: '### Result\n"https://example.com"\n### Ran Playwright code',
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				// eval document.documentElement.outerHTML
+				return Promise.resolve({
+					success: true,
+					stdout: '### Result\n"<html>HTTPS Content</html>"\n### Ran Playwright code',
+					stderr: "",
+					exitCode: 0,
+				} as SpawnResult);
+			});
+			mockRuntime.sleep = vi.fn().mockResolvedValue(undefined);
+			mockRuntime.readFile = vi.fn().mockResolvedValue("status: 200\ncontent-type: text/html");
+			mockExistsSync.mockReturnValue(true);
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			const result = await (
+				fetcher as unknown as {
+					executeFetch(
+						url: string,
+					): Promise<{ html: string; finalUrl: string; contentType: string } | null>;
+				}
+			).executeFetch("https://example.com");
+
+			expect(result).not.toBeNull();
+			expect(result?.html).toBe("<html>HTTPS Content</html>");
+		});
 	});
 
 	describe("fetch", () => {
