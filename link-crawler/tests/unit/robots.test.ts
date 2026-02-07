@@ -397,4 +397,32 @@ Disallow: /path(test)*
 			});
 		});
 	});
+
+	describe("Security: ReDoS prevention", () => {
+		it("should handle excessive wildcards safely", () => {
+			const checker = new RobotsChecker("User-agent: *\nDisallow: " + "/*".repeat(100));
+			// タイムアウトせずに結果を返すこと
+			expect(checker.isAllowed("https://example.com/a/b/c")).toBeDefined();
+		});
+
+		it("should reject patterns with more than 10 wildcards", () => {
+			const checker = new RobotsChecker("User-agent: *\nDisallow: " + "/*".repeat(11));
+			// ワイルドカード数超過のパターンは無視される（マッチしない）
+			expect(checker.isAllowed("https://example.com/a/b/c")).toBe(true);
+		});
+
+		it("should reject patterns longer than 500 characters", () => {
+			const longPattern = "/" + "a".repeat(501);
+			const checker = new RobotsChecker(`User-agent: *\nDisallow: ${longPattern}`);
+			// パターン長超過のルールは無視される
+			expect(checker.isAllowed(`https://example.com${longPattern}`)).toBe(true);
+		});
+
+		it("should accept patterns within limits", () => {
+			const checker = new RobotsChecker("User-agent: *\nDisallow: /*/admin/*/*.pdf$");
+			// 正常なパターン（ワイルドカード4個）は機能する
+			expect(checker.isAllowed("https://example.com/site/admin/docs/file.pdf")).toBe(false);
+			expect(checker.isAllowed("https://example.com/site/admin/docs/file.txt")).toBe(true);
+		});
+	});
 });
