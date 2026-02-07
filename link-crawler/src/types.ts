@@ -68,7 +68,7 @@ export interface DetectedSpec {
 export interface CrawlResult {
 	crawledAt: string;
 	baseUrl: string;
-	config: Partial<CrawlConfig>;
+	config: Pick<CrawlConfig, "maxDepth" | "sameDomain">;
 	totalPages: number;
 	pages: CrawledPage[];
 	specs: DetectedSpec[];
