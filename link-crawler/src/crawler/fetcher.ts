@@ -174,10 +174,10 @@ export class PlaywrightFetcher implements Fetcher {
 			if (logMatch) {
 				// 相対パスから絶対パスを構築
 				const logPath = normalize(logMatch[1]);
-				
+
 				// パストラバーサル防止: cwdの外を参照していないことを確認
 				const cwd = this.runtime.cwd();
-				
+
 				// 絶対パスの場合は直接使用、相対パスの場合はcwdと結合
 				const fullPath = isAbsolute(logPath) ? logPath : join(cwd, logPath);
 				const resolvedPath = resolve(fullPath);
