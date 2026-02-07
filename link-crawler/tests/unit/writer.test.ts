@@ -166,7 +166,7 @@ describe("OutputWriter", () => {
 		// Verify hash is a SHA-256 hex string (64 characters)
 		const hashMatch = content.match(/hash: "([a-f0-9]{64})"/);
 		expect(hashMatch).toBeTruthy();
-		expect(hashMatch![1]).toHaveLength(64);
+		expect(hashMatch?.[1]).toHaveLength(64);
 	});
 
 	describe("filename with title", () => {
@@ -355,6 +355,98 @@ describe("OutputWriter", () => {
 			);
 			// Only ascii alphanumeric characters remain (Japanese chars removed, no hyphen added between English and numbers)
 			expect(pageFile).toBe("pages/page-001-english123.md");
+		});
+	});
+
+	describe("YAML frontmatter escaping", () => {
+		it("should escape double quotes in keywords field", () => {
+			const writer = new OutputWriter(defaultConfig);
+			const metadataWithQuotes: PageMetadata = {
+				...defaultMetadata,
+				keywords: 'test, "quoted keyword", another',
+			};
+
+			const pageFile = writer.savePage(
+				"https://example.com/page1",
+				"# Content",
+				1,
+				[],
+				metadataWithQuotes,
+				"Test",
+			);
+
+			const pagePath = join(testOutputDir, pageFile);
+			const content = readFileSync(pagePath, "utf-8");
+
+			// Verify escaped quotes in keywords
+			expect(content).toMatch(/keywords: "test, \\"quoted keyword\\", another"/);
+		});
+
+		it("should escape double quotes in title field", () => {
+			const writer = new OutputWriter(defaultConfig);
+			const metadataWithQuotes: PageMetadata = {
+				...defaultMetadata,
+				title: 'Test "quoted" title',
+			};
+
+			const pageFile = writer.savePage(
+				"https://example.com/page1",
+				"# Content",
+				1,
+				[],
+				metadataWithQuotes,
+				null,
+			);
+
+			const pagePath = join(testOutputDir, pageFile);
+			const content = readFileSync(pagePath, "utf-8");
+
+			expect(content).toMatch(/title: "Test \\"quoted\\" title"/);
+		});
+
+		it("should escape double quotes in description field", () => {
+			const writer = new OutputWriter(defaultConfig);
+			const metadataWithQuotes: PageMetadata = {
+				...defaultMetadata,
+				description: 'Description with "quotes"',
+			};
+
+			const pageFile = writer.savePage(
+				"https://example.com/page1",
+				"# Content",
+				1,
+				[],
+				metadataWithQuotes,
+				"Test",
+			);
+
+			const pagePath = join(testOutputDir, pageFile);
+			const content = readFileSync(pagePath, "utf-8");
+
+			expect(content).toMatch(/description: "Description with \\"quotes\\""/);
+		});
+
+		it("should handle keywords without quotes", () => {
+			const writer = new OutputWriter(defaultConfig);
+			const metadataWithoutQuotes: PageMetadata = {
+				...defaultMetadata,
+				keywords: "test, keyword, another",
+			};
+
+			const pageFile = writer.savePage(
+				"https://example.com/page1",
+				"# Content",
+				1,
+				[],
+				metadataWithoutQuotes,
+				"Test",
+			);
+
+			const pagePath = join(testOutputDir, pageFile);
+			const content = readFileSync(pagePath, "utf-8");
+
+			// Verify keywords remain unchanged
+			expect(content).toMatch(/keywords: "test, keyword, another"/);
 		});
 	});
 });

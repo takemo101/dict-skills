@@ -330,7 +330,7 @@ interface DetectedSpec {
 
 ### 5.4 チャンク分割ロジック
 
-見出し（`#`, `##`, `###`）を境界として分割:
+H1見出し（`#`）を境界として分割:
 
 ```
 入力 (full.md):
@@ -802,18 +802,45 @@ class Chunker {
    * @returns 分割されたチャンクの配列
    */
   chunk(fullMarkdown: string): string[] {
+    // 空入力ガード
+    if (!fullMarkdown.trim()) {
+      return [];
+    }
+
+    // H1見出し（# ）で分割
+    // ただし、frontmatter内の#は除外
     const chunks: string[] = [];
     const lines = fullMarkdown.split("\n");
     let currentChunk: string[] = [];
     let inFrontmatter = false;
+    let frontmatterEnded = false; // frontmatter終了フラグ
     let isFirstH1 = true;
+    let seenNonEmptyLine = false; // 非空行検出フラグ
 
     for (const line of lines) {
-      // frontmatterの検出
-      if (line.trim() === "---") {
-        inFrontmatter = !inFrontmatter;
-        currentChunk.push(line);
-        continue;
+      // frontmatter検出（ファイル先頭のみ）
+      if (line.trim() === "---" && !frontmatterEnded) {
+        // 先頭の空行をスキップした後の最初の---
+        if (!seenNonEmptyLine) {
+          inFrontmatter = true;
+          currentChunk.push(line);
+          seenNonEmptyLine = true;
+          continue;
+        }
+
+        // frontmatter内で2番目の---を検出
+        if (inFrontmatter) {
+          inFrontmatter = false;
+          frontmatterEnded = true;
+          currentChunk.push(line);
+          continue;
+        }
+      }
+
+      // 非空行を検出（frontmatterがない場合）
+      if (line.trim() !== "" && !seenNonEmptyLine) {
+        seenNonEmptyLine = true;
+        frontmatterEnded = true; // frontmatterなし確定
       }
 
       // frontmatter内は無条件で追加
@@ -849,14 +876,22 @@ class Chunker {
    * @returns 出力されたファイルパスの配列
    */
   writeChunks(chunks: string[]): string[] {
+    // 空チェック
+    if (chunks.length === 0) {
+      return [];
+    }
+
+    // chunksディレクトリ作成
     const chunksDir = join(this.outputDir, "chunks");
     mkdirSync(chunksDir, { recursive: true });
 
     const outputPaths: string[] = [];
+
     for (let i = 0; i < chunks.length; i++) {
       const chunkNum = String(i + 1).padStart(3, "0");
       const chunkFile = `chunk-${chunkNum}.md`;
       const chunkPath = join(chunksDir, chunkFile);
+
       writeFileSync(chunkPath, chunks[i]);
       outputPaths.push(chunkPath);
     }

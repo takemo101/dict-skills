@@ -25,7 +25,7 @@ export function parseConfig(options: Record<string, unknown>, startUrl: string):
 	const defaultOutputDir = `./.context/${generateSiteName(startUrl)}`;
 	const outputDir = String(options.output || defaultOutputDir);
 
-	return {
+	const config: CrawlConfig = {
 		startUrl,
 		maxDepth: Math.min(Number(options.depth) || DEFAULTS.MAX_DEPTH, DEFAULTS.MAX_DEPTH_LIMIT),
 		outputDir,
@@ -42,4 +42,14 @@ export function parseConfig(options: Record<string, unknown>, startUrl: string):
 		chunks: options.chunks === true,
 		keepSession: Boolean(options.keepSession),
 	};
+
+	// Warn when all output formats are disabled
+	if (!config.pages && !config.merge && !config.chunks) {
+		console.warn(
+			"⚠️  Warning: All output formats are disabled (--no-pages --no-merge without --chunks).",
+		);
+		console.warn("   Only index.json will be generated. Consider adding --chunks.");
+	}
+
+	return config;
 }

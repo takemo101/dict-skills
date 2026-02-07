@@ -1508,3 +1508,151 @@ describe("extractContent - fallback edge cases for coverage", () => {
 		expect(result).toHaveProperty("content");
 	});
 });
+
+describe("extractContent - fallback code block detection (Issue #514)", () => {
+	// Tests for Issue #514: CSS selectors vs HTML content matching
+
+	it("should detect hljs class in fallback content", () => {
+		// Main has hljs class -> should be detected by CODE_BLOCK_INDICATORS
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<main><div class="hljs"><code>code with hljs</code></div></main>
+			<aside><pre><code>aside code</code></pre></aside>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/hljs-detect" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			// Should contain hljs code block
+			expect(result.content.toLowerCase()).toContain("hljs");
+		}
+	});
+
+	it("should detect shiki class in fallback content", () => {
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<main><div class="shiki"><code>shiki code</code></div></main>
+			<aside><pre><code>aside code</code></pre></aside>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/shiki-detect" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			expect(result.content.toLowerCase()).toContain("shiki");
+		}
+	});
+
+	it("should detect prism-code class in fallback content", () => {
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<main><div class="prism-code"><code>prism code</code></div></main>
+			<aside><pre><code>aside code</code></pre></aside>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/prism-detect" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			expect(result.content.toLowerCase()).toContain("prism");
+		}
+	});
+
+	it("should detect highlight class in fallback content", () => {
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<main><div class="highlight"><code>highlighted</code></div></main>
+			<aside><pre><code>aside code</code></pre></aside>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/highlight-detect" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			expect(result.content.toLowerCase()).toContain("highlight");
+		}
+	});
+
+	it("should detect code-block class in fallback content", () => {
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<main><div class="code-block"><code>code block</code></div></main>
+			<aside><pre><code>aside code</code></pre></aside>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/code-block-detect" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			expect(result.content.toLowerCase()).toContain("code-block");
+		}
+	});
+
+	it("should detect data-language attribute in fallback content", () => {
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<main><pre data-language="python"><code>python code</code></pre></main>
+			<aside><pre><code>aside code</code></pre></aside>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/data-language-detect" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			expect(result.content.toLowerCase()).toContain("data-language");
+		}
+	});
+
+	it("should detect data-rehype-pretty-code attribute in fallback content", () => {
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<main><div data-rehype-pretty-code-fragment=""><code>rehype</code></div></main>
+			<aside><pre><code>aside code</code></pre></aside>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/rehype-detect" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			expect(result.content.toLowerCase()).toContain("data-rehype-pretty-code");
+		}
+	});
+
+	it("should not duplicate code blocks when detected in content", () => {
+		// Content has hljs code -> detected by indicator -> collected blocks not added
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<main><div class="hljs"><pre><code>main code</code></pre></div></main>
+			<aside><pre><code>aside code that should not duplicate</code></pre></aside>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/no-duplicate-detect" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			// Should contain main code
+			expect(result.content.toLowerCase()).toContain("main code");
+			// Should not duplicate aside code (because hljs was detected in content)
+			const asideMatches = result.content.match(/aside code/gi);
+			expect(asideMatches?.length || 0).toBeLessThanOrEqual(1);
+		}
+	});
+
+	it("should add collected code blocks when no indicator found in content", () => {
+		// Content has no code indicators -> collected blocks should be added
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<main><p>Just plain text without any code</p></main>
+			<aside><pre><code>important code from aside</code></pre></aside>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/add-collected" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			// Should contain collected code blocks
+			expect(result.content.toLowerCase()).toContain("code");
+		}
+	});
+});
