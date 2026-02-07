@@ -4,7 +4,6 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Crawler } from "../../src/crawler/index.js";
-import { computeHash } from "../../src/diff/hasher.js";
 import type { CrawlConfig, Fetcher, FetchResult } from "../../src/types.js";
 
 // Mock fetcher for testing
