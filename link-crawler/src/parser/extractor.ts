@@ -195,5 +195,10 @@ export function extractContent(dom: JSDOM): { title: string | null; content: str
 	}
 
 	// フォールバック: main タグなどから抽出（コードブロックも保持）
-	return extractAndPreserveCodeBlocks(dom.window.document);
+	const fallback = extractAndPreserveCodeBlocks(dom.window.document);
+	// マーカーを復元してコードブロックを正しく保持
+	if (fallback.content) {
+		fallback.content = restoreCodeBlocks(fallback.content, codeBlockMap);
+	}
+	return fallback;
 }

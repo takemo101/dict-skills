@@ -2056,3 +2056,68 @@ describe("extractContent - CODE_BLOCK_HTML_PATTERNS detection (line 144)", () =>
 		}
 	});
 });
+
+describe("extractContent - Issue #622: fallback path marker restoration", () => {
+	it("should preserve code blocks in fallback path after marker restoration", () => {
+		// Readabilityが失敗するHTML（短すぎるコンテンツ）
+		// protectCodeBlocks でマーカーに置換された後、フォールバックで復元されることを確認
+		const html = `<!DOCTYPE html><html><body>
+			<pre><code>important code snippet</code></pre>
+			<p>Short content that Readability may not extract</p>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/issue-622-fallback" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			// コードブロックが正しく保持されている
+			expect(result.content).toContain("<pre>");
+			expect(result.content).toContain("<code>");
+			expect(result.content).toContain("important code snippet");
+		}
+	});
+
+	it("should restore multiple code blocks in fallback path", () => {
+		// 複数のコードブロックが全て復元されることを確認
+		const html = `<!DOCTYPE html><html><body>
+			<script>var x = 1;</script>
+			<style>.test { }</style>
+			<main>
+				<pre><code class="language-js">const x = 1;</code></pre>
+				<p>Text content here</p>
+				<div class="code-block"><pre>docker run</pre></div>
+			</main>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/issue-622-multiple" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			// 複数のコードブロックが全て保持されている
+			expect(result.content).toContain("const x = 1");
+			expect(result.content).toContain("docker run");
+		}
+	});
+
+	it("should restore code blocks with special attributes in fallback path", () => {
+		// data-rehype-pretty-code-fragment などの特殊な属性を持つコードブロックも復元される
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<div data-rehype-pretty-code-fragment="">
+				<pre data-language="python"><code>print("hello")</code></pre>
+			</div>
+			<div class="shiki"><code>shiki code</code></div>
+			<div class="hljs"><code>hljs code</code></div>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/issue-622-special" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			// 特殊な属性を持つコードブロックが保持されている
+			expect(result.content).toContain('print("hello")');
+			expect(result.content).toContain("shiki code");
+			expect(result.content).toContain("hljs code");
+		}
+	});
+});
