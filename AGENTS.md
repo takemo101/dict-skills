@@ -12,6 +12,8 @@
 | 並列クロール不可 | 上記の制約による | [001](docs/decisions/001-playwright-cli-session.md) |
 | sessionId短縮形式 | Unixソケットパス長制限 | [001](docs/decisions/001-playwright-cli-session.md) |
 
+<!-- エージェントが重要な知見を発見した際、上の表に1行追加し、docs/decisions/ に詳細を記録する -->
+
 ## 設計方針
 
 - **playwright-cli統一**: 全サイト対応、SPA/静的の分岐なし
