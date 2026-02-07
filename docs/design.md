@@ -561,6 +561,23 @@ class Hasher {
 - `Hasher`: 純粋なロジッククラス（ハッシュ比較のみ）
 - `IndexManager`: ファイルI/O（`index.json`の読み書き）
 
+**IndexManagerのconfig引数:**
+
+`IndexManager`のコンストラクタは以下の形式でconfigを受け取ります：
+
+```typescript
+constructor(
+  outputDir: string,
+  baseUrl: string,
+  config: { maxDepth: number; sameDomain: boolean; diff?: boolean },
+  logger?: Logger
+)
+```
+
+configパラメータの役割：
+- `maxDepth`, `sameDomain`: `index.json`に保存される設定項目（`CrawlResult.config`として記録）
+- `diff`: 内部制御フラグ（差分クロール時の既存ページマージに使用、`index.json`には含まれない）
+
 **使用例:**
 
 ```typescript
