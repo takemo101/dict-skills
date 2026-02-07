@@ -6,7 +6,7 @@
 
 | ツール | バージョン | インストール |
 |--------|-----------|-------------|
-| Bun | 1.3.x 以上 | `curl -fsSL https://bun.sh/install \| bash` |
+| Bun | 1.0以上 | `curl -fsSL https://bun.sh/install \| bash` |
 | playwright-cli | latest | `npm install -g @playwright/cli` |
 
 ### 1.2 セットアップ
