@@ -132,7 +132,7 @@ export class RobotsChecker {
 			// 正規表現の特殊文字をエスケープしつつ、*を.*に変換
 			const regexStr = pattern
 				.split("*")
-				.map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+				.map((s) => s.replace(/[.+?^${}()|[\]\\]/g, "\\$&"))
 				.join(".*");
 			const regex = new RegExp(`^${regexStr}${exactEnd ? "$" : ""}`);
 			return regex.test(path);
