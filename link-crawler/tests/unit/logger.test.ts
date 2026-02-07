@@ -367,4 +367,76 @@ describe("CrawlLogger", () => {
 			);
 		});
 	});
+
+	describe("debug logging", () => {
+		it("should respect debug parameter when explicitly set to true", () => {
+			const logger = new CrawlLogger(baseConfig, true);
+			logger.logDebug("test message");
+
+			expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining("[DEBUG"));
+			expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining("test message"));
+		});
+
+		it("should not log debug messages when explicitly set to false", () => {
+			const logger = new CrawlLogger(baseConfig, false);
+			logger.logDebug("test message");
+
+			expect(consoleLogSpy).not.toHaveBeenCalled();
+		});
+
+		it("should default to process.env.DEBUG when debug parameter is omitted", () => {
+			// Save original DEBUG value
+			const originalDebug = process.env.DEBUG;
+
+			// Test with DEBUG not set
+			delete process.env.DEBUG;
+			const logger1 = new CrawlLogger(baseConfig);
+			logger1.logDebug("test message");
+			expect(consoleLogSpy).not.toHaveBeenCalled();
+
+			// Test with DEBUG=1
+			consoleLogSpy.mockClear();
+			process.env.DEBUG = "1";
+			const logger2 = new CrawlLogger(baseConfig);
+			logger2.logDebug("test message with DEBUG=1");
+			expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining("[DEBUG"));
+			expect(consoleLogSpy).toHaveBeenCalledWith(
+				expect.stringContaining("test message with DEBUG=1"),
+			);
+
+			// Restore original DEBUG value
+			if (originalDebug !== undefined) {
+				process.env.DEBUG = originalDebug;
+			} else {
+				delete process.env.DEBUG;
+			}
+		});
+
+		it("should log debug message with data when provided", () => {
+			const logger = new CrawlLogger(baseConfig, true);
+			const testData = { key: "value", number: 42 };
+			logger.logDebug("test with data", testData);
+
+			expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining("[DEBUG"));
+			expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining("test with data"));
+			expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('"key": "value"'));
+		});
+
+		it("should include debug enabled message in logStart when debug is true", () => {
+			const logger = new CrawlLogger(baseConfig, true);
+			logger.logStart();
+
+			expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining("Debug: enabled"));
+		});
+
+		it("should not include debug message in logStart when debug is false", () => {
+			const logger = new CrawlLogger(baseConfig, false);
+			logger.logStart();
+
+			const debugCalls = consoleLogSpy.mock.calls.filter(
+				(call: unknown[]) => typeof call[0] === "string" && call[0].includes("Debug: enabled"),
+			);
+			expect(debugCalls).toHaveLength(0);
+		});
+	});
 });

@@ -61,7 +61,8 @@ describe("crawl CLI integration", () => {
 			expect.fail("Should have thrown an error");
 		} catch (error: unknown) {
 			// Should exit with non-zero code
-			expect((error as { status: number }).status).toBeGreaterThan(0);
+			const err = error as { status: number };
+			expect(err.status).toBeGreaterThan(0);
 		}
 	});
 
@@ -83,10 +84,7 @@ describe("crawl CLI integration", () => {
 		} catch (error: unknown) {
 			// If it times out or has network issues, that's okay
 			// The important thing is it didn't fail with INVALID_ARGUMENTS (exit code 2)
-			const err = error as { status?: number };
-			if (err.status === 2) {
-				throw new Error("Command failed with INVALID_ARGUMENTS (exit code 2)");
-			}
+			const err = error as { status: number };
 			expect(err.status).not.toBe(2);
 		}
 	}, 35000); // Increase timeout for real crawl
@@ -101,7 +99,8 @@ describe("crawl CLI integration", () => {
 			expect.fail("Should have thrown an error");
 		} catch (error: unknown) {
 			// Should exit with an error code (not 0)
-			expect((error as { status: number }).status).not.toBe(0);
+			const err = error as { status: number };
+			expect(err.status).not.toBe(0);
 		}
 	});
 });
