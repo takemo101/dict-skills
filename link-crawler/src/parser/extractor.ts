@@ -15,6 +15,19 @@ const CODE_BLOCK_SELECTORS = [
 	".shiki",
 ];
 
+/** HTML内でコードブロックを検出するためのインジケータ（実際にHTML文字列に現れる形式） */
+const CODE_BLOCK_INDICATORS = [
+	"<pre",
+	"<code",
+	"hljs",
+	"shiki",
+	"prism-code",
+	"highlight",
+	"code-block",
+	"data-language",
+	"data-rehype-pretty-code",
+];
+
 /** 一意なマーカーIDを生成 */
 function generateMarkerId(index: number): string {
 	return `CODEBLOCK_${index}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
