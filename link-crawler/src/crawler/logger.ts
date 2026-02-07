@@ -8,8 +8,8 @@ export class CrawlLogger implements Logger {
 	private skippedCount = 0;
 	private debug: boolean;
 
-	constructor(private config: CrawlConfig) {
-		this.debug = process.env.DEBUG === "1";
+	constructor(private config: CrawlConfig, debug?: boolean) {
+		this.debug = debug ?? process.env.DEBUG === "1";
 	}
 
 	/** クロール開始ログ */
