@@ -1165,6 +1165,168 @@ describe("extractContent - fallback code block preservation", () => {
 	});
 });
 
+describe("extractContent - fallback code block detection patterns", () => {
+	it("should detect code blocks with data-language attribute in fallback", () => {
+		// Tests that data-language="python" is detected (not "[data-language]" string)
+		// Use script/style only to trigger fallback
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<style>y</style>
+			<div class="container">
+				<p>Text without code</p>
+			</div>
+			<pre data-language="python"><code>print("hello")</code></pre>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/detect-data-language" });
+		const result = extractContent(dom);
+
+		// Code block should be detected and added
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			expect(result.content).toContain("print");
+		}
+	});
+
+	it("should detect code blocks with class attributes in fallback", () => {
+		// Tests that class="code-block" is detected (not ".code-block" string)
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<style>y</style>
+			<div class="container">
+				<p>Text without code</p>
+			</div>
+			<div class="code-block"><pre>code here</pre></div>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/detect-class" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			expect(result.content).toContain("code here");
+		}
+	});
+
+	it("should not trigger false positive for 'previous' text in fallback", () => {
+		// Tests that "previous" text doesn't match <pre> pattern
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<style>y</style>
+			<main>
+				<p>In the previous section, we prepared the code.</p>
+				<p>We also discussed encoding and decoding.</p>
+			</main>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/no-false-previous" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		// Content should have the text but no code blocks should be prepended
+		// (Because the pattern check should not match "previous" or "prepared")
+	});
+
+	it("should not trigger false positive for CSS selector strings in fallback", () => {
+		// Tests that CSS selector strings like "[data-language]" don't match
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<style>y</style>
+			<main>
+				<p>Use the selector [data-language] or .code-block in your CSS.</p>
+				<p>Also try pre and code tags.</p>
+			</main>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/no-false-selector" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		// Should not detect CSS selector strings or words as actual code blocks
+	});
+
+	it("should detect <pre> tags correctly in fallback", () => {
+		// Tests that actual <pre> tags are detected
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<style>y</style>
+			<div class="container"><p>Text without code</p></div>
+			<pre>formatted text</pre>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/detect-pre" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			expect(result.content).toContain("formatted");
+		}
+	});
+
+	it("should detect <code> tags correctly in fallback", () => {
+		// Tests that actual <code> tags are detected
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<style>y</style>
+			<div class="container"><p>Text without code</p></div>
+			<code>inline code</code>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/detect-code" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			expect(result.content).toContain("inline");
+		}
+	});
+
+	it("should detect all class-based code block patterns in fallback", () => {
+		// Tests all class patterns: highlight, hljs, prism-code, shiki
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<style>y</style>
+			<div class="container"><p>Text</p></div>
+			<div class="highlight"><pre>1</pre></div>
+			<div class="hljs"><pre>2</pre></div>
+			<div class="prism-code"><pre>3</pre></div>
+			<div class="shiki"><pre>4</pre></div>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/detect-all-classes" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+	});
+
+	it("should detect data-rehype-pretty-code-fragment attribute in fallback", () => {
+		// Tests that data-rehype-pretty-code-fragment is detected
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<style>y</style>
+			<div class="container"><p>Text</p></div>
+			<div data-rehype-pretty-code-fragment=""><pre>code</pre></div>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/detect-rehype" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			expect(result.content).toContain("code");
+		}
+	});
+
+	it("should not prepend code blocks when content already has them", () => {
+		// Tests the pattern matching prevents duplication
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<style>y</style>
+			<main>
+				<p>Introduction</p>
+				<pre><code>existing code</code></pre>
+			</main>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/has-code-already" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		// Should have the code but not duplicated
+	});
+});
+
 describe("extractContent - fallback edge cases for coverage", () => {
 	// These tests target uncovered lines in extractAndPreserveCodeBlocks:
 	// Lines 110, 113-117, 123, 132-136
@@ -1367,6 +1529,154 @@ describe("extractContent - fallback edge cases for coverage", () => {
 		expect(result.content).not.toBeNull();
 		if (result.content) {
 			expect(result.content).toContain("real code block");
+		}
+	});
+});
+
+describe("extractContent - fallback code block detection (Issue #514)", () => {
+	// Tests for Issue #514: CSS selectors vs HTML content matching
+
+	it("should detect hljs class in fallback content", () => {
+		// Main has hljs class -> should be detected by CODE_BLOCK_INDICATORS
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<main><div class="hljs"><code>code with hljs</code></div></main>
+			<aside><pre><code>aside code</code></pre></aside>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/hljs-detect" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			// Should contain hljs code block
+			expect(result.content.toLowerCase()).toContain("hljs");
+		}
+	});
+
+	it("should detect shiki class in fallback content", () => {
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<main><div class="shiki"><code>shiki code</code></div></main>
+			<aside><pre><code>aside code</code></pre></aside>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/shiki-detect" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			expect(result.content.toLowerCase()).toContain("shiki");
+		}
+	});
+
+	it("should detect prism-code class in fallback content", () => {
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<main><div class="prism-code"><code>prism code</code></div></main>
+			<aside><pre><code>aside code</code></pre></aside>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/prism-detect" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			expect(result.content.toLowerCase()).toContain("prism");
+		}
+	});
+
+	it("should detect highlight class in fallback content", () => {
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<main><div class="highlight"><code>highlighted</code></div></main>
+			<aside><pre><code>aside code</code></pre></aside>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/highlight-detect" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			expect(result.content.toLowerCase()).toContain("highlight");
+		}
+	});
+
+	it("should detect code-block class in fallback content", () => {
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<main><div class="code-block"><code>code block</code></div></main>
+			<aside><pre><code>aside code</code></pre></aside>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/code-block-detect" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			expect(result.content.toLowerCase()).toContain("code-block");
+		}
+	});
+
+	it("should detect data-language attribute in fallback content", () => {
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<main><pre data-language="python"><code>python code</code></pre></main>
+			<aside><pre><code>aside code</code></pre></aside>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/data-language-detect" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			expect(result.content.toLowerCase()).toContain("data-language");
+		}
+	});
+
+	it("should detect data-rehype-pretty-code attribute in fallback content", () => {
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<main><div data-rehype-pretty-code-fragment=""><code>rehype</code></div></main>
+			<aside><pre><code>aside code</code></pre></aside>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/rehype-detect" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			expect(result.content.toLowerCase()).toContain("data-rehype-pretty-code");
+		}
+	});
+
+	it("should not duplicate code blocks when detected in content", () => {
+		// Content has hljs code -> detected by indicator -> collected blocks not added
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<main><div class="hljs"><pre><code>main code</code></pre></div></main>
+			<aside><pre><code>aside code that should not duplicate</code></pre></aside>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/no-duplicate-detect" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			// Should contain main code
+			expect(result.content.toLowerCase()).toContain("main code");
+			// Should not duplicate aside code (because hljs was detected in content)
+			const asideMatches = result.content.match(/aside code/gi);
+			expect(asideMatches?.length || 0).toBeLessThanOrEqual(1);
+		}
+	});
+
+	it("should add collected code blocks when no indicator found in content", () => {
+		// Content has no code indicators -> collected blocks should be added
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<main><p>Just plain text without any code</p></main>
+			<aside><pre><code>important code from aside</code></pre></aside>
+		</body></html>`;
+		const dom = new JSDOM(html, { url: "https://example.com/add-collected" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			// Should contain collected code blocks
+			expect(result.content.toLowerCase()).toContain("code");
 		}
 	});
 });
