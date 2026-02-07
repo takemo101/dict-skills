@@ -111,10 +111,18 @@ describe("parseConfig", () => {
 	});
 
 	it("should parse keepSession option", () => {
-		const configWithKeep = parseConfig({ keepSession: true }, "https://example.com", "test-version");
+		const configWithKeep = parseConfig(
+			{ keepSession: true },
+			"https://example.com",
+			"test-version",
+		);
 		expect(configWithKeep.keepSession).toBe(true);
 
-		const configWithoutKeep = parseConfig({ keepSession: false }, "https://example.com", "test-version");
+		const configWithoutKeep = parseConfig(
+			{ keepSession: false },
+			"https://example.com",
+			"test-version",
+		);
 		expect(configWithoutKeep.keepSession).toBe(false);
 
 		const configDefault = parseConfig({}, "https://example.com", "test-version");
@@ -133,7 +141,11 @@ describe("parseConfig", () => {
 	});
 
 	it("should allow custom output directory to override default", () => {
-		const config = parseConfig({ output: "./custom-dir" }, "https://nextjs.org/docs", "test-version");
+		const config = parseConfig(
+			{ output: "./custom-dir" },
+			"https://nextjs.org/docs",
+			"test-version",
+		);
 		expect(config.outputDir).toBe("./custom-dir");
 	});
 
@@ -209,7 +221,11 @@ describe("parseConfig - output format warnings", () => {
 	it("should warn when all output formats are disabled", () => {
 		const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
-		parseConfig({ pages: false, merge: false, chunks: false }, "https://example.com", "test-version");
+		parseConfig(
+			{ pages: false, merge: false, chunks: false },
+			"https://example.com",
+			"test-version",
+		);
 
 		expect(consoleSpy).toHaveBeenCalledWith(
 			"⚠️  Warning: All output formats are disabled (--no-pages --no-merge without --chunks).",
@@ -224,7 +240,11 @@ describe("parseConfig - output format warnings", () => {
 	it("should not warn when at least one output format is enabled - pages", () => {
 		const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
-		parseConfig({ pages: true, merge: false, chunks: false }, "https://example.com", "test-version");
+		parseConfig(
+			{ pages: true, merge: false, chunks: false },
+			"https://example.com",
+			"test-version",
+		);
 
 		expect(consoleSpy).not.toHaveBeenCalled();
 
@@ -234,7 +254,11 @@ describe("parseConfig - output format warnings", () => {
 	it("should not warn when at least one output format is enabled - merge", () => {
 		const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
-		parseConfig({ pages: false, merge: true, chunks: false }, "https://example.com", "test-version");
+		parseConfig(
+			{ pages: false, merge: true, chunks: false },
+			"https://example.com",
+			"test-version",
+		);
 
 		expect(consoleSpy).not.toHaveBeenCalled();
 
@@ -244,7 +268,11 @@ describe("parseConfig - output format warnings", () => {
 	it("should not warn when at least one output format is enabled - chunks", () => {
 		const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
-		parseConfig({ pages: false, merge: false, chunks: true }, "https://example.com", "test-version");
+		parseConfig(
+			{ pages: false, merge: false, chunks: true },
+			"https://example.com",
+			"test-version",
+		);
 
 		expect(consoleSpy).not.toHaveBeenCalled();
 
@@ -611,7 +639,11 @@ describe("parseConfig - maxPages validation", () => {
 		const config = parseConfig({ maxPages: "abc" }, "https://example.com", "test-version");
 		expect(config.maxPages).toBeNull();
 
-		const config2 = parseConfig({ maxPages: "not-a-number" }, "https://example.com", "test-version");
+		const config2 = parseConfig(
+			{ maxPages: "not-a-number" },
+			"https://example.com",
+			"test-version",
+		);
 		expect(config2.maxPages).toBeNull();
 	});
 
