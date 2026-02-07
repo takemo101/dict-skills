@@ -242,13 +242,14 @@ export class Crawler {
 			description: metadata.description?.substring(0, 100),
 		});
 
-		// リンク抽出（extractContent より前に実行し、DOM 破壊的変更の影響を回避）
-		// Issue #712: extractContent は DOM を変更するため、extractLinks を先に呼ぶ必要がある
+		// リンク抽出（DOM を先に参照）
+		// Issue #745: extractContent は内部でDOMをクローンするため順序依存は解消されたが、
+		// 論理的な順序として先にリンクを抽出する
 		const links = extractLinks(dom, this.visited, this.config);
 		this.logger.logDebug("Links extracted", { linkCount: links.length, links: links.slice(0, 5) });
 
 		// コンテンツ抽出（JSDOMを渡す）
-		// 注意: この関数は DOM を破壊的に変更する（nav/header/footer 等を削除）
+		// Issue #745: 内部でDOMクローンを使用するため、元のDOMは変更されない
 		const { title, content } = extractContent(dom);
 		this.logger.logDebug("Content extracted", { title, contentLength: content?.length || 0 });
 
