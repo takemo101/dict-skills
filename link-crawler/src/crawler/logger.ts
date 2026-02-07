@@ -1,10 +1,10 @@
-import type { CrawlConfig } from "../types.js";
+import type { CrawlConfig, Logger } from "../types.js";
 
 /**
  * クロールログ出力クラス
  * ログ出力の責務を分離
  */
-export class CrawlLogger {
+export class CrawlLogger implements Logger {
 	private skippedCount = 0;
 	private debug: boolean;
 

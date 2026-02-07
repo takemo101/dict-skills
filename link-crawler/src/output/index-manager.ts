@@ -1,7 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { CrawlLogger } from "../crawler/logger.js";
-import type { CrawledPage, CrawlResult, PageMetadata } from "../types.js";
+import type { CrawledPage, CrawlResult, Logger, PageMetadata } from "../types.js";
 
 /**
  * CrawlResult型の型ガード関数
@@ -33,7 +32,7 @@ export class IndexManager {
 		private outputDir: string,
 		private baseUrl: string,
 		private config: { maxDepth: number; sameDomain: boolean; diff?: boolean },
-		private logger?: CrawlLogger,
+		private logger?: Logger,
 	) {
 		// 既存のindex.jsonを読み込み
 		this.loadExistingIndex();

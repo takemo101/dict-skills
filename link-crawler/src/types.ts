@@ -73,3 +73,10 @@ export interface Fetcher {
 	fetch(url: string): Promise<FetchResult | null>;
 	close?(): Promise<void>;
 }
+
+/** ロガーインターフェース（output モジュールが依存） */
+export interface Logger {
+	logIndexFormatError(path: string): void;
+	logIndexLoadError(error: string): void;
+	logDebug(message: string, data?: unknown): void;
+}

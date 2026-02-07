@@ -1,9 +1,8 @@
 import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { FILENAME, SPEC_PATTERNS } from "../constants.js";
-import type { CrawlLogger } from "../crawler/logger.js";
 import { computeHash } from "../diff/hasher.js";
-import type { CrawlConfig, CrawledPage, PageMetadata } from "../types.js";
+import type { CrawlConfig, CrawledPage, Logger, PageMetadata } from "../types.js";
 import { IndexManager } from "./index-manager.js";
 
 /** 文字列をslug形式に変換（小文字化、スペース→ハイフン、特殊文字除去） */
@@ -29,7 +28,7 @@ export class OutputWriter {
 
 	constructor(
 		private config: CrawlConfig,
-		private logger?: CrawlLogger,
+		private logger?: Logger,
 	) {
 		this.indexManager = new IndexManager(
 			config.outputDir,
