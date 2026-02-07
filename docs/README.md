@@ -54,8 +54,8 @@ ln -s /path/to/link-crawler ~/.pi/agent/skills/link-crawler
 
 | ドキュメント | 対象読者 | 内容 |
 |-------------|---------|------|
-| [プロジェクトREADME](../../README.md) | 初めての方 | 概要・クイックスタート・インストール |
-| [SKILL.md](../../link-crawler/SKILL.md) | **piユーザー** | piスキルとしての簡潔な使い方 |
+| [プロジェクトREADME](../README.md) | 初めての方 | 概要・クイックスタート・インストール |
+| [SKILL.md](../link-crawler/SKILL.md) | **piユーザー** | piスキルとしての簡潔な使い方 |
 | [CLI仕様書](./cli-spec.md) | **CLIユーザー** | 完全なオプション一覧・詳細な使用例・出力形式の仕様（SSOT） |
 
 ### 開発者向け
@@ -69,11 +69,11 @@ ln -s /path/to/link-crawler ~/.pi/agent/skills/link-crawler
 
 ### 「とにかく早く使いたい」
 
-→ **[プロジェクトREADME](../../README.md)** → [CLI仕様書](./cli-spec.md)
+→ **[プロジェクトREADME](../README.md)** → [CLI仕様書](./cli-spec.md)
 
 ### 「piエージェントで使いたい」
 
-→ **[SKILL.md](../../link-crawler/SKILL.md)**
+→ **[SKILL.md](../link-crawler/SKILL.md)**
 
 - piスキルとしてのセットアップ
 - piエージェントでの使用例
