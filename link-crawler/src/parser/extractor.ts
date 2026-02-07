@@ -101,7 +101,7 @@ function restoreCodeBlocks(html: string, codeBlockMap: Map<string, string>): str
 
 /**
  * Fallback content extraction when Readability fails
- * 
+ *
  * Note: Code block preservation is handled by the caller via restoreCodeBlocks.
  * This function receives a document where code blocks have already been replaced
  * with placeholders by protectCodeBlocks.
