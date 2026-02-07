@@ -868,6 +868,201 @@ describe("PlaywrightFetcher", () => {
 			expect(result).not.toBeNull();
 			expect(result?.html).toBe("<html>HTTPS Content</html>");
 		});
+
+		describe("URL validation enhancements", () => {
+			it("should reject URLs longer than 2048 characters", async () => {
+				const config = createMockConfig();
+				const mockRuntime = createMockRuntime();
+				const longUrl = `https://example.com/${"a".repeat(2048)}`;
+
+				const fetcher = new PlaywrightFetcher(config, mockRuntime);
+				const result = await (
+					fetcher as unknown as {
+						executeFetch(url: string): Promise<{ html: string; finalUrl: string } | null>;
+					}
+				).executeFetch(longUrl);
+
+				expect(result).toBeNull();
+				expect(mockRuntime.spawn).not.toHaveBeenCalled();
+			});
+
+			it("should accept URLs exactly at 2048 character limit", async () => {
+				const config = createMockConfig();
+				const mockRuntime = createMockRuntime();
+				// Create URL with exactly 2048 characters
+				const baseUrl = "https://example.com/";
+				const padding = "a".repeat(2048 - baseUrl.length);
+				const exactLimitUrl = baseUrl + padding;
+
+				let callCount = 0;
+				mockRuntime.spawn = vi.fn().mockImplementation(() => {
+					callCount++;
+					if (callCount === 1) {
+						return Promise.resolve({
+							success: true,
+							stdout: "",
+							stderr: "",
+							exitCode: 0,
+						} as SpawnResult);
+					}
+					if (callCount === 2) {
+						return Promise.resolve({
+							success: true,
+							stdout: "[Network](../path/to/network.log)",
+							stderr: "",
+							exitCode: 0,
+						} as SpawnResult);
+					}
+					if (callCount === 3) {
+						return Promise.resolve({
+							success: true,
+							stdout: `### Result\n"${exactLimitUrl}"\n### Ran Playwright code`,
+							stderr: "",
+							exitCode: 0,
+						} as SpawnResult);
+					}
+					return Promise.resolve({
+						success: true,
+						stdout: '### Result\n"<html>Content</html>"\n### Ran Playwright code',
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				});
+				mockRuntime.sleep = vi.fn().mockResolvedValue(undefined);
+				mockRuntime.readFile = vi.fn().mockResolvedValue("status: 200\ncontent-type: text/html");
+				mockExistsSync.mockReturnValue(true);
+
+				const fetcher = new PlaywrightFetcher(config, mockRuntime);
+				const result = await (
+					fetcher as unknown as {
+						executeFetch(
+							url: string,
+						): Promise<{ html: string; finalUrl: string; contentType: string } | null>;
+					}
+				).executeFetch(exactLimitUrl);
+
+				expect(result).not.toBeNull();
+			});
+
+			it("should reject URLs with NULL character", async () => {
+				const config = createMockConfig();
+				const mockRuntime = createMockRuntime();
+				const urlWithNull = "https://example.com/\x00path";
+
+				const fetcher = new PlaywrightFetcher(config, mockRuntime);
+				const result = await (
+					fetcher as unknown as {
+						executeFetch(url: string): Promise<{ html: string; finalUrl: string } | null>;
+					}
+				).executeFetch(urlWithNull);
+
+				expect(result).toBeNull();
+				expect(mockRuntime.spawn).not.toHaveBeenCalled();
+			});
+
+			it("should reject URLs with TAB character", async () => {
+				const config = createMockConfig();
+				const mockRuntime = createMockRuntime();
+				const urlWithTab = "https://example.com/\tpath";
+
+				const fetcher = new PlaywrightFetcher(config, mockRuntime);
+				const result = await (
+					fetcher as unknown as {
+						executeFetch(url: string): Promise<{ html: string; finalUrl: string } | null>;
+					}
+				).executeFetch(urlWithTab);
+
+				expect(result).toBeNull();
+				expect(mockRuntime.spawn).not.toHaveBeenCalled();
+			});
+
+			it("should reject URLs with newline character", async () => {
+				const config = createMockConfig();
+				const mockRuntime = createMockRuntime();
+				const urlWithNewline = "https://example.com/\npath";
+
+				const fetcher = new PlaywrightFetcher(config, mockRuntime);
+				const result = await (
+					fetcher as unknown as {
+						executeFetch(url: string): Promise<{ html: string; finalUrl: string } | null>;
+					}
+				).executeFetch(urlWithNewline);
+
+				expect(result).toBeNull();
+				expect(mockRuntime.spawn).not.toHaveBeenCalled();
+			});
+
+			it("should reject URLs with DEL character", async () => {
+				const config = createMockConfig();
+				const mockRuntime = createMockRuntime();
+				const urlWithDel = "https://example.com/\x7fpath";
+
+				const fetcher = new PlaywrightFetcher(config, mockRuntime);
+				const result = await (
+					fetcher as unknown as {
+						executeFetch(url: string): Promise<{ html: string; finalUrl: string } | null>;
+					}
+				).executeFetch(urlWithDel);
+
+				expect(result).toBeNull();
+				expect(mockRuntime.spawn).not.toHaveBeenCalled();
+			});
+
+			it("should accept URLs with normal query parameters and encoded characters", async () => {
+				const config = createMockConfig();
+				const mockRuntime = createMockRuntime();
+				const normalUrl = "https://example.com/search?q=%E6%A4%9C%E7%B4%A2&lang=ja";
+
+				let callCount = 0;
+				mockRuntime.spawn = vi.fn().mockImplementation(() => {
+					callCount++;
+					if (callCount === 1) {
+						return Promise.resolve({
+							success: true,
+							stdout: "",
+							stderr: "",
+							exitCode: 0,
+						} as SpawnResult);
+					}
+					if (callCount === 2) {
+						return Promise.resolve({
+							success: true,
+							stdout: "[Network](../path/to/network.log)",
+							stderr: "",
+							exitCode: 0,
+						} as SpawnResult);
+					}
+					if (callCount === 3) {
+						return Promise.resolve({
+							success: true,
+							stdout: `### Result\n"${normalUrl}"\n### Ran Playwright code`,
+							stderr: "",
+							exitCode: 0,
+						} as SpawnResult);
+					}
+					return Promise.resolve({
+						success: true,
+						stdout: '### Result\n"<html>Content</html>"\n### Ran Playwright code',
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				});
+				mockRuntime.sleep = vi.fn().mockResolvedValue(undefined);
+				mockRuntime.readFile = vi.fn().mockResolvedValue("status: 200\ncontent-type: text/html");
+				mockExistsSync.mockReturnValue(true);
+
+				const fetcher = new PlaywrightFetcher(config, mockRuntime);
+				const result = await (
+					fetcher as unknown as {
+						executeFetch(
+							url: string,
+						): Promise<{ html: string; finalUrl: string; contentType: string } | null>;
+					}
+				).executeFetch(normalUrl);
+
+				expect(result).not.toBeNull();
+			});
+		});
 	});
 
 	describe("fetch", () => {
