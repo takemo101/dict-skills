@@ -540,7 +540,7 @@ describe("OutputWriter", () => {
 			expect(readFileSync(pagePath, "utf-8")).toContain("# Old Content");
 
 			// 2. 2回目のクロール（非 diff モード）
-			const writer2 = new OutputWriter({ ...defaultConfig, diff: false });
+			const _writer2 = new OutputWriter({ ...defaultConfig, diff: false });
 
 			// ディレクトリが削除されたため、ファイルが存在しないことを確認
 			expect(() => readFileSync(pagePath, "utf-8")).toThrow();
