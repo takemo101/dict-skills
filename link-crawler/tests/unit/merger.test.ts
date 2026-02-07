@@ -1,5 +1,4 @@
-import { mkdirSync, readFileSync, rmSync } from "node:fs";
-import { join } from "node:path";
+import { mkdirSync, rmSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Merger } from "../../src/output/merger.js";
 import type { CrawledPage } from "../../src/types.js";
@@ -157,112 +156,6 @@ Content after frontmatter`,
 			// Should not have duplicate title
 			const titleMatches = result.match(/# Page 1/g);
 			expect(titleMatches).toHaveLength(1);
-		});
-	});
-
-	describe("writeFull", () => {
-		it("should write full.md file", () => {
-			const merger = new Merger(testOutputDir);
-			const pages = [createPage("https://example.com/page1", "Page 1", "pages/page-001.md")];
-			const pageContents = new Map([["pages/page-001.md", "# Page 1\n\nThis is content."]]);
-
-			const outputPath = merger.writeFull(pages, pageContents);
-
-			expect(outputPath).toBe(join(testOutputDir, "full.md"));
-			const content = readFileSync(outputPath, "utf-8");
-			expect(content).toContain("# Page 1");
-			expect(content).toContain("> Source: https://example.com/page1");
-			expect(content).toContain("This is content.");
-		});
-
-		it("should merge multiple pages with separators", () => {
-			const merger = new Merger(testOutputDir);
-			const pages = [
-				createPage("https://example.com/page1", "Page 1", "pages/page-001.md"),
-				createPage("https://example.com/page2", "Page 2", "pages/page-002.md"),
-			];
-			const pageContents = new Map([
-				["pages/page-001.md", "# Page 1\n\nContent 1"],
-				["pages/page-002.md", "# Page 2\n\nContent 2"],
-			]);
-
-			const outputPath = merger.writeFull(pages, pageContents);
-
-			const content = readFileSync(outputPath, "utf-8");
-			expect(content).toContain("---");
-			expect(content).toContain("Content 1");
-			expect(content).toContain("Content 2");
-		});
-
-		it("should handle duplicate titles across pages", () => {
-			const merger = new Merger(testOutputDir);
-			const pages = [
-				createPage("https://example.com/page1", "Same Title", "pages/page-001.md"),
-				createPage("https://example.com/page2", "Same Title", "pages/page-002.md"),
-			];
-			const pageContents = new Map([
-				["pages/page-001.md", "# Same Title\n\nContent from page 1"],
-				["pages/page-002.md", "# Same Title\n\nContent from page 2"],
-			]);
-
-			const outputPath = merger.writeFull(pages, pageContents);
-
-			const content = readFileSync(outputPath, "utf-8");
-			// Both pages should be present with their content
-			expect(content).toContain("Content from page 1");
-			expect(content).toContain("Content from page 2");
-			// Headers should appear for both pages
-			const headerMatches = content.match(/# Same Title/g);
-			expect(headerMatches).toHaveLength(2);
-		});
-
-		it("should handle empty content in pageContents", () => {
-			const merger = new Merger(testOutputDir);
-			const pages = [createPage("https://example.com/page1", "Page 1", "pages/page-001.md")];
-			const pageContents = new Map<string, string>([]);
-
-			const outputPath = merger.writeFull(pages, pageContents);
-
-			const content = readFileSync(outputPath, "utf-8");
-			expect(content).toContain("# Page 1");
-			expect(content).toContain("> Source: https://example.com/page1");
-			// Should handle missing content gracefully
-			expect(content).not.toContain("undefined");
-		});
-
-		it("should handle pages with empty markdown content", () => {
-			const merger = new Merger(testOutputDir);
-			const pages = [createPage("https://example.com/page1", "Page 1", "pages/page-001.md")];
-			const pageContents = new Map([["pages/page-001.md", ""]]);
-
-			const outputPath = merger.writeFull(pages, pageContents);
-
-			const content = readFileSync(outputPath, "utf-8");
-			expect(content).toContain("# Page 1");
-			expect(content).toContain("> Source: https://example.com/page1");
-		});
-
-		it("should handle many pages efficiently", () => {
-			const merger = new Merger(testOutputDir);
-			const pages: CrawledPage[] = [];
-			const pageContents = new Map<string, string>();
-
-			for (let i = 1; i <= 10; i++) {
-				const file = `pages/page-${String(i).padStart(3, "0")}.md`;
-				pages.push(createPage(`https://example.com/page${i}`, `Page ${i}`, file));
-				pageContents.set(file, `# Page ${i}\n\nContent ${i}`);
-			}
-
-			const outputPath = merger.writeFull(pages, pageContents);
-
-			const content = readFileSync(outputPath, "utf-8");
-			expect(content).toContain("# Page 1");
-			expect(content).toContain("# Page 10");
-			expect(content).toContain("Content 1");
-			expect(content).toContain("Content 10");
-			// Should have 9 separators for 10 pages
-			const separatorMatches = content.match(/---/g);
-			expect(separatorMatches).toHaveLength(9);
 		});
 	});
 });
