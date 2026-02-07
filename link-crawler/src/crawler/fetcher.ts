@@ -111,7 +111,7 @@ export class PlaywrightFetcher implements Fetcher {
 		// HTTPメタデータ（ステータスコード・content-type）を取得
 		const { statusCode, contentType } = await this.getHttpMetadata();
 		if (statusCode !== null && (statusCode < 200 || statusCode >= 300)) {
-			// 2xx以外はスキップ
+			// 2xx範囲外はスキップ
 			return null;
 		}
 

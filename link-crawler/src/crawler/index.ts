@@ -70,6 +70,11 @@ export class Crawler {
 			await this.fetcher?.close?.();
 		}
 
+		// 差分モード時: 訪問済みURLを渡す
+		if (this.config.diff) {
+			this.writer.setVisitedUrls(this.visited);
+		}
+
 		const indexPath = this.writer.saveIndex();
 		const result = this.writer.getResult();
 
