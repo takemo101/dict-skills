@@ -111,3 +111,145 @@ Extensive test cases were added to attempt coverage improvement:
 - Multiple code block selector types
 
 All tests pass, but coverage remains at 73.07% due to unreachable code.
+
+---
+
+## Resolution
+
+**Date**: 2026-02-07  
+**Status**: ✅ **RESOLVED**  
+**Related Issue**: #650
+
+### Changes Implemented
+
+The unreachable code issues documented above have been completely resolved through comprehensive refactoring:
+
+#### 1. `protectCodeBlocks` Refactoring
+
+The function was completely rewritten to use a **3-phase approach**:
+
+**Phase 1**: Collect all code block elements from all selectors
+```typescript
+const allElements: Element[] = [];
+for (const selector of CODE_BLOCK_PRIORITY_SELECTORS) {
+    const elements = Array.from(doc.querySelectorAll(selector));
+    allElements.push(...elements);
+}
+```
+
+**Phase 2**: Filter out nested elements using `contains()`
+```typescript
+const elementsToProcess: Element[] = [];
+for (const el of allElements) {
+    let isNested = false;
+    for (const other of allElements) {
+        if (other !== el && other.contains(el)) {
+            isNested = true;
+            break;
+        }
+    }
+    if (!isNested) {
+        elementsToProcess.push(el);
+    }
+}
+```
+
+**Phase 3**: Replace filtered elements with placeholders
+```typescript
+for (const el of elementsToProcess) {
+    const markerId = generateMarkerId(index);
+    const marker = `__CODEBLOCK_${markerId}__`;
+    codeBlockMap.set(marker, el.outerHTML);
+    
+    const placeholder = doc.createElement("span");
+    placeholder.setAttribute("data-codeblock-id", markerId);
+    placeholder.setAttribute("data-codeblock-placeholder", "true");
+    placeholder.textContent = marker;
+    
+    el.replaceWith(placeholder);
+    index++;
+}
+```
+
+**Key Improvements**:
+- Uses `contains()` for accurate parent-child relationship detection
+- Eliminates unreachable code by separating collection from modification
+- All nested element detection logic is now reachable and testable
+
+#### 2. Fallback Path Code Block Restoration
+
+The fallback extraction now correctly restores code block markers:
+
+```typescript
+export function extractContent(dom: JSDOM) {
+    const codeBlockMap = protectCodeBlocks(dom.window.document);
+    
+    const reader = new Readability(dom.window.document.cloneNode(true) as Document);
+    const article = reader.parse();
+    
+    if (article?.content) {
+        const restoredContent = restoreCodeBlocks(article.content, codeBlockMap);
+        return { title: article.title ?? null, content: restoredContent };
+    }
+    
+    // Fallback: extract + restore markers
+    const fallback = extractFallbackContent(dom.window.document);
+    if (fallback.content) {
+        fallback.content = restoreCodeBlocks(fallback.content, codeBlockMap);
+    }
+    return fallback;
+}
+```
+
+**Key Improvements**:
+- `extractFallbackContent` renamed from `extractAndPreserveCodeBlocks`
+- Fallback content now correctly restored via `restoreCodeBlocks`
+- Code block preservation works consistently in both paths
+
+### Final Coverage Results
+
+```
+File             | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s
+extractor.ts     |  100.00 |   95.83  |  100.00 |  100.00 | 171
+```
+
+**Improvements**:
+- Statements: 85.07% → **100.00%** (+14.93%)
+- **Branches: 73.07% → 95.83% (+22.76%)** ✅ **Target Exceeded**
+- Functions: 87.5% → **100.00%** (+12.5%)
+- Lines: 86.36% → **100.00%** (+13.64%)
+
+**Target Achievement**: 
+- Original target: 85%+ branch coverage
+- Achieved: **95.83%** (10.83% above target)
+
+### Remaining Uncovered Code
+
+Only **1 branch** remains uncovered (line 171):
+- The `|| body` fallback in the selector query
+- This represents a rare edge case where all content selectors fail
+- The 95.83% coverage is considered excellent and sufficient
+
+### Verification
+
+All 109 extractor tests pass:
+```bash
+✓ tests/unit/extractor.test.ts (109 tests) 985ms
+```
+
+Test coverage includes:
+- Nested code block handling (Issue #631)
+- Multiple selector matching
+- Fallback path code block restoration (Issue #622)
+- All CODE_BLOCK_PRIORITY_SELECTORS
+- Edge cases and error conditions
+
+### Conclusion
+
+The unreachable code issues have been **fully resolved**:
+- ✅ No unreachable code in `protectCodeBlocks`
+- ✅ Fallback path correctly handles code blocks
+- ✅ Branch coverage exceeds 85% target (now 95.83%)
+- ✅ All tests passing with comprehensive coverage
+
+This issue is now **CLOSED** as resolved.
