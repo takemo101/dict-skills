@@ -222,3 +222,56 @@ describe("parseConfig - output format warnings", () => {
 		consoleSpy.mockRestore();
 	});
 });
+
+describe("parseConfig - URL validation", () => {
+	it("should throw ConfigError for invalid URL", () => {
+		expect(() => {
+			parseConfig({}, "not-a-url");
+		}).toThrow(ConfigError);
+
+		expect(() => {
+			parseConfig({}, "not-a-url");
+		}).toThrowError(/Invalid URL: not-a-url/);
+	});
+
+	it("should throw ConfigError for empty string URL", () => {
+		expect(() => {
+			parseConfig({}, "");
+		}).toThrow(ConfigError);
+
+		expect(() => {
+			parseConfig({}, "");
+		}).toThrowError(/Invalid URL/);
+	});
+
+	it("should throw ConfigError for malformed URL", () => {
+		expect(() => {
+			parseConfig({}, "://missing-protocol");
+		}).toThrow(ConfigError);
+
+		expect(() => {
+			parseConfig({}, "just some text");
+		}).toThrow(ConfigError);
+	});
+
+	it("should set configKey to 'startUrl' in ConfigError", () => {
+		try {
+			parseConfig({}, "invalid-url");
+			expect.fail("Should have thrown ConfigError");
+		} catch (error) {
+			expect(error).toBeInstanceOf(ConfigError);
+			expect((error as ConfigError).configKey).toBe("startUrl");
+		}
+	});
+
+	it("should accept valid URLs", () => {
+		const config1 = parseConfig({}, "https://example.com");
+		expect(config1.startUrl).toBe("https://example.com");
+
+		const config2 = parseConfig({}, "http://localhost:3000");
+		expect(config2.startUrl).toBe("http://localhost:3000");
+
+		const config3 = parseConfig({}, "https://example.com/path/to/page");
+		expect(config3.startUrl).toBe("https://example.com/path/to/page");
+	});
+});
