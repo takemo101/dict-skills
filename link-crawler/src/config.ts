@@ -34,9 +34,9 @@ export function parseConfig(options: Record<string, unknown>, startUrl: string):
 
 	// Parse depth value safely (handle 0 correctly)
 	const depthValue = Number(options.depth);
-	const maxDepth = Math.min(
-		Number.isNaN(depthValue) ? DEFAULTS.MAX_DEPTH : depthValue,
-		DEFAULTS.MAX_DEPTH_LIMIT,
+	const maxDepth = Math.max(
+		0,
+		Math.min(Number.isNaN(depthValue) ? DEFAULTS.MAX_DEPTH : depthValue, DEFAULTS.MAX_DEPTH_LIMIT),
 	);
 
 	const config: CrawlConfig = {
@@ -46,11 +46,19 @@ export function parseConfig(options: Record<string, unknown>, startUrl: string):
 		sameDomain: options.sameDomain !== false,
 		includePattern: parsePattern(options.include as string | undefined, "include"),
 		excludePattern: parsePattern(options.exclude as string | undefined, "exclude"),
-		delay: Number.isNaN(Number(options.delay)) ? DEFAULTS.DELAY_MS : Number(options.delay),
+		delay: Math.max(
+			0,
+			Number.isNaN(Number(options.delay)) ? DEFAULTS.DELAY_MS : Number(options.delay),
+		),
 		timeout:
-			(Number.isNaN(Number(options.timeout)) ? DEFAULTS.TIMEOUT_SEC : Number(options.timeout)) *
-			1000,
-		spaWait: Number.isNaN(Number(options.wait)) ? DEFAULTS.SPA_WAIT_MS : Number(options.wait),
+			Math.max(
+				1,
+				Number.isNaN(Number(options.timeout)) ? DEFAULTS.TIMEOUT_SEC : Number(options.timeout),
+			) * 1000,
+		spaWait: Math.max(
+			0,
+			Number.isNaN(Number(options.wait)) ? DEFAULTS.SPA_WAIT_MS : Number(options.wait),
+		),
 		headed: Boolean(options.headed),
 		diff: Boolean(options.diff),
 		pages: options.pages !== false,
