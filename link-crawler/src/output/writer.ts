@@ -129,6 +129,16 @@ export class OutputWriter {
 		return pageFile;
 	}
 
+	/** YAML文字列をエスケープ（ダブルクォート内で使用） */
+	private escapeYamlString(str: string): string {
+		return str
+			.replace(/\\/g, "\\\\") // バックスラッシュを最初にエスケープ
+			.replace(/"/g, '\\"') // ダブルクォート
+			.replace(/\n/g, "\\n") // 改行
+			.replace(/\r/g, "\\r") // キャリッジリターン
+			.replace(/\t/g, "\\t"); // タブ
+	}
+
 	/** frontmatterを構築 (public: Crawler の --no-pages モードで使用) */
 	buildFrontmatter(
 		url: string,
@@ -141,9 +151,9 @@ export class OutputWriter {
 		const lines: (string | null)[] = [
 			"---",
 			`url: ${url}`,
-			`title: "${(metadata.title || title || "").replace(/"/g, '\\"')}"`,
-			metadata.description ? `description: "${metadata.description.replace(/"/g, '\\"')}"` : null,
-			metadata.keywords ? `keywords: "${metadata.keywords.replace(/"/g, '\\"')}"` : null,
+			`title: "${this.escapeYamlString(metadata.title || title || "")}"`,
+			metadata.description ? `description: "${this.escapeYamlString(metadata.description)}"` : null,
+			metadata.keywords ? `keywords: "${this.escapeYamlString(metadata.keywords)}"` : null,
 			hash ? `hash: "${hash}"` : null,
 			`crawledAt: ${pageCrawledAt}`,
 			`depth: ${depth}`,

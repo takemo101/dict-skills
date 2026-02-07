@@ -545,6 +545,198 @@ describe("OutputWriter", () => {
 			// Verify keywords remain unchanged
 			expect(content).toMatch(/keywords: "test, keyword, another"/);
 		});
+
+		it("should escape newline characters in title", () => {
+			const writer = new OutputWriter(defaultConfig);
+			const metadataWithNewline: PageMetadata = {
+				...defaultMetadata,
+				title: "Title with\nnewline",
+			};
+
+			const pageFile = writer.savePage(
+				"https://example.com/page1",
+				"# Content",
+				1,
+				[],
+				metadataWithNewline,
+				null,
+			);
+
+			const pagePath = join(testOutputDir, pageFile);
+			const content = readFileSync(pagePath, "utf-8");
+
+			// Verify newline is escaped as \n (backslash-n in the file)
+			expect(content).toMatch(/title: "Title with\\nnewline"/);
+		});
+
+		it("should escape carriage return and newline in description", () => {
+			const writer = new OutputWriter(defaultConfig);
+			const metadataWithCRLF: PageMetadata = {
+				...defaultMetadata,
+				description: "Description with\r\nCRLF line ending",
+			};
+
+			const pageFile = writer.savePage(
+				"https://example.com/page1",
+				"# Content",
+				1,
+				[],
+				metadataWithCRLF,
+				"Test",
+			);
+
+			const pagePath = join(testOutputDir, pageFile);
+			const content = readFileSync(pagePath, "utf-8");
+
+			// Verify CRLF is escaped as \r\n (backslash-r backslash-n in file)
+			expect(content).toMatch(/description: "Description with\\r\\nCRLF line ending"/);
+		});
+
+		it("should escape backslash in keywords", () => {
+			const writer = new OutputWriter(defaultConfig);
+			const metadataWithBackslash: PageMetadata = {
+				...defaultMetadata,
+				keywords: "path\\to\\file, test",
+			};
+
+			const pageFile = writer.savePage(
+				"https://example.com/page1",
+				"# Content",
+				1,
+				[],
+				metadataWithBackslash,
+				"Test",
+			);
+
+			const pagePath = join(testOutputDir, pageFile);
+			const content = readFileSync(pagePath, "utf-8");
+
+			// Verify backslash is escaped as \\ (two backslashes in file)
+			expect(content).toMatch(/keywords: "path\\\\to\\\\file, test"/);
+		});
+
+		it("should escape tab character in description", () => {
+			const writer = new OutputWriter(defaultConfig);
+			const metadataWithTab: PageMetadata = {
+				...defaultMetadata,
+				description: "Description with\ttab character",
+			};
+
+			const pageFile = writer.savePage(
+				"https://example.com/page1",
+				"# Content",
+				1,
+				[],
+				metadataWithTab,
+				"Test",
+			);
+
+			const pagePath = join(testOutputDir, pageFile);
+			const content = readFileSync(pagePath, "utf-8");
+
+			// Verify tab is escaped as \t (backslash-t in file)
+			expect(content).toMatch(/description: "Description with\\ttab character"/);
+		});
+
+		it("should escape multiple special characters in title", () => {
+			const writer = new OutputWriter(defaultConfig);
+			const metadataWithMultiple: PageMetadata = {
+				...defaultMetadata,
+				title: 'Title with "quotes"\nand newline',
+			};
+
+			const pageFile = writer.savePage(
+				"https://example.com/page1",
+				"# Content",
+				1,
+				[],
+				metadataWithMultiple,
+				null,
+			);
+
+			const pagePath = join(testOutputDir, pageFile);
+			const content = readFileSync(pagePath, "utf-8");
+
+			// Verify both quotes and newline are escaped
+			expect(content).toMatch(/title: "Title with \\"quotes\\"\\nand newline"/);
+		});
+
+		it("should escape backslash and quotes in description", () => {
+			const writer = new OutputWriter(defaultConfig);
+			const metadataWithBackslashAndQuotes: PageMetadata = {
+				...defaultMetadata,
+				description: 'Path is "C:\\Program Files\\App"',
+			};
+
+			const pageFile = writer.savePage(
+				"https://example.com/page1",
+				"# Content",
+				1,
+				[],
+				metadataWithBackslashAndQuotes,
+				"Test",
+			);
+
+			const pagePath = join(testOutputDir, pageFile);
+			const content = readFileSync(pagePath, "utf-8");
+
+			// Verify both backslash and quotes are escaped (backslash first)
+			expect(content).toMatch(/description: "Path is \\"C:\\\\Program Files\\\\App\\""/);
+		});
+
+		it("should handle empty strings without errors", () => {
+			const writer = new OutputWriter(defaultConfig);
+			const metadataEmpty: PageMetadata = {
+				...defaultMetadata,
+				title: "",
+				description: "",
+				keywords: "",
+			};
+
+			const pageFile = writer.savePage(
+				"https://example.com/page1",
+				"# Content",
+				1,
+				[],
+				metadataEmpty,
+				null,
+			);
+
+			const pagePath = join(testOutputDir, pageFile);
+			const content = readFileSync(pagePath, "utf-8");
+
+			// Verify empty strings are handled correctly
+			// Empty title is still included (mandatory field)
+			expect(content).toMatch(/title: ""/);
+			// Empty description and keywords are omitted (optional fields with falsy check)
+			expect(content).not.toMatch(/description:/);
+			expect(content).not.toMatch(/keywords:/);
+		});
+
+		it("should handle strings with only special characters", () => {
+			const writer = new OutputWriter(defaultConfig);
+			const metadataOnlySpecial: PageMetadata = {
+				...defaultMetadata,
+				title: "\n\r\t",
+				description: "\\\\\\",
+			};
+
+			const pageFile = writer.savePage(
+				"https://example.com/page1",
+				"# Content",
+				1,
+				[],
+				metadataOnlySpecial,
+				null,
+			);
+
+			const pagePath = join(testOutputDir, pageFile);
+			const content = readFileSync(pagePath, "utf-8");
+
+			// Verify all special characters are escaped
+			expect(content).toMatch(/title: "\\n\\r\\t"/);
+			expect(content).toMatch(/description: "\\\\\\\\\\\\"/);
+		});
 	});
 
 	describe("diff mode", () => {
