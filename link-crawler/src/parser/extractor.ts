@@ -100,44 +100,17 @@ function restoreCodeBlocks(html: string, codeBlockMap: Map<string, string>): str
 }
 
 /**
- * HTML文字列にコードブロックが含まれているかチェック
- * DOM-based検出により、文字列マッチングによる誤検知を防ぎます
+ * Fallback content extraction when Readability fails
+ * 
+ * Note: Code block preservation is handled by the caller via restoreCodeBlocks.
+ * This function receives a document where code blocks have already been replaced
+ * with placeholders by protectCodeBlocks.
  */
-function hasCodeBlockInHTML(htmlString: string, doc: Document): boolean {
-	// 空の場合は false
-	if (!htmlString || htmlString.trim() === "") {
-		return false;
-	}
-
-	// 一時的なコンテナ要素を作成してHTMLをパース
-	const tempDiv = doc.createElement("div");
-	tempDiv.innerHTML = htmlString;
-
-	// CODE_BLOCK_PRIORITY_SELECTORS のいずれかにマッチする要素があるかチェック
-	for (const selector of CODE_BLOCK_PRIORITY_SELECTORS) {
-		if (tempDiv.querySelector(selector)) {
-			return true;
-		}
-	}
-
-	return false;
-}
-
-/** フォールバック抽出時にコードブロックを保護 */
-function extractAndPreserveCodeBlocks(doc: Document): {
+function extractFallbackContent(doc: Document): {
 	title: string | null;
 	content: string | null;
 } {
 	const body = doc.body;
-
-	// コードブロックを収集（削除前に保存）
-	const codeBlocks: string[] = [];
-	for (const selector of CODE_BLOCK_PRIORITY_SELECTORS) {
-		const elements = Array.from(body.querySelectorAll(selector));
-		for (const el of elements) {
-			codeBlocks.push(el.outerHTML);
-		}
-	}
 
 	// 不要な要素を削除
 	for (const el of body.querySelectorAll("script, style, noscript, nav, header, footer, aside")) {
@@ -145,15 +118,7 @@ function extractAndPreserveCodeBlocks(doc: Document): {
 	}
 
 	const main = doc.querySelector("main, article, [role='main'], .content, #content") || body;
-	let content = main?.innerHTML || null;
-
-	// コンテンツにコードブロックが含まれていない場合、収集したものを追加
-	if (content && codeBlocks.length > 0) {
-		const hasCodeBlock = hasCodeBlockInHTML(content, doc);
-		if (!hasCodeBlock) {
-			content = `${codeBlocks.join("\n")}\n${content}`;
-		}
-	}
+	const content = main?.innerHTML || null;
 
 	return {
 		title: null,
@@ -194,8 +159,8 @@ export function extractContent(dom: JSDOM): { title: string | null; content: str
 		return { title: article.title ?? null, content: restoredContent };
 	}
 
-	// フォールバック: main タグなどから抽出（コードブロックも保持）
-	const fallback = extractAndPreserveCodeBlocks(dom.window.document);
+	// フォールバック: main タグなどから抽出
+	const fallback = extractFallbackContent(dom.window.document);
 	// マーカーを復元してコードブロックを正しく保持
 	if (fallback.content) {
 		fallback.content = restoreCodeBlocks(fallback.content, codeBlockMap);
