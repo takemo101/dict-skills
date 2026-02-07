@@ -33,6 +33,7 @@ program
 	.option("--no-merge", "Skip merged output file")
 	.option("--chunks", "Enable chunked output files", false)
 	.option("--keep-session", "Keep .playwright-cli directory after crawl (for debugging)", false)
+	.option("--no-robots", "Ignore robots.txt (not recommended)", false)
 	.version(packageJson.version)
 	.parse();
 

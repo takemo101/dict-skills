@@ -23,6 +23,7 @@ crawl <url> [options]
 | `--timeout <sec>` | | `30` | リクエストタイムアウト（秒） |
 | `--wait <ms>` | | `2000` | ページレンダリング待機時間（ミリ秒） |
 | `--headed` | | `false` | ブラウザを表示（デバッグ用） |
+| `--no-robots` | | | robots.txt を無視（非推奨） |
 
 ### 3.2 スコープ制御
 
@@ -106,7 +107,19 @@ crawl https://docs.example.com --no-merge
 crawl https://docs.example.com --no-pages --no-merge --chunks
 ```
 
-### 4.5 デバッグ・調整
+### 4.5 robots.txt の制御
+
+```bash
+# デフォルト: robots.txt を尊重（推奨）
+crawl https://docs.example.com -d 2
+
+# robots.txt を無視（開発・テスト用、非推奨）
+crawl https://docs.example.com -d 2 --no-robots
+```
+
+**注意**: `--no-robots` オプションは開発やテスト目的でのみ使用してください。本番環境では常に robots.txt を尊重することを推奨します。
+
+### 4.6 デバッグ・調整
 
 ```bash
 # ブラウザを表示して動作確認

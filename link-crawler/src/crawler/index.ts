@@ -9,12 +9,14 @@ import type { RuntimeAdapter } from "../utils/runtime.js";
 import { createRuntimeAdapter } from "../utils/runtime.js";
 import { CrawlLogger } from "./logger.js";
 import { PostProcessor } from "./post-processor.js";
+import { RobotsChecker } from "./robots.js";
 
 /** クローラーエンジン */
 export class Crawler {
 	private fetcher!: Fetcher;
 	private writer: OutputWriter;
 	private hasher: Hasher | null = null;
+	private robotsChecker: RobotsChecker | null = null;
 	private logger: CrawlLogger;
 	private postProcessor: PostProcessor;
 	private runtime: RuntimeAdapter;
@@ -49,12 +51,37 @@ export class Crawler {
 		return this.fetcher;
 	}
 
+	/** robots.txt の取得 */
+	private async fetchRobotsTxt(): Promise<void> {
+		try {
+			const baseUrl = new URL(this.config.startUrl);
+			const robotsUrl = `${baseUrl.origin}/robots.txt`;
+			this.logger.logDebug("Fetching robots.txt", { url: robotsUrl });
+
+			const result = await this.fetcher.fetch(robotsUrl);
+			if (result && result.contentType.includes("text/plain")) {
+				this.robotsChecker = new RobotsChecker(result.html);
+				this.logger.logDebug("robots.txt loaded and parsed", { url: robotsUrl });
+			} else {
+				this.logger.logDebug("robots.txt not available (allowing all)");
+			}
+		} catch (error) {
+			// 取得失敗時は全許可（エラーログは出力しない）
+			this.logger.logDebug("robots.txt fetch failed (allowing all)");
+		}
+	}
+
 	/** クロール開始 */
 	async run(): Promise<void> {
 		// Fetcherの初期化
 		await this.initFetcher();
 
 		this.logger.logStart();
+
+		// robots.txt の取得
+		if (this.config.respectRobots) {
+			await this.fetchRobotsTxt();
+		}
 
 		// 差分モード時は既存ハッシュを読み込む
 		if (this.config.diff) {
@@ -89,6 +116,12 @@ export class Crawler {
 	private async crawl(url: string, depth: number): Promise<void> {
 		if (depth > this.config.maxDepth || this.visited.has(url)) {
 			return;
+		}
+
+		// robots.txt チェック
+		if (this.robotsChecker && !this.robotsChecker.isAllowed(url)) {
+			this.logger.logDebug("Blocked by robots.txt", { url });
+			return; // スキップ
 		}
 
 		this.visited.add(url); // URL単位で訪問済みを管理（深度は無関係）

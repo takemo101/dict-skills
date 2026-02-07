@@ -18,6 +18,8 @@ export interface CrawlConfig {
 	merge: boolean;
 	chunks: boolean;
 	keepSession: boolean;
+	/** robots.txt を尊重するか（デフォルト: true） */
+	respectRobots: boolean;
 }
 
 /** フェッチ結果 */

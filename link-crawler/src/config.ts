@@ -65,6 +65,7 @@ export function parseConfig(options: Record<string, unknown>, startUrl: string):
 		merge: options.merge !== false,
 		chunks: options.chunks === true,
 		keepSession: Boolean(options.keepSession),
+		respectRobots: options.robots !== false,
 	};
 
 	// Warn when all output formats are disabled
