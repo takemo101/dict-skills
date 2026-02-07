@@ -4,7 +4,7 @@ import { OutputWriter } from "../output/writer.js";
 import { htmlToMarkdown } from "../parser/converter.js";
 import { extractContent, extractMetadata } from "../parser/extractor.js";
 import { extractLinks } from "../parser/links.js";
-import type { CrawlConfig, Fetcher, FetchResult } from "../types.js";
+import type { CrawlConfig, Fetcher, FetchResult, PageMetadata } from "../types.js";
 import type { RuntimeAdapter } from "../utils/runtime.js";
 import { createRuntimeAdapter } from "../utils/runtime.js";
 import { CrawlLogger } from "./logger.js";
@@ -295,7 +295,7 @@ export class Crawler {
 		markdown: string,
 		depth: number,
 		links: string[],
-		metadata: any,
+		metadata: PageMetadata,
 		title: string | null,
 		hash: string,
 	): void {
