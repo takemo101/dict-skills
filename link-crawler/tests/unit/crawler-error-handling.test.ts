@@ -16,6 +16,7 @@ describe("Crawler - Error Handling", () => {
 			startUrl: "https://example.com",
 			outputDir: "/tmp/test-output",
 			maxDepth: 2,
+			maxPages: null,
 			delay: 0,
 			timeout: 5000,
 			spaWait: 100,
@@ -28,6 +29,7 @@ describe("Crawler - Error Handling", () => {
 			chunks: false,
 			headed: false,
 			keepSession: false,
+			respectRobots: true,
 		};
 
 		// Fetcherモック

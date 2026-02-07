@@ -41,6 +41,7 @@ describe("PostProcessor", () => {
 		baseConfig = {
 			startUrl: "https://example.com",
 			maxDepth: 2,
+			maxPages: null,
 			outputDir: testOutputDir,
 			sameDomain: true,
 			includePattern: null,
@@ -54,6 +55,7 @@ describe("PostProcessor", () => {
 			merge: true,
 			chunks: true,
 			keepSession: false,
+			respectRobots: true,
 		};
 
 		// Create a mock logger

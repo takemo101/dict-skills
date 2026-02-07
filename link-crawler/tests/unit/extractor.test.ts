@@ -2469,3 +2469,67 @@ describe("extractContent - nested code block deduplication (Issue #631)", () => 
 		}
 	});
 });
+
+describe("extractContent - Readability edge cases (line 171)", () => {
+	it("should handle Readability success with no title tag (line 171)", () => {
+		// Tests line 171: article.title ?? null
+		// Readability extracts content but title is missing/empty
+		const html = `
+			<!DOCTYPE html>
+			<html>
+				<head>
+					<!-- No title tag to test title extraction -->
+				</head>
+				<body>
+					<article>
+						<h1>Article Heading</h1>
+						<p>This is a substantial paragraph with enough content for Readability to extract successfully.</p>
+						<p>Second paragraph provides more context and information to ensure proper extraction.</p>
+						<p>Third paragraph continues with additional details about the topic being discussed.</p>
+						<p>Fourth paragraph ensures there is sufficient text for Readability algorithm.</p>
+						<p>Final paragraph completes the article with meaningful content.</p>
+					</article>
+				</body>
+			</html>
+		`;
+		const dom = new JSDOM(html, { url: "https://example.com/no-title" });
+		const result = extractContent(dom);
+
+		// Readability should extract content successfully
+		expect(result.content).not.toBeNull();
+		expect(result.content).toContain("substantial paragraph");
+		
+		// Title may be empty string or null when no title tag exists
+		// This tests the ?? null fallback path on line 171
+		expect(result.title === "" || result.title === null).toBe(true);
+	});
+
+	it("should handle article with empty title tag", () => {
+		// Tests another scenario where article.title could be empty/null
+		const html = `
+			<!DOCTYPE html>
+			<html>
+				<head>
+					<title></title>
+				</head>
+				<body>
+					<article>
+						<h1>Main Heading</h1>
+						<p>Article content with substantial text to ensure Readability extraction works properly.</p>
+						<p>More paragraphs to provide enough content for the extraction algorithm to identify.</p>
+						<p>Additional content ensures this is recognized as the main content of the page.</p>
+						<p>Final paragraph to complete the substantial content requirement.</p>
+					</article>
+				</body>
+			</html>
+		`;
+		const dom = new JSDOM(html, { url: "https://example.com/empty-title" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		expect(result.content).toContain("substantial text");
+		
+		// Empty title tag results in empty string or null
+		expect(result.title === "" || result.title === null).toBe(true);
+	});
+});
