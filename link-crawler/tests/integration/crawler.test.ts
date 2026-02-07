@@ -86,6 +86,7 @@ function createTestHtml(options: {
 const getDefaultConfig = (): CrawlConfig => ({
 	startUrl: "https://example.com",
 	maxDepth: 2,
+	maxPages: null,
 	outputDir: testOutputDir,
 	sameDomain: true,
 	includePattern: null,
@@ -99,6 +100,7 @@ const getDefaultConfig = (): CrawlConfig => ({
 	merge: true,
 	chunks: true,
 	keepSession: false,
+	respectRobots: true,
 });
 
 describe("CrawlerEngine Integration", () => {

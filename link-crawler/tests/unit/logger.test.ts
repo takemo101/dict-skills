@@ -13,6 +13,7 @@ describe("CrawlLogger", () => {
 		baseConfig = {
 			startUrl: "https://example.com",
 			maxDepth: 2,
+			maxPages: null,
 			outputDir: "./output",
 			sameDomain: true,
 			includePattern: null,
@@ -26,6 +27,7 @@ describe("CrawlLogger", () => {
 			merge: false,
 			chunks: false,
 			keepSession: false,
+			respectRobots: true,
 		};
 	});
 
