@@ -61,11 +61,8 @@ describe("crawl CLI integration", () => {
 			expect.fail("Should have thrown an error");
 		} catch (error: unknown) {
 			// Should exit with non-zero code
-			if (error && typeof error === "object" && "status" in error) {
-				expect((error as { status: number }).status).toBeGreaterThan(0);
-			} else {
-				throw error;
-			}
+			const err = error as { status: number };
+			expect(err.status).toBeGreaterThan(0);
 		}
 	});
 
@@ -87,11 +84,8 @@ describe("crawl CLI integration", () => {
 		} catch (error: unknown) {
 			// If it times out or has network issues, that's okay
 			// The important thing is it didn't fail with INVALID_ARGUMENTS (exit code 2)
-			if (error && typeof error === "object" && "status" in error) {
-				expect((error as { status: number }).status).not.toBe(2);
-			} else {
-				throw error;
-			}
+			const err = error as { status: number };
+			expect(err.status).not.toBe(2);
 		}
 	}, 35000); // Increase timeout for real crawl
 
@@ -105,11 +99,8 @@ describe("crawl CLI integration", () => {
 			expect.fail("Should have thrown an error");
 		} catch (error: unknown) {
 			// Should exit with an error code (not 0)
-			if (error && typeof error === "object" && "status" in error) {
-				expect((error as { status: number }).status).not.toBe(0);
-			} else {
-				throw error;
-			}
+			const err = error as { status: number };
+			expect(err.status).not.toBe(0);
 		}
 	});
 });

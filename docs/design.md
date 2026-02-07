@@ -596,16 +596,15 @@ if (hasher.isChanged(url, newHash)) {
 
 ```typescript
 class Merger {
-  constructor(outputDir: string)
+  constructor(_outputDir: string)
   stripTitle(markdown: string): string
-  buildFullContent(pages: CrawledPage[], pageContents: Map<string, string>): string  // メイン API
-  writeFull(pages: CrawledPage[], pageContents: Map<string, string>): string         // ユーティリティ
+  buildFullContent(pages: CrawledPage[], pageContents: Map<string, string>): string
 }
 ```
 
 **メソッドの役割:**
 - `buildFullContent()`: 全ページを結合したMarkdown文字列を生成（メモリ上）
-- `writeFull()`: `buildFullContent()` を呼び出してファイル出力するユーティリティメソッド（テスト用）
+- `stripTitle()`: Markdownから先頭のH1タイトルとfrontmatterを除去
 
 #### 処理フロー
 
@@ -632,15 +631,6 @@ const fullContent = merger.buildFullContent(pages, pageContents);
 // ファイル書き込みは呼び出し側で実行
 const outputPath = join(outputDir, "full.md");
 writeFileSync(outputPath, fullContent);
-```
-
-**テスト/ユーティリティ用:**
-```typescript
-const merger = new Merger(outputDir);
-
-// buildFullContent() + writeFileSync() を一度に実行
-const fullPath = merger.writeFull(pages, pageContents);
-// → .context/<site>/full.md が生成される
 ```
 
 **Note**: 本番コード（PostProcessor）は、`buildFullContent()` を使用してメモリ上でコンテンツを生成し、ファイル書き込みは PostProcessor が担当します。これにより、`--no-merge --chunks` のような「mergeなしでchunksのみ」のケースでも、chunker用にコンテンツを再利用できます（Issue #710, #711 参照）。
