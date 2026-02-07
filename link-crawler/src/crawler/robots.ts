@@ -76,22 +76,32 @@ export class RobotsChecker {
 			return true;
 		}
 
-		// Allow ルールを先にチェック（優先度高）
-		for (const allowPath of rule.allow) {
-			if (this.matchPath(path, allowPath)) {
-				return true;
-			}
-		}
+		// 最長一致ルールを見つける（より具体的なルールが優先）
+		let longestMatch = "";
+		let isAllowedByLongestMatch = true;
 
 		// Disallow ルールをチェック
 		for (const disallowPath of rule.disallow) {
-			if (this.matchPath(path, disallowPath)) {
-				return false;
+			if (this.matchPath(path, disallowPath) && disallowPath.length > longestMatch.length) {
+				longestMatch = disallowPath;
+				isAllowedByLongestMatch = false;
 			}
 		}
 
-		// どのルールにもマッチしない場合は許可
-		return true;
+		// Allow ルールをチェック（Disallow より優先度高い）
+		for (const allowPath of rule.allow) {
+			if (this.matchPath(path, allowPath) && allowPath.length > longestMatch.length) {
+				longestMatch = allowPath;
+				isAllowedByLongestMatch = true;
+			}
+		}
+
+		// マッチするルールがない場合は許可
+		if (!longestMatch) {
+			return true;
+		}
+
+		return isAllowedByLongestMatch;
 	}
 
 	/** URL からパスを抽出 */
