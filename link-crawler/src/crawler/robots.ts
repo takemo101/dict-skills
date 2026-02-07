@@ -115,14 +115,33 @@ export class RobotsChecker {
 		}
 	}
 
-	/** パスがルールにマッチするか（前方一致） */
+	/** パスがルールにマッチするか（ワイルドカード・終端パターン対応） */
 	private matchPath(path: string, rulePath: string): boolean {
 		// 空の Disallow は「全許可」を意味する
 		if (!rulePath) {
 			return false;
 		}
 
-		// 前方一致
-		return path.startsWith(rulePath);
+		// $ 終端マーカーの処理
+		const exactEnd = rulePath.endsWith("$");
+		const pattern = exactEnd ? rulePath.slice(0, -1) : rulePath;
+
+		// * ワイルドカードが含まれる場合
+		if (pattern.includes("*")) {
+			// ワイルドカードを正規表現に変換
+			// 正規表現の特殊文字をエスケープしつつ、*を.*に変換
+			const regexStr = pattern
+				.split("*")
+				.map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+				.join(".*");
+			const regex = new RegExp("^" + regexStr + (exactEnd ? "$" : ""));
+			return regex.test(path);
+		}
+
+		// 通常の前方一致（既存の動作を維持）
+		if (exactEnd) {
+			return path === pattern;
+		}
+		return path.startsWith(pattern);
 	}
 }
