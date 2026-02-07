@@ -1,5 +1,5 @@
 import { existsSync, rmSync } from "node:fs";
-import { join, normalize } from "node:path";
+import { join, normalize, resolve, sep } from "node:path";
 import { PATHS, PATTERNS } from "../constants.js";
 import { DependencyError, FetchError, TimeoutError } from "../errors.js";
 import type { CrawlConfig, Fetcher, FetchResult } from "../types.js";
@@ -175,6 +175,16 @@ export class PlaywrightFetcher implements Fetcher {
 				// 相対パスから絶対パスを構築
 				const logPath = normalize(logMatch[1]);
 				const fullPath = join(this.runtime.cwd(), logPath);
+
+				// パストラバーサル防止: cwdの外を参照していないことを確認
+				const cwd = this.runtime.cwd();
+				const resolvedPath = resolve(fullPath);
+				const resolvedCwd = resolve(cwd);
+
+				// 解決済みパスがcwd配下にあることを確認
+				if (!resolvedPath.startsWith(resolvedCwd + sep) && resolvedPath !== resolvedCwd) {
+					return { statusCode: null, contentType: "text/html" };
+				}
 
 				if (existsSync(fullPath)) {
 					const logContent = await this.runtime.readFile(fullPath);

@@ -170,7 +170,7 @@ describe("PlaywrightFetcher", () => {
 					// network command (getHttpMetadata)
 					return Promise.resolve({
 						success: true,
-						stdout: "[Network](../path/to/network.log)",
+						stdout: "[Network](.playwright-cli/network.log)",
 						stderr: "",
 						exitCode: 0,
 					} as SpawnResult);
@@ -230,7 +230,7 @@ describe("PlaywrightFetcher", () => {
 					// network command
 					return Promise.resolve({
 						success: true,
-						stdout: "[Network](../path/to/network.log)",
+						stdout: "[Network](.playwright-cli/network.log)",
 						stderr: "",
 						exitCode: 0,
 					} as SpawnResult);
@@ -299,7 +299,7 @@ describe("PlaywrightFetcher", () => {
 					// network command
 					return Promise.resolve({
 						success: true,
-						stdout: "[Network](../path/to/network.log)",
+						stdout: "[Network](.playwright-cli/network.log)",
 						stderr: "",
 						exitCode: 0,
 					} as SpawnResult);
@@ -352,7 +352,7 @@ describe("PlaywrightFetcher", () => {
 					// network command
 					return Promise.resolve({
 						success: true,
-						stdout: "[Network](../path/to/network.log)",
+						stdout: "[Network](.playwright-cli/network.log)",
 						stderr: "",
 						exitCode: 0,
 					} as SpawnResult);
@@ -405,7 +405,7 @@ describe("PlaywrightFetcher", () => {
 					// network command
 					return Promise.resolve({
 						success: true,
-						stdout: "[Network](../path/to/network.log)",
+						stdout: "[Network](.playwright-cli/network.log)",
 						stderr: "",
 						exitCode: 0,
 					} as SpawnResult);
@@ -463,7 +463,7 @@ describe("PlaywrightFetcher", () => {
 					// network command
 					return Promise.resolve({
 						success: true,
-						stdout: "[Network](../path/to/network.log)",
+						stdout: "[Network](.playwright-cli/network.log)",
 						stderr: "",
 						exitCode: 0,
 					} as SpawnResult);
@@ -521,7 +521,7 @@ describe("PlaywrightFetcher", () => {
 					// network command
 					return Promise.resolve({
 						success: true,
-						stdout: "[Network](../path/to/network.log)",
+						stdout: "[Network](.playwright-cli/network.log)",
 						stderr: "",
 						exitCode: 0,
 					} as SpawnResult);
@@ -579,7 +579,7 @@ describe("PlaywrightFetcher", () => {
 					// network command
 					return Promise.resolve({
 						success: true,
-						stdout: "[Network](../path/to/network.log)",
+						stdout: "[Network](.playwright-cli/network.log)",
 						stderr: "",
 						exitCode: 0,
 					} as SpawnResult);
@@ -638,7 +638,7 @@ describe("PlaywrightFetcher", () => {
 					// network command
 					return Promise.resolve({
 						success: true,
-						stdout: "[Network](../path/to/network.log)",
+						stdout: "[Network](.playwright-cli/network.log)",
 						stderr: "",
 						exitCode: 0,
 					} as SpawnResult);
@@ -772,7 +772,7 @@ describe("PlaywrightFetcher", () => {
 					// network command
 					return Promise.resolve({
 						success: true,
-						stdout: "[Network](../path/to/network.log)",
+						stdout: "[Network](.playwright-cli/network.log)",
 						stderr: "",
 						exitCode: 0,
 					} as SpawnResult);
@@ -830,7 +830,7 @@ describe("PlaywrightFetcher", () => {
 					// network command
 					return Promise.resolve({
 						success: true,
-						stdout: "[Network](../path/to/network.log)",
+						stdout: "[Network](.playwright-cli/network.log)",
 						stderr: "",
 						exitCode: 0,
 					} as SpawnResult);
@@ -908,7 +908,7 @@ describe("PlaywrightFetcher", () => {
 					if (callCount === 2) {
 						return Promise.resolve({
 							success: true,
-							stdout: "[Network](../path/to/network.log)",
+							stdout: "[Network](.playwright-cli/network.log)",
 							stderr: "",
 							exitCode: 0,
 						} as SpawnResult);
@@ -1027,7 +1027,7 @@ describe("PlaywrightFetcher", () => {
 					if (callCount === 2) {
 						return Promise.resolve({
 							success: true,
-							stdout: "[Network](../path/to/network.log)",
+							stdout: "[Network](.playwright-cli/network.log)",
 							stderr: "",
 							exitCode: 0,
 						} as SpawnResult);
@@ -1094,7 +1094,7 @@ describe("PlaywrightFetcher", () => {
 					// network command
 					return Promise.resolve({
 						success: true,
-						stdout: "[Network](../path/to/network.log)",
+						stdout: "[Network](.playwright-cli/network.log)",
 						stderr: "",
 						exitCode: 0,
 					} as SpawnResult);
@@ -1189,7 +1189,7 @@ describe("PlaywrightFetcher", () => {
 					// network commands (3, 7)
 					return Promise.resolve({
 						success: true,
-						stdout: "[Network](../path/to/network.log)",
+						stdout: "[Network](.playwright-cli/network.log)",
 						stderr: "",
 						exitCode: 0,
 					} as SpawnResult);
@@ -1526,14 +1526,14 @@ describe("PlaywrightFetcher", () => {
 	});
 
 	describe("getHttpMetadata", () => {
-		it("should normalize relative paths with parent directory references", async () => {
+		it("should normalize relative paths within cwd", async () => {
 			const config = createMockConfig();
 			const mockRuntime = createMockRuntime();
 
-			// Test with path containing ../ (parent directory references)
+			// Test with path within cwd
 			mockRuntime.spawn = vi.fn().mockResolvedValue({
 				success: true,
-				stdout: "[Network](../logs/network.log)",
+				stdout: "[Network](.playwright-cli/logs/network.log)",
 				stderr: "",
 				exitCode: 0,
 			} as SpawnResult);
@@ -1550,18 +1550,18 @@ describe("PlaywrightFetcher", () => {
 
 			expect(result.statusCode).toBe(200);
 			expect(result.contentType).toBe("text/html");
-			// Verify that the normalized path is used
-			expect(mockExistsSync).toHaveBeenCalled();
+			// Verify that the file was read
+			expect(mockRuntime.readFile).toHaveBeenCalled();
 		});
 
-		it("should handle paths with multiple parent directory references", async () => {
+		it("should handle subdirectory paths correctly", async () => {
 			const config = createMockConfig();
 			const mockRuntime = createMockRuntime();
 
-			// Test with path containing multiple ../
+			// Test with subdirectory path
 			mockRuntime.spawn = vi.fn().mockResolvedValue({
 				success: true,
-				stdout: "[Network](../../test/logs/network.log)",
+				stdout: "[Network](test/logs/network.log)",
 				stderr: "",
 				exitCode: 0,
 			} as SpawnResult);
@@ -1612,7 +1612,7 @@ describe("PlaywrightFetcher", () => {
 
 			mockRuntime.spawn = vi.fn().mockResolvedValue({
 				success: true,
-				stdout: "[Network](../logs/network.log)",
+				stdout: "[Network](.playwright-cli/logs/network.log)",
 				stderr: "",
 				exitCode: 0,
 			} as SpawnResult);
@@ -1758,7 +1758,7 @@ describe("PlaywrightFetcher", () => {
 					// network command - with log path
 					return Promise.resolve({
 						success: true,
-						stdout: "[Network](../path/to/nonexistent.log)",
+						stdout: "[Network](.playwright-cli/nonexistent.log)",
 						stderr: "",
 						exitCode: 0,
 					} as SpawnResult);
@@ -1808,7 +1808,7 @@ describe("PlaywrightFetcher", () => {
 					// network command - with log path
 					return Promise.resolve({
 						success: true,
-						stdout: "[Network](../path/to/network.log)",
+						stdout: "[Network](.playwright-cli/network.log)",
 						stderr: "",
 						exitCode: 0,
 					} as SpawnResult);
@@ -1904,7 +1904,7 @@ describe("PlaywrightFetcher", () => {
 					// network command
 					return Promise.resolve({
 						success: true,
-						stdout: "[Network](../path/to/network.log)",
+						stdout: "[Network](.playwright-cli/network.log)",
 						stderr: "",
 						exitCode: 0,
 					} as SpawnResult);
@@ -1955,7 +1955,7 @@ describe("PlaywrightFetcher", () => {
 					// network command
 					return Promise.resolve({
 						success: true,
-						stdout: "[Network](../path/to/network.log)",
+						stdout: "[Network](.playwright-cli/network.log)",
 						stderr: "",
 						exitCode: 0,
 					} as SpawnResult);
@@ -2005,7 +2005,7 @@ describe("PlaywrightFetcher", () => {
 					// network command
 					return Promise.resolve({
 						success: true,
-						stdout: "[Network](../path/to/network.log)",
+						stdout: "[Network](.playwright-cli/network.log)",
 						stderr: "",
 						exitCode: 0,
 					} as SpawnResult);
@@ -2057,7 +2057,7 @@ describe("PlaywrightFetcher", () => {
 					// network command
 					return Promise.resolve({
 						success: true,
-						stdout: "[Network](../path/to/network.log)",
+						stdout: "[Network](.playwright-cli/network.log)",
 						stderr: "",
 						exitCode: 0,
 					} as SpawnResult);
@@ -2109,7 +2109,7 @@ describe("PlaywrightFetcher", () => {
 					// network command
 					return Promise.resolve({
 						success: true,
-						stdout: "[Network](../path/to/network.log)",
+						stdout: "[Network](.playwright-cli/network.log)",
 						stderr: "",
 						exitCode: 0,
 					} as SpawnResult);
@@ -2161,7 +2161,7 @@ describe("PlaywrightFetcher", () => {
 					// network command
 					return Promise.resolve({
 						success: true,
-						stdout: "[Network](../path/to/network.log)",
+						stdout: "[Network](.playwright-cli/network.log)",
 						stderr: "",
 						exitCode: 0,
 					} as SpawnResult);
@@ -2213,7 +2213,7 @@ describe("PlaywrightFetcher", () => {
 					// network command
 					return Promise.resolve({
 						success: true,
-						stdout: "[Network](../path/to/network.log)",
+						stdout: "[Network](.playwright-cli/network.log)",
 						stderr: "",
 						exitCode: 0,
 					} as SpawnResult);
@@ -2265,7 +2265,7 @@ describe("PlaywrightFetcher", () => {
 					// network command
 					return Promise.resolve({
 						success: true,
-						stdout: "[Network](../path/to/network.log)",
+						stdout: "[Network](.playwright-cli/network.log)",
 						stderr: "",
 						exitCode: 0,
 					} as SpawnResult);
@@ -2315,7 +2315,7 @@ describe("PlaywrightFetcher", () => {
 					// network command
 					return Promise.resolve({
 						success: true,
-						stdout: "[Network](../path/to/network.log)",
+						stdout: "[Network](.playwright-cli/network.log)",
 						stderr: "",
 						exitCode: 0,
 					} as SpawnResult);
@@ -2391,7 +2391,7 @@ describe("PlaywrightFetcher", () => {
 
 			mockRuntime.spawn = vi.fn().mockResolvedValue({
 				success: true,
-				stdout: "[Network](../logs/network.log)",
+				stdout: "[Network](.playwright-cli/logs/network.log)",
 				stderr: "",
 				exitCode: 0,
 			} as SpawnResult);
@@ -2418,7 +2418,7 @@ describe("PlaywrightFetcher", () => {
 
 			mockRuntime.spawn = vi.fn().mockResolvedValue({
 				success: true,
-				stdout: "[Network](../logs/network.log)",
+				stdout: "[Network](.playwright-cli/logs/network.log)",
 				stderr: "",
 				exitCode: 0,
 			} as SpawnResult);
@@ -2445,7 +2445,7 @@ describe("PlaywrightFetcher", () => {
 
 			mockRuntime.spawn = vi.fn().mockResolvedValue({
 				success: true,
-				stdout: "[Network](../logs/network.log)",
+				stdout: "[Network](.playwright-cli/logs/network.log)",
 				stderr: "",
 				exitCode: 0,
 			} as SpawnResult);
@@ -2472,7 +2472,7 @@ describe("PlaywrightFetcher", () => {
 
 			mockRuntime.spawn = vi.fn().mockResolvedValue({
 				success: true,
-				stdout: "[Network](../logs/network.log)",
+				stdout: "[Network](.playwright-cli/logs/network.log)",
 				stderr: "",
 				exitCode: 0,
 			} as SpawnResult);
@@ -2499,7 +2499,7 @@ describe("PlaywrightFetcher", () => {
 
 			mockRuntime.spawn = vi.fn().mockResolvedValue({
 				success: true,
-				stdout: "[Network](../logs/network.log)",
+				stdout: "[Network](.playwright-cli/logs/network.log)",
 				stderr: "",
 				exitCode: 0,
 			} as SpawnResult);
@@ -2516,6 +2516,176 @@ describe("PlaywrightFetcher", () => {
 
 			expect(result.statusCode).toBe(200);
 			expect(result.contentType).toBe("text/html");
+		});
+
+		describe("path traversal prevention", () => {
+			it("should reject path traversal attempts with ../../", async () => {
+				const config = createMockConfig();
+				const mockRuntime = createMockRuntime();
+
+				// Malicious path trying to escape cwd
+				mockRuntime.spawn = vi.fn().mockResolvedValue({
+					success: true,
+					stdout: "[Network](../../etc/passwd)",
+					stderr: "",
+					exitCode: 0,
+				} as SpawnResult);
+
+				mockExistsSync.mockReturnValue(true);
+				mockRuntime.readFile = vi.fn().mockResolvedValue("root:x:0:0:root:/root:/bin/bash");
+
+				const fetcher = new PlaywrightFetcher(config, mockRuntime);
+				const result = await (
+					fetcher as unknown as {
+						getHttpMetadata(): Promise<{ statusCode: number | null; contentType: string }>;
+					}
+				).getHttpMetadata();
+
+				// Should return default values and NOT read the file
+				expect(result.statusCode).toBeNull();
+				expect(result.contentType).toBe("text/html");
+				expect(mockRuntime.readFile).not.toHaveBeenCalled();
+			});
+
+			it("should reject absolute paths outside cwd", async () => {
+				const config = createMockConfig();
+				const mockRuntime = createMockRuntime();
+
+				// Absolute path outside cwd
+				mockRuntime.spawn = vi.fn().mockResolvedValue({
+					success: true,
+					stdout: "[Network](/etc/passwd)",
+					stderr: "",
+					exitCode: 0,
+				} as SpawnResult);
+
+				mockExistsSync.mockReturnValue(true);
+				mockRuntime.readFile = vi.fn().mockResolvedValue("root:x:0:0:root:/root:/bin/bash");
+
+				const fetcher = new PlaywrightFetcher(config, mockRuntime);
+				const result = await (
+					fetcher as unknown as {
+						getHttpMetadata(): Promise<{ statusCode: number | null; contentType: string }>;
+					}
+				).getHttpMetadata();
+
+				// Should return default values and NOT read the file
+				expect(result.statusCode).toBeNull();
+				expect(result.contentType).toBe("text/html");
+				expect(mockRuntime.readFile).not.toHaveBeenCalled();
+			});
+
+			it("should accept paths within cwd subdirectory", async () => {
+				const config = createMockConfig();
+				const mockRuntime = createMockRuntime();
+
+				// Safe path within cwd
+				mockRuntime.spawn = vi.fn().mockResolvedValue({
+					success: true,
+					stdout: "[Network](.playwright-cli/logs/network.log)",
+					stderr: "",
+					exitCode: 0,
+				} as SpawnResult);
+
+				mockExistsSync.mockReturnValue(true);
+				mockRuntime.readFile = vi.fn().mockResolvedValue("status: 200\ncontent-type: text/html");
+
+				const fetcher = new PlaywrightFetcher(config, mockRuntime);
+				const result = await (
+					fetcher as unknown as {
+						getHttpMetadata(): Promise<{ statusCode: number | null; contentType: string }>;
+					}
+				).getHttpMetadata();
+
+				// Should successfully read the file
+				expect(result.statusCode).toBe(200);
+				expect(result.contentType).toBe("text/html");
+				expect(mockRuntime.readFile).toHaveBeenCalled();
+			});
+
+			it("should accept simple relative paths within cwd", async () => {
+				const config = createMockConfig();
+				const mockRuntime = createMockRuntime();
+
+				// Safe relative path
+				mockRuntime.spawn = vi.fn().mockResolvedValue({
+					success: true,
+					stdout: "[Network](logs/network.log)",
+					stderr: "",
+					exitCode: 0,
+				} as SpawnResult);
+
+				mockExistsSync.mockReturnValue(true);
+				mockRuntime.readFile = vi.fn().mockResolvedValue("status: 404\ncontent-type: text/plain");
+
+				const fetcher = new PlaywrightFetcher(config, mockRuntime);
+				const result = await (
+					fetcher as unknown as {
+						getHttpMetadata(): Promise<{ statusCode: number | null; contentType: string }>;
+					}
+				).getHttpMetadata();
+
+				// Should successfully read the file
+				expect(result.statusCode).toBe(404);
+				expect(result.contentType).toBe("text/plain");
+				expect(mockRuntime.readFile).toHaveBeenCalled();
+			});
+
+			it("should reject path with single parent directory that escapes cwd", async () => {
+				const config = createMockConfig();
+				const mockRuntime = createMockRuntime();
+
+				// Path that goes one level up from cwd
+				mockRuntime.spawn = vi.fn().mockResolvedValue({
+					success: true,
+					stdout: "[Network](../outside.log)",
+					stderr: "",
+					exitCode: 0,
+				} as SpawnResult);
+
+				mockExistsSync.mockReturnValue(true);
+				mockRuntime.readFile = vi.fn().mockResolvedValue("malicious content");
+
+				const fetcher = new PlaywrightFetcher(config, mockRuntime);
+				const result = await (
+					fetcher as unknown as {
+						getHttpMetadata(): Promise<{ statusCode: number | null; contentType: string }>;
+					}
+				).getHttpMetadata();
+
+				// Should return default values and NOT read the file
+				expect(result.statusCode).toBeNull();
+				expect(result.contentType).toBe("text/html");
+				expect(mockRuntime.readFile).not.toHaveBeenCalled();
+			});
+
+			it("should handle complex traversal patterns", async () => {
+				const config = createMockConfig();
+				const mockRuntime = createMockRuntime();
+
+				// Complex path with mixed .. and subdirectories
+				mockRuntime.spawn = vi.fn().mockResolvedValue({
+					success: true,
+					stdout: "[Network](subdir/../../etc/shadow)",
+					stderr: "",
+					exitCode: 0,
+				} as SpawnResult);
+
+				mockExistsSync.mockReturnValue(true);
+				mockRuntime.readFile = vi.fn().mockResolvedValue("sensitive data");
+
+				const fetcher = new PlaywrightFetcher(config, mockRuntime);
+				const result = await (
+					fetcher as unknown as {
+						getHttpMetadata(): Promise<{ statusCode: number | null; contentType: string }>;
+					}
+				).getHttpMetadata();
+
+				// Should return default values and NOT read the file
+				expect(result.statusCode).toBeNull();
+				expect(result.contentType).toBe("text/html");
+				expect(mockRuntime.readFile).not.toHaveBeenCalled();
+			});
 		});
 	});
 
