@@ -17,7 +17,7 @@ const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
 program
 	.name("crawl")
 	.description("Crawl technical documentation sites recursively")
-	.argument("<url>", "Starting URL to crawl")
+	.argument("[url]", "Starting URL to crawl")
 	.option("-d, --depth <num>", "Maximum crawl depth", "1")
 	.option("--max-pages <num>", "Maximum number of pages to crawl (0 = unlimited)")
 	.option("-o, --output <dir>", "Output directory (default: ./.context/<site-name>/)")
@@ -42,7 +42,7 @@ const options = program.opts();
 const startUrl = program.args[0];
 
 if (!startUrl) {
-	program.help();
+	program.outputHelp();
 	process.exit(EXIT_CODES.INVALID_ARGUMENTS);
 }
 
