@@ -449,4 +449,101 @@ describe("OutputWriter", () => {
 			expect(content).toMatch(/keywords: "test, keyword, another"/);
 		});
 	});
+
+	describe("diff mode", () => {
+		it("should preserve existing files in pages/ directory in diff mode", () => {
+			// 1. 初回クロール（非 diff モード）
+			const writer1 = new OutputWriter({ ...defaultConfig, diff: false });
+			const pageFile1 = writer1.savePage(
+				"https://example.com/page1",
+				"# Page 1 Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "Page 1" },
+				null,
+			);
+			writer1.saveIndex();
+
+			const pagePath1 = join(testOutputDir, pageFile1);
+
+			// ファイルが作成されたことを確認
+			expect(readFileSync(pagePath1, "utf-8")).toContain("# Page 1 Content");
+
+			// 2. 差分クロール（diff モード）
+			const writer2 = new OutputWriter({ ...defaultConfig, diff: true });
+
+			// 既存ファイルがまだ存在することを確認
+			expect(readFileSync(pagePath1, "utf-8")).toContain("# Page 1 Content");
+
+			// 新しいページのみ追加
+			const pageFile2 = writer2.savePage(
+				"https://example.com/page2",
+				"# Page 2 Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "Page 2" },
+				null,
+			);
+			writer2.saveIndex();
+
+			const pagePath2 = join(testOutputDir, pageFile2);
+
+			// 既存ファイルと新規ファイルの両方が存在することを確認
+			expect(readFileSync(pagePath1, "utf-8")).toContain("# Page 1 Content");
+			expect(readFileSync(pagePath2, "utf-8")).toContain("# Page 2 Content");
+
+			// ページ番号が連続していることを確認
+			expect(pageFile1).toBe("pages/page-001-page-1.md");
+			expect(pageFile2).toBe("pages/page-001-page-2.md"); // writer2 の pageCount は 0 から開始
+		});
+
+		it("should preserve existing files in specs/ directory in diff mode", () => {
+			// 1. 初回クロール（非 diff モード）
+			const writer1 = new OutputWriter({ ...defaultConfig, diff: false });
+			const spec1Content = '{"openapi": "3.0.0"}';
+			writer1.handleSpec("https://api.example.com/openapi.json", spec1Content);
+			writer1.saveIndex();
+
+			const specPath = join(testOutputDir, "specs/openapi.json");
+			expect(readFileSync(specPath, "utf-8")).toBe(spec1Content);
+
+			// 2. 差分クロール（diff モード）
+			const writer2 = new OutputWriter({ ...defaultConfig, diff: true });
+
+			// 既存ファイルがまだ存在することを確認
+			expect(readFileSync(specPath, "utf-8")).toBe(spec1Content);
+
+			// 新しい spec のみ追加
+			const spec2Content = '{"swagger": "2.0"}';
+			writer2.handleSpec("https://api.example.com/swagger.json", spec2Content);
+			writer2.saveIndex();
+
+			// 既存ファイルと新規ファイルの両方が存在することを確認
+			expect(readFileSync(specPath, "utf-8")).toBe(spec1Content);
+			expect(readFileSync(join(testOutputDir, "specs/swagger.json"), "utf-8")).toBe(spec2Content);
+		});
+
+		it("should delete and recreate directories in non-diff mode", () => {
+			// 1. 初回クロール
+			const writer1 = new OutputWriter({ ...defaultConfig, diff: false });
+			writer1.savePage(
+				"https://example.com/page1",
+				"# Old Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "Page 1" },
+				null,
+			);
+			writer1.saveIndex();
+
+			const pagePath = join(testOutputDir, "pages/page-001-page-1.md");
+			expect(readFileSync(pagePath, "utf-8")).toContain("# Old Content");
+
+			// 2. 2回目のクロール（非 diff モード）
+			const writer2 = new OutputWriter({ ...defaultConfig, diff: false });
+
+			// ディレクトリが削除されたため、ファイルが存在しないことを確認
+			expect(() => readFileSync(pagePath, "utf-8")).toThrow();
+		});
+	});
 });

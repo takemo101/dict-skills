@@ -42,14 +42,14 @@ export class OutputWriter {
 			this.logger,
 		);
 
-		// ディレクトリをクリーンアップしてから作成
+		// ディレクトリをクリーンアップしてから作成（diff モードでは既存ファイルを保持）
 		const pagesDir = join(config.outputDir, FILENAME.PAGES_DIR);
 		const specsDir = join(config.outputDir, FILENAME.SPECS_DIR);
 
-		if (existsSync(pagesDir)) {
+		if (!config.diff && existsSync(pagesDir)) {
 			rmSync(pagesDir, { recursive: true, force: true });
 		}
-		if (existsSync(specsDir)) {
+		if (!config.diff && existsSync(specsDir)) {
 			rmSync(specsDir, { recursive: true, force: true });
 		}
 
