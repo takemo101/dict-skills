@@ -140,7 +140,7 @@ function extractAndPreserveCodeBlocks(doc: Document): {
 
 	// コンテンツにコードブロックが含まれていない場合、収集したものを追加
 	if (content && codeBlocks.length > 0) {
-		const hasCodeBlock = CODE_BLOCK_HTML_PATTERNS.some((pattern) => pattern.test(content));
+		const hasCodeBlock = CODE_BLOCK_HTML_PATTERNS.some((pattern) => pattern.test(content!));
 		if (!hasCodeBlock) {
 			content = `${codeBlocks.join("\n")}\n${content}`;
 		}
