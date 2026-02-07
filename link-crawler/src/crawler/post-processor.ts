@@ -19,7 +19,7 @@ export class PostProcessor {
 		logger?: CrawlLogger,
 	) {
 		this.logger = logger ?? new CrawlLogger(config);
-		this.merger = new Merger(config.outputDir);
+		this.merger = new Merger();
 		this.chunker = new Chunker(config.outputDir);
 	}
 

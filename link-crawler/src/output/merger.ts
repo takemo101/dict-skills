@@ -5,9 +5,6 @@ import type { CrawledPage } from "../types.js";
  * 全ページを結合してfull.mdを生成
  */
 export class Merger {
-	// biome-ignore lint/complexity/noUselessConstructor: Maintaining API compatibility
-	constructor(_outputDir: string) {}
-
 	/**
 	 * Markdownから先頭のH1タイトルを除去
 	 * frontmatterがある場合は考慮する
