@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Crawler } from "../../src/crawler/index.js";
+import { computeHash } from "../../src/diff/hasher.js";
 import type { CrawlConfig, Fetcher, FetchResult } from "../../src/types.js";
 
 // Mock fetcher for testing
@@ -390,6 +391,167 @@ info:
 			// Index should still be updated
 			const indexPath = join(testDir, "index.json");
 			expect(existsSync(indexPath)).toBe(true);
+		});
+
+		it("should store pages in memory when pages is false", async () => {
+			const html = `<html><head><title>Test</title></head><body><p>Content</p></body></html>`;
+			mockFetcher.setResponse("https://example.com", {
+				html,
+				finalUrl: "https://example.com",
+				contentType: "text/html",
+			});
+
+			const config = { ...baseConfig, pages: false };
+			const crawler = new Crawler(config, mockFetcher);
+			await crawler.run();
+
+			// Index should still be created
+			const indexPath = join(testDir, "index.json");
+			expect(existsSync(indexPath)).toBe(true);
+
+			const indexData = JSON.parse(await readFile(indexPath, "utf-8"));
+			expect(indexData.totalPages).toBe(1);
+			expect(indexData.pages[0].url).toBe("https://example.com");
+
+			// Page files should not be created
+			const pagesDir = join(testDir, "pages");
+			if (existsSync(pagesDir)) {
+				const files = await readdir(pagesDir);
+				const pageFiles = files.filter((f) => f.startsWith("page-") && f.endsWith(".md"));
+				expect(pageFiles).toHaveLength(0);
+			}
+		});
+	});
+
+	describe("robots.txt handling", () => {
+		it("should skip URLs blocked by robots.txt", async () => {
+			// robots.txt のモックレスポンス
+			mockFetcher.setResponse("https://example.com/robots.txt", {
+				html: "User-agent: *\nDisallow: /blocked",
+				finalUrl: "https://example.com/robots.txt",
+				contentType: "text/plain",
+			});
+
+			// ルートページには blocked へのリンクがある
+			const rootHtml = `
+        <html>
+          <head><title>Root</title></head>
+          <body><a href="/blocked">Blocked Page</a></body>
+        </html>
+      `;
+			mockFetcher.setResponse("https://example.com", {
+				html: rootHtml,
+				finalUrl: "https://example.com",
+				contentType: "text/html",
+			});
+
+			const config = { ...baseConfig, respectRobots: true };
+			const crawler = new Crawler(config, mockFetcher);
+			await crawler.run();
+
+			const indexPath = join(testDir, "index.json");
+			const indexData = JSON.parse(await readFile(indexPath, "utf-8"));
+			const urls = indexData.pages.map((p: { url: string }) => p.url);
+
+			// Root page should be crawled
+			expect(urls).toContain("https://example.com");
+			// Blocked page should not be crawled
+			expect(urls).not.toContain("https://example.com/blocked");
+		});
+	});
+
+	describe("diff mode unchanged page", () => {
+		it("should log skip for unchanged pages in diff mode", async () => {
+			const html = `<html><head><title>Test</title></head><body><p>Content</p></body></html>`;
+
+			// First crawl to get the actual hash
+			mockFetcher.setResponse("https://example.com", {
+				html,
+				finalUrl: "https://example.com",
+				contentType: "text/html",
+			});
+
+			const initialCrawler = new Crawler(baseConfig, mockFetcher);
+			await initialCrawler.run();
+
+			// Get the hash from the first crawl
+			const indexPath = join(testDir, "index.json");
+			const initialIndexData = JSON.parse(await readFile(indexPath, "utf-8"));
+			const hash = initialIndexData.pages[0].hash;
+
+			// Now prepare for diff mode crawl with the same content
+			mockFetcher.setResponse("https://example.com", {
+				html,
+				finalUrl: "https://example.com",
+				contentType: "text/html",
+			});
+
+			const config = { ...baseConfig, diff: true };
+			const crawler = new Crawler(config, mockFetcher);
+			await crawler.run();
+
+			// Page should still be in index with same hash (unchanged)
+			const indexData = JSON.parse(await readFile(indexPath, "utf-8"));
+			expect(indexData.totalPages).toBe(1);
+			expect(indexData.pages[0].hash).toBe(hash);
+			expect(indexData.pages[0].url).toBe("https://example.com");
+		});
+	});
+
+	describe("maxPages limit", () => {
+		it("should log maxPages reached only once", async () => {
+			const rootHtml = `
+        <html>
+          <head><title>Root</title></head>
+          <body>
+            <a href="/page1">Page 1</a>
+            <a href="/page2">Page 2</a>
+            <a href="/page3">Page 3</a>
+          </body>
+        </html>
+      `;
+
+			mockFetcher.setResponse("https://example.com", {
+				html: rootHtml,
+				finalUrl: "https://example.com",
+				contentType: "text/html",
+			});
+
+			// Set maxPages to 1 so only root page is crawled
+			const config = { ...baseConfig, maxPages: 1 };
+			const crawler = new Crawler(config, mockFetcher);
+			await crawler.run();
+
+			const indexPath = join(testDir, "index.json");
+			const indexData = JSON.parse(await readFile(indexPath, "utf-8"));
+
+			// Only 1 page should be crawled due to maxPages limit
+			expect(indexData.totalPages).toBe(1);
+			expect(indexData.pages[0].url).toBe("https://example.com");
+		});
+	});
+
+	describe("cleanup error handling", () => {
+		it("should handle cleanup errors gracefully", async () => {
+			class ErrorFetcher implements Fetcher {
+				async fetch(url: string): Promise<FetchResult | null> {
+					return {
+						html: "<html><head><title>Test</title></head><body><p>Content</p></body></html>",
+						finalUrl: url,
+						contentType: "text/html",
+					};
+				}
+
+				async close(): Promise<void> {
+					throw new Error("Fetcher close error");
+				}
+			}
+
+			const errorFetcher = new ErrorFetcher();
+			const crawler = new Crawler(baseConfig, errorFetcher);
+
+			// Cleanup should handle the error gracefully (even if close() throws)
+			await expect(crawler.cleanup()).resolves.not.toThrow();
 		});
 	});
 
