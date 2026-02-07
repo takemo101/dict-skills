@@ -25,7 +25,7 @@ node_modules/
 dist/
 
 # Coverage
-coverage/
+**/coverage/
 
 # Test fixture directories
 link-crawler/tests/**/.test-*/
