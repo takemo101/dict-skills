@@ -342,8 +342,8 @@ describe("OutputWriter", () => {
 				{ ...defaultMetadata, title: "日本語タイトル" },
 				null,
 			);
-			// Japanese characters are now preserved by slugify
-			expect(pageFile).toBe("pages/page-001-日本語タイトル.md");
+			// Non-ASCII characters are removed, resulting in sequential number only
+			expect(pageFile).toBe("pages/page-001.md");
 		});
 
 		it("should handle mixed alphanumeric and Japanese", () => {
@@ -356,8 +356,8 @@ describe("OutputWriter", () => {
 				{ ...defaultMetadata, title: "日本語Englishタイトル123" },
 				null,
 			);
-			// Both ASCII and Japanese characters are preserved
-			expect(pageFile).toBe("pages/page-001-日本語englishタイトル123.md");
+			// Non-ASCII characters are removed, only ASCII remains
+			expect(pageFile).toBe("pages/page-001-english123.md");
 		});
 
 		it("should handle Chinese titles (simplified)", () => {
@@ -370,7 +370,8 @@ describe("OutputWriter", () => {
 				{ ...defaultMetadata, title: "配置指南" },
 				null,
 			);
-			expect(pageFile).toBe("pages/page-001-配置指南.md");
+			// Non-ASCII characters are removed, resulting in sequential number only
+			expect(pageFile).toBe("pages/page-001.md");
 		});
 
 		it("should handle Chinese titles (traditional)", () => {
@@ -383,7 +384,8 @@ describe("OutputWriter", () => {
 				{ ...defaultMetadata, title: "設定指南" },
 				null,
 			);
-			expect(pageFile).toBe("pages/page-001-設定指南.md");
+			// Non-ASCII characters are removed, resulting in sequential number only
+			expect(pageFile).toBe("pages/page-001.md");
 		});
 
 		it("should handle Korean titles", () => {
@@ -396,7 +398,8 @@ describe("OutputWriter", () => {
 				{ ...defaultMetadata, title: "시작하기 가이드" },
 				null,
 			);
-			expect(pageFile).toBe("pages/page-001-시작하기-가이드.md");
+			// Non-ASCII characters are removed, resulting in sequential number only
+			expect(pageFile).toBe("pages/page-001.md");
 		});
 
 		it("should remove emoji from titles", () => {
@@ -409,7 +412,7 @@ describe("OutputWriter", () => {
 				{ ...defaultMetadata, title: "Getting Started 🚀 Guide 😊" },
 				null,
 			);
-			// Emoji are removed, but spaces between words become hyphens
+			// Emoji and non-ASCII characters are removed, spaces become hyphens
 			expect(pageFile).toBe("pages/page-001-getting-started-guide.md");
 		});
 
@@ -426,9 +429,8 @@ describe("OutputWriter", () => {
 				{ ...defaultMetadata, title: longTitle },
 				null,
 			);
-			// Should be truncated to 50 characters
-			const expectedSlug = longTitle.slice(0, 50);
-			expect(pageFile).toBe(`pages/page-001-${expectedSlug}.md`);
+			// All non-ASCII characters are removed, resulting in sequential number only
+			expect(pageFile).toBe("pages/page-001.md");
 		});
 
 		it("should handle Arabic titles", () => {
@@ -441,7 +443,8 @@ describe("OutputWriter", () => {
 				{ ...defaultMetadata, title: "دليل البدء" },
 				null,
 			);
-			expect(pageFile).toBe("pages/page-001-دليل-البدء.md");
+			// Non-ASCII characters are removed, resulting in sequential number only
+			expect(pageFile).toBe("pages/page-001.md");
 		});
 
 		it("should handle Cyrillic titles", () => {
@@ -454,7 +457,36 @@ describe("OutputWriter", () => {
 				{ ...defaultMetadata, title: "Руководство по началу работы" },
 				null,
 			);
-			expect(pageFile).toBe("pages/page-001-руководство-по-началу-работы.md");
+			// Non-ASCII characters are removed, resulting in sequential number only
+			expect(pageFile).toBe("pages/page-001.md");
+		});
+
+		it("should remove all non-ASCII characters from mixed title", () => {
+			const writer = new OutputWriter(defaultConfig);
+			const pageFile = writer.savePage(
+				"https://example.com",
+				"# Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "Hello世界World" },
+				null,
+			);
+			// Non-ASCII characters (世界) are removed, "HelloWorld" becomes "helloworld"
+			expect(pageFile).toBe("pages/page-001-helloworld.md");
+		});
+
+		it("should fallback to sequential number when title becomes empty after slugify", () => {
+			const writer = new OutputWriter(defaultConfig);
+			const pageFile = writer.savePage(
+				"https://example.com",
+				"# Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "日本語のみ" },
+				null,
+			);
+			// All characters are non-ASCII and removed, resulting in empty string
+			expect(pageFile).toBe("pages/page-001.md");
 		});
 	});
 
