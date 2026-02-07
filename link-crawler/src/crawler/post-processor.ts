@@ -46,14 +46,14 @@ export class PostProcessor {
 		// Merger実行 (--no-merge時はスキップ)
 		if (this.config.merge) {
 			this.logger.logMergerStart();
-			
+
 			// メモリ上で内容を生成
 			fullMdContent = this.merger.buildFullContent(pages, contents);
-			
+
 			// ディスクに書き込み
 			const outputPath = join(this.config.outputDir, "full.md");
 			writeFileSync(outputPath, fullMdContent);
-			
+
 			this.logger.logMergerComplete(outputPath);
 		} else if (this.config.chunks) {
 			// mergeなしでchunksのみの場合は、Mergerを使ってメモリから結合内容を生成

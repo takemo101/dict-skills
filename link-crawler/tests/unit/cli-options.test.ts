@@ -43,11 +43,7 @@ function parseCliArgs(args: string[]): Record<string, unknown> {
 		.option("--no-pages", "Skip individual page output")
 		.option("--no-merge", "Skip merged output file")
 		.option("--chunks", "Enable chunked output files", false)
-		.option(
-			"--keep-session",
-			"Keep .playwright-cli directory after crawl (for debugging)",
-			false,
-		)
+		.option("--keep-session", "Keep .playwright-cli directory after crawl (for debugging)", false)
 		.option("--no-robots", "Ignore robots.txt (not recommended)")
 		.parse(args, { from: "user" });
 
@@ -249,12 +245,7 @@ describe("CLI option parsing: multiple options combination", () => {
 	});
 
 	it("handles all output-related options", () => {
-		const opts = parseCliArgs([
-			"https://example.com",
-			"--no-pages",
-			"--no-merge",
-			"--chunks",
-		]);
+		const opts = parseCliArgs(["https://example.com", "--no-pages", "--no-merge", "--chunks"]);
 
 		expect(opts.pages).toBe(false);
 		expect(opts.merge).toBe(false);
@@ -296,14 +287,22 @@ describe("CLI option parsing: multiple options combination", () => {
 describe("CLI option parsing: argument parsing", () => {
 	it("parses the URL argument", () => {
 		const program = new Command();
-		program.name("crawl").exitOverride().argument("<url>", "Starting URL to crawl").parse(["https://example.com"], { from: "user" });
+		program
+			.name("crawl")
+			.exitOverride()
+			.argument("<url>", "Starting URL to crawl")
+			.parse(["https://example.com"], { from: "user" });
 
 		expect(program.args).toEqual(["https://example.com"]);
 	});
 
 	it("parses URL with path", () => {
 		const program = new Command();
-		program.name("crawl").exitOverride().argument("<url>", "Starting URL to crawl").parse(["https://example.com/docs"], { from: "user" });
+		program
+			.name("crawl")
+			.exitOverride()
+			.argument("<url>", "Starting URL to crawl")
+			.parse(["https://example.com/docs"], { from: "user" });
 
 		expect(program.args).toEqual(["https://example.com/docs"]);
 	});
@@ -339,18 +338,10 @@ describe("CLI option parsing: edge cases", () => {
 	});
 
 	it("handles conflicting --same-domain and --no-same-domain (last one wins)", () => {
-		const opts1 = parseCliArgs([
-			"https://example.com",
-			"--same-domain",
-			"--no-same-domain",
-		]);
+		const opts1 = parseCliArgs(["https://example.com", "--same-domain", "--no-same-domain"]);
 		expect(opts1.sameDomain).toBe(false);
 
-		const opts2 = parseCliArgs([
-			"https://example.com",
-			"--no-same-domain",
-			"--same-domain",
-		]);
+		const opts2 = parseCliArgs(["https://example.com", "--no-same-domain", "--same-domain"]);
 		expect(opts2.sameDomain).toBe(true);
 	});
 });
