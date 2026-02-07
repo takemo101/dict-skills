@@ -56,12 +56,13 @@ export const SPEC_PATTERNS: Record<string, RegExp> = {
 /** パス候補 */
 export const PATHS = {
 	/** Node.js実行ファイルの候補 */
-	NODE_PATHS: ["/opt/homebrew/bin/node", "/usr/local/bin/node", "node"],
+	NODE_PATHS: ["/opt/homebrew/bin/node", "/usr/local/bin/node", "/usr/bin/node", "node"],
 	/** Playwright CLIの候補 */
 	PLAYWRIGHT_PATHS: [
 		"/opt/homebrew/bin/playwright-cli",
 		"/usr/local/bin/playwright-cli",
 		...(process.env.HOME ? [`${process.env.HOME}/.npm-global/bin/playwright-cli`] : []),
+		"playwright-cli",
 	],
 } as const;
 

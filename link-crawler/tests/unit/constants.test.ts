@@ -1,48 +1,71 @@
 import { describe, expect, it } from "vitest";
 import { PATHS } from "../../src/constants.js";
 
-describe("PATHS.PLAYWRIGHT_PATHS", () => {
-	it("should not include undefined in paths when HOME is not set", () => {
-		const paths = PATHS.PLAYWRIGHT_PATHS;
+describe("PATHS constants", () => {
+	describe("NODE_PATHS", () => {
+		it("should include macOS paths", () => {
+			expect(PATHS.NODE_PATHS).toContain("/opt/homebrew/bin/node");
+			expect(PATHS.NODE_PATHS).toContain("/usr/local/bin/node");
+		});
 
-		// パス配列に"undefined"文字列が含まれていないことを確認
-		for (const path of paths) {
-			expect(path).not.toContain("undefined");
-			expect(typeof path).toBe("string");
-			expect(path.length).toBeGreaterThan(0);
-		}
+		it("should include Linux path", () => {
+			expect(PATHS.NODE_PATHS).toContain("/usr/bin/node");
+		});
+
+		it("should include PATH fallback", () => {
+			expect(PATHS.NODE_PATHS).toContain("node");
+		});
+
+		it("should have correct order: specific paths before fallback", () => {
+			const paths = PATHS.NODE_PATHS;
+			const fallbackIndex = paths.indexOf("node");
+			const macOSIndices = [
+				paths.indexOf("/opt/homebrew/bin/node"),
+				paths.indexOf("/usr/local/bin/node"),
+			];
+			const linuxIndex = paths.indexOf("/usr/bin/node");
+
+			// All specific paths should come before the fallback
+			for (const index of [...macOSIndices, linuxIndex]) {
+				expect(index).toBeLessThan(fallbackIndex);
+			}
+		});
 	});
 
-	it("should include all valid playwright-cli paths", () => {
-		const paths = PATHS.PLAYWRIGHT_PATHS;
+	describe("PLAYWRIGHT_PATHS", () => {
+		it("should include macOS paths", () => {
+			expect(PATHS.PLAYWRIGHT_PATHS).toContain("/opt/homebrew/bin/playwright-cli");
+			expect(PATHS.PLAYWRIGHT_PATHS).toContain("/usr/local/bin/playwright-cli");
+		});
 
-		// 最低限2つのパスが含まれている（/opt/homebrew, /usr/local）
-		expect(paths.length).toBeGreaterThanOrEqual(2);
+		it("should include PATH fallback", () => {
+			expect(PATHS.PLAYWRIGHT_PATHS).toContain("playwright-cli");
+		});
 
-		// 既知のパスが含まれているか
-		expect(paths).toContain("/opt/homebrew/bin/playwright-cli");
-		expect(paths).toContain("/usr/local/bin/playwright-cli");
-	});
+		it("should have correct order: specific paths before fallback", () => {
+			const paths = PATHS.PLAYWRIGHT_PATHS;
+			const fallbackIndex = paths.indexOf("playwright-cli");
+			const macOSIndices = [
+				paths.indexOf("/opt/homebrew/bin/playwright-cli"),
+				paths.indexOf("/usr/local/bin/playwright-cli"),
+			];
 
-	it("should be an array of strings", () => {
-		const paths = PATHS.PLAYWRIGHT_PATHS;
-		expect(Array.isArray(paths)).toBe(true);
-		expect(paths.every((p) => typeof p === "string")).toBe(true);
-	});
-});
+			// All specific paths should come before the fallback
+			for (const index of macOSIndices) {
+				expect(index).toBeLessThan(fallbackIndex);
+			}
+		});
 
-describe("PATHS.NODE_PATHS", () => {
-	it("should be an array of valid node paths", () => {
-		const paths = PATHS.NODE_PATHS;
-		expect(Array.isArray(paths)).toBe(true);
-		expect(paths.length).toBeGreaterThan(0);
-		expect(paths.every((p) => typeof p === "string")).toBe(true);
-	});
+		it("should include HOME-based npm global path when HOME is set", () => {
+			if (process.env.HOME) {
+				const expectedPath = `${process.env.HOME}/.npm-global/bin/playwright-cli`;
+				expect(PATHS.PLAYWRIGHT_PATHS).toContain(expectedPath);
+			}
+		});
 
-	it("should not contain undefined in any path", () => {
-		const paths = PATHS.NODE_PATHS;
-		for (const path of paths) {
-			expect(path).not.toContain("undefined");
-		}
+		it("should have fallback as last element", () => {
+			const paths = PATHS.PLAYWRIGHT_PATHS;
+			expect(paths[paths.length - 1]).toBe("playwright-cli");
+		});
 	});
 });
