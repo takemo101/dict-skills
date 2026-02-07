@@ -6,7 +6,7 @@
  *
  * Strategy:
  * - Test what we CAN test: version loading, imports, basic structure
- * - Focus on improving coverage rather than complex mocking scenarios  
+ * - Focus on improving coverage rather than complex mocking scenarios
  * - Signal handlers are tested indirectly through integration tests
  */
 
@@ -20,7 +20,7 @@ describe("crawl.ts entrypoint - code coverage", () => {
 		it("should have access to EXIT_CODES constants", () => {
 			//  crawl.ts uses EXIT_CODES from constants.js
 			expect(EXIT_CODES).toBeDefined();
-		expect(EXIT_CODES.SUCCESS).toBeDefined();
+			expect(EXIT_CODES.SUCCESS).toBeDefined();
 		});
 
 		it("should have access to handleError function", () => {
@@ -34,7 +34,7 @@ describe("crawl.ts entrypoint - code coverage", () => {
 		it("should handle ConfigError with correct exit code", () => {
 			const error = new ConfigError("Invalid config", "test");
 			const result = handleError(error);
-			
+
 			expect(result.exitCode).toBe(EXIT_CODES.INVALID_ARGUMENTS);
 			expect(result.message).toContain("Configuration error");
 		});
@@ -42,7 +42,7 @@ describe("crawl.ts entrypoint - code coverage", () => {
 		it("should handle DependencyError with correct exit code", () => {
 			const error = new DependencyError("Missing dependency", "playwright-cli");
 			const result = handleError(error);
-			
+
 			expect(result.exitCode).toBe(EXIT_CODES.DEPENDENCY_ERROR);
 			expect(result.message).toContain("Missing dependency");
 		});
@@ -50,7 +50,7 @@ describe("crawl.ts entrypoint - code coverage", () => {
 		it("should handle FetchError with correct exit code", () => {
 			const error = new FetchError("Network error", "https://example.com");
 			const result = handleError(error);
-			
+
 			expect(result.exitCode).toBe(EXIT_CODES.CRAWL_ERROR);
 			expect(result.message).toContain("Fetch error");
 		});
@@ -58,7 +58,7 @@ describe("crawl.ts entrypoint - code coverage", () => {
 		it("should handle unknown errors with GENERAL_ERROR code", () => {
 			const error = new Error("Unknown error");
 			const result = handleError(error);
-			
+
 			expect(result.exitCode).toBe(EXIT_CODES.GENERAL_ERROR);
 			expect(result.message).toContain("Fatal error");
 		});
