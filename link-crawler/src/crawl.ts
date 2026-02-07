@@ -94,4 +94,8 @@ async function main(): Promise<void> {
 	}
 }
 
-main();
+main().catch((error) => {
+	const { message, exitCode } = handleError(error);
+	console.error(message);
+	process.exit(exitCode);
+});
