@@ -17,6 +17,9 @@ export class CrawlLogger {
 		console.log(`\n🕷️  Link Crawler v2.0`);
 		console.log(`   URL: ${this.config.startUrl}`);
 		console.log(`   Depth: ${this.config.maxDepth}`);
+		if (this.config.maxPages !== null) {
+			console.log(`   Max pages: ${this.config.maxPages}`);
+		}
 		console.log(`   Output: ${this.config.outputDir}`);
 		console.log(`   Mode: playwright-cli`);
 		console.log(`   Same domain only: ${this.config.sameDomain}`);
@@ -75,6 +78,11 @@ export class CrawlLogger {
 		const indent = "  ".repeat(depth);
 		console.log(`${indent}  ⏭️  Skipped (unchanged)`);
 		this.skippedCount++;
+	}
+
+	/** 最大ページ数到達ログ */
+	logMaxPagesReached(limit: number): void {
+		console.log(`\n⚠️  Max pages limit reached (${limit})`);
 	}
 
 	/** 仕様ファイル検出ログ */

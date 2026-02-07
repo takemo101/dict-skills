@@ -22,6 +22,8 @@ export class Crawler {
 	/** メモリ内のページ内容 (--no-pages時に使用) */
 	private pageContents = new Map<string, string>();
 	private fetcherPromise?: Promise<Fetcher>;
+	/** 最大ページ数到達ログの重複防止 */
+	private maxPagesReachedLogged = false;
 
 	constructor(
 		private config: CrawlConfig,
@@ -108,6 +110,15 @@ export class Crawler {
 
 	/** 再帰クロール */
 	private async crawl(url: string, depth: number): Promise<void> {
+		// Check max pages limit (if set)
+		if (this.config.maxPages !== null && this.visited.size >= this.config.maxPages) {
+			if (!this.maxPagesReachedLogged) {
+				this.logger.logMaxPagesReached(this.config.maxPages);
+				this.maxPagesReachedLogged = true;
+			}
+			return;
+		}
+
 		if (depth > this.config.maxDepth || this.visited.has(url)) {
 			return;
 		}

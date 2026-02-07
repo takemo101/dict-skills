@@ -2,6 +2,8 @@
 export interface CrawlConfig {
 	startUrl: string;
 	maxDepth: number;
+	/** 最大クロールページ数（nullは無制限） */
+	maxPages: number | null;
 	outputDir: string;
 	sameDomain: boolean;
 	includePattern: RegExp | null;
