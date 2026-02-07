@@ -2609,26 +2609,6 @@ describe("extractContent - DOM mutation isolation (Issue #712)", () => {
 		`;
 
 		const dom = new JSDOM(html, { url: "https://example.com" });
-		const _visited = new Set<string>();
-		const _config = {
-			startUrl: "https://example.com",
-			maxDepth: 2,
-			maxPages: null,
-			outputDir: "./output",
-			sameDomain: true,
-			includePattern: null,
-			excludePattern: null,
-			delay: 500,
-			timeout: 30000,
-			spaWait: 2000,
-			headed: false,
-			diff: false,
-			pages: true,
-			merge: true,
-			chunks: true,
-			keepSession: false,
-			respectRobots: true,
-		};
 
 		// Extract links BEFORE extractContent (the fix for Issue #712)
 		const linksBefore = dom.window.document.querySelectorAll("a").length;
@@ -2686,26 +2666,6 @@ describe("extractContent - DOM mutation isolation (Issue #712)", () => {
 
 		const dom1 = new JSDOM(html, { url: "https://example.com" });
 		const dom2 = new JSDOM(html, { url: "https://example.com" });
-		const _visited = new Set<string>();
-		const _config = {
-			startUrl: "https://example.com",
-			maxDepth: 2,
-			maxPages: null,
-			outputDir: "./output",
-			sameDomain: true,
-			includePattern: null,
-			excludePattern: null,
-			delay: 500,
-			timeout: 30000,
-			spaWait: 2000,
-			headed: false,
-			diff: false,
-			pages: true,
-			merge: true,
-			chunks: true,
-			keepSession: false,
-			respectRobots: true,
-		};
 
 		// Scenario 1: Extract links BEFORE content (correct order - Issue #712 fix)
 		const linksBeforeExtraction: string[] = [];
