@@ -158,4 +158,9 @@ export class OutputWriter {
 	getIndexManager(): IndexManager {
 		return this.indexManager;
 	}
+
+	/** 訪問済みURLを設定（差分クロール時のマージ範囲制限用） */
+	setVisitedUrls(urls: Set<string>): void {
+		this.indexManager.setVisitedUrls(urls);
+	}
 }

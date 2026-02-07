@@ -26,6 +26,8 @@ export class IndexManager {
 	/** 既存のページ情報（URL→CrawledPage） */
 	private existingPages: Map<string, CrawledPage> = new Map();
 	private pageCount = 0;
+	/** 訪問済みURL（差分クロール時のマージ範囲制限用） */
+	private visitedUrls: Set<string> | null = null;
 
 	constructor(
 		private outputDir: string,
@@ -150,16 +152,32 @@ export class IndexManager {
 	}
 
 	/**
+	 * 訪問済みURLを設定（差分クロール時のマージ範囲制限用）
+	 * @param urls 訪問済みURLのSet
+	 */
+	setVisitedUrls(urls: Set<string>): void {
+		this.visitedUrls = urls;
+	}
+
+	/**
 	 * 既存のページ情報を結果にマージ
 	 * 差分クロール時、スキップされたページの情報を保持するために使用
 	 */
 	private mergeExistingPages(): void {
 		for (const [url, page] of this.existingPages) {
 			// 既に登録済みのページはスキップ
-			if (!this.result.pages.some((p) => p.url === url)) {
-				this.result.pages.push(page);
-				this.result.totalPages++;
+			if (this.result.pages.some((p) => p.url === url)) {
+				continue;
 			}
+
+			// 訪問済みURLリストが設定されている場合、
+			// 訪問されたページのみマージ（削除されたページは除外）
+			if (this.visitedUrls && !this.visitedUrls.has(url)) {
+				continue;
+			}
+
+			this.result.pages.push(page);
+			this.result.totalPages++;
 		}
 	}
 
