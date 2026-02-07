@@ -4,6 +4,7 @@ export default defineConfig({
 	test: {
 		globals: true,
 		include: ["tests/**/*.test.ts"],
+		globalSetup: "./tests/global-setup.ts",
 		globalTeardown: "./tests/global-teardown.ts",
 		// Enable file-level parallelism for faster test execution
 		// forks pool provides complete isolation between test files

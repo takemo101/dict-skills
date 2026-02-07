@@ -15,7 +15,7 @@ function cleanupTestDirectories(
 			if (pattern(entry)) {
 				const fullPath = join(baseDir, entry);
 				rmSync(fullPath, { recursive: true, force: true });
-				console.log(`✓ Cleaned up: ${relativePath}${entry}`);
+				console.log(`✓ Cleaned up (pre-test): ${relativePath}${entry}`);
 			}
 		}
 	} catch (error) {
@@ -23,8 +23,10 @@ function cleanupTestDirectories(
 	}
 }
 
-export default async function globalTeardown() {
+export default async function globalSetup() {
 	const linkCrawlerDir = join(import.meta.dirname, "..");
+
+	console.log("🧹 Cleaning up old test directories before running tests...");
 
 	// Clean up test-output-* directories in link-crawler root
 	cleanupTestDirectories(
@@ -36,10 +38,6 @@ export default async function globalTeardown() {
 	const testsUnitDir = join(linkCrawlerDir, "tests", "unit");
 
 	// Clean up all .test-* directories in tests/unit
-	// This includes:
-	// - .test-index-manager-*
-	// - .test-crawler*
-	// - any other test temporary directories
 	cleanupTestDirectories(
 		testsUnitDir,
 		(entry) => entry.startsWith(".test-"),
