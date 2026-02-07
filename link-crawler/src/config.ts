@@ -45,7 +45,9 @@ export function parseConfig(options: Record<string, unknown>, startUrl: string):
 
 	// Warn when all output formats are disabled
 	if (!config.pages && !config.merge && !config.chunks) {
-		console.warn("⚠️  Warning: All output formats are disabled (--no-pages --no-merge without --chunks).");
+		console.warn(
+			"⚠️  Warning: All output formats are disabled (--no-pages --no-merge without --chunks).",
+		);
 		console.warn("   Only index.json will be generated. Consider adding --chunks.");
 	}
 
