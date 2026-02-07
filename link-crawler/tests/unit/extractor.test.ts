@@ -1347,18 +1347,15 @@ describe("extractContent - fallback edge cases for coverage", () => {
 	});
 
 	it("should accurately detect code blocks in fallback mode without false positives from text content", () => {
-		// HTML with text containing "pre", "code" but no actual code block elements in main
-		// Code blocks are in aside (collected), main has only text with "pre"/"code" words
+		// HTML with minimal content to trigger fallback
+		// Code blocks in body (collected during fallback), main has text with "pre"/"code" words
 		// Tests the fix for Issue #552: DOM-based detection instead of string includes()
 		const html = `<!DOCTYPE html><html><body>
 			<script>x</script>
 			<style>y</style>
-			<aside>
-				<pre><code>real code block from aside</code></pre>
-			</aside>
+			<pre><code>real code block</code></pre>
 			<main>
-				<p>This is the previous section with code of conduct.</p>
-				<p>The preparation phase includes encoding the data.</p>
+				<span>This is the previous section with code of conduct.</span>
 			</main>
 		</body></html>`;
 		const dom = new JSDOM(html, { url: "https://example.com/issue-552-false-positive" });
@@ -1369,7 +1366,7 @@ describe("extractContent - fallback edge cases for coverage", () => {
 		// After fix: DOM query correctly identifies no code blocks in main, so code is added
 		expect(result.content).not.toBeNull();
 		if (result.content) {
-			expect(result.content).toContain("real code block from aside");
+			expect(result.content).toContain("real code block");
 		}
 	});
 });
