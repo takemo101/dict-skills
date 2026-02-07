@@ -25,10 +25,7 @@ function parsePattern(pattern: string | undefined, name: string): RegExp | null 
 		// パターン: 量指定子 + 閉じ括弧 + 量指定子
 		// 例: (a+)+, (a*)+, (a+)*, (a{1,})+
 		if (/(\+|\*|\{[^}]*\})\s*\)(\+|\*|\{)/.test(pattern)) {
-			throw new ConfigError(
-				`${name} pattern may cause catastrophic backtracking`,
-				name,
-			);
+			throw new ConfigError(`${name} pattern may cause catastrophic backtracking`, name);
 		}
 
 		return regex;

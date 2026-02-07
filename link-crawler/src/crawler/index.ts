@@ -61,13 +61,13 @@ export class Crawler {
 			this.logger.logDebug("Fetching robots.txt", { url: robotsUrl });
 
 			const result = await this.fetcher.fetch(robotsUrl);
-			if (result && result.contentType.includes("text/plain")) {
+			if (result?.contentType.includes("text/plain")) {
 				this.robotsChecker = new RobotsChecker(result.html);
 				this.logger.logDebug("robots.txt loaded and parsed", { url: robotsUrl });
 			} else {
 				this.logger.logDebug("robots.txt not available (allowing all)");
 			}
-		} catch (error) {
+		} catch (_error) {
 			// 取得失敗時は全許可（エラーログは出力しない）
 			this.logger.logDebug("robots.txt fetch failed (allowing all)");
 		}
