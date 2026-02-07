@@ -6,7 +6,7 @@ import { program } from "commander";
 import { parseConfig } from "./config.js";
 import { EXIT_CODES } from "./constants.js";
 import { Crawler } from "./crawler/index.js";
-import { ConfigError, CrawlError, DependencyError, FetchError, TimeoutError } from "./errors.js";
+import { handleError } from "./error-handler.js";
 
 // package.jsonからバージョンを読み込む
 const __filename = fileURLToPath(import.meta.url);
@@ -88,32 +88,9 @@ async function main(): Promise<void> {
 		await crawler.run();
 		process.exit(EXIT_CODES.SUCCESS);
 	} catch (error) {
-		if (error instanceof DependencyError) {
-			console.error(`✗ ${error.message}`);
-			process.exit(EXIT_CODES.DEPENDENCY_ERROR);
-		}
-		if (error instanceof ConfigError) {
-			console.error(`✗ Configuration error: ${error.message}`);
-			process.exit(EXIT_CODES.INVALID_ARGUMENTS);
-		}
-		if (error instanceof FetchError) {
-			console.error(`✗ Fetch error at ${error.url}: ${error.message}`);
-			process.exit(EXIT_CODES.CRAWL_ERROR);
-		}
-		if (error instanceof TimeoutError) {
-			console.error(`✗ Request timeout after ${error.timeoutMs}ms`);
-			process.exit(EXIT_CODES.CRAWL_ERROR);
-		}
-		// Note: CrawlError check must come after all subclasses (TimeoutError, FetchError, etc.)
-		// to ensure specific error handling takes precedence over the generic handler.
-		if (error instanceof CrawlError) {
-			console.error(`✗ ${error.toString()}`);
-			process.exit(EXIT_CODES.CRAWL_ERROR);
-		}
-		// 未知のエラー
-		const message = error instanceof Error ? error.message : String(error);
-		console.error(`✗ Fatal error: ${message}`);
-		process.exit(EXIT_CODES.GENERAL_ERROR);
+		const { message, exitCode } = handleError(error);
+		console.error(message);
+		process.exit(exitCode);
 	}
 }
 

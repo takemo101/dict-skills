@@ -23,7 +23,7 @@ export default defineConfig({
 			provider: "v8",
 			reporter: ["text", "html", "json-summary"],
 			include: ["src/**/*.ts"],
-			exclude: ["src/crawl.ts"],
+			exclude: [],
 		},
 	},
 });
