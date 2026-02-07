@@ -16,7 +16,7 @@ agent:
     - claude-sonnet-4-5
 
 parallel:
-  max_concurrent: 5
+  max_concurrent: 10
 
 auto:
   provider: anthropic
