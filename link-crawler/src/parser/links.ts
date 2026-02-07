@@ -53,7 +53,8 @@ export function extractLinks(dom: JSDOM, visited: Set<string>, config: CrawlConf
 			href.startsWith("tel:") ||
 			href.startsWith("data:") ||
 			href.startsWith("blob:") ||
-			href.startsWith("ftp:")
+			href.startsWith("ftp:") ||
+			href.startsWith("file:")
 		) {
 			continue;
 		}

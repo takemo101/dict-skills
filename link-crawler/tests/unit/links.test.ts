@@ -373,6 +373,48 @@ describe("extractLinks", () => {
 		expect(links[0]).toBe("https://example.com/page");
 	});
 
+	it("should exclude file: links", () => {
+		const html = `
+			<html>
+				<body>
+					<a href="file:///etc/hosts">File</a>
+					<a href="/page">Page</a>
+				</body>
+			</html>
+		`;
+		const visited = new Set<string>();
+		const dom = new JSDOM(html, { url: "https://example.com" });
+		const links = extractLinks(dom, visited, baseConfig);
+
+		expect(links).toHaveLength(1);
+		expect(links[0]).toBe("https://example.com/page");
+	});
+
+	it("should exclude multiple non-http schemes", () => {
+		const html = `
+			<html>
+				<body>
+					<a href="tel:+1234567890">Call</a>
+					<a href="mailto:test@example.com">Email</a>
+					<a href="javascript:void(0)">JS</a>
+					<a href="data:text/plain,test">Data</a>
+					<a href="blob:abc-123">Blob</a>
+					<a href="ftp://ftp.example.com/file">FTP</a>
+					<a href="file:///path">File</a>
+					<a href="/page1">Page 1</a>
+					<a href="/page2">Page 2</a>
+				</body>
+			</html>
+		`;
+		const visited = new Set<string>();
+		const dom = new JSDOM(html, { url: "https://example.com" });
+		const links = extractLinks(dom, visited, baseConfig);
+
+		expect(links).toHaveLength(2);
+		expect(links).toContain("https://example.com/page1");
+		expect(links).toContain("https://example.com/page2");
+	});
+
 	it("should exclude visited links", () => {
 		const html = `
 			<html>
