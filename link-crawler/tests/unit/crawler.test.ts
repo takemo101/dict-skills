@@ -40,6 +40,7 @@ describe("Crawler", () => {
 		baseConfig = {
 			startUrl: "https://example.com",
 			maxDepth: 2,
+			maxPages: null,
 			outputDir: testDir,
 			sameDomain: true,
 			includePattern: null,
@@ -53,6 +54,7 @@ describe("Crawler", () => {
 			merge: false,
 			chunks: false,
 			keepSession: false,
+			respectRobots: true,
 		};
 	});
 
