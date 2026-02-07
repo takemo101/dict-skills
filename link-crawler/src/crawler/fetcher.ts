@@ -95,6 +95,7 @@ export class PlaywrightFetcher implements Fetcher {
 				return null;
 			}
 			// 制御文字のチェックを追加
+			// biome-ignore lint/suspicious/noControlCharactersInRegex: Intentional check for control characters in URLs
 			if (/[\x00-\x1f\x7f]/.test(url)) {
 				return null;
 			}
