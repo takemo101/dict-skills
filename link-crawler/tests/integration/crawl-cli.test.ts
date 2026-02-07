@@ -8,7 +8,7 @@
  */
 
 import { execSync } from "node:child_process";
-import { existsSync, mkdirSync, rm, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, rm } from "node:fs";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 const TEST_OUTPUT_DIR = "tests/integration/.test-crawl-cli";
@@ -59,9 +59,13 @@ describe("crawl CLI integration", () => {
 			});
 			// Should not reach here
 			expect.fail("Should have thrown an error");
-		} catch (error: any) {
+		} catch (error: unknown) {
 			// Should exit with non-zero code
-			expect(error.status).toBeGreaterThan(0);
+			if (error && typeof error === "object" && "status" in error) {
+				expect((error as { status: number }).status).toBeGreaterThan(0);
+			} else {
+				throw error;
+			}
 		}
 	});
 
@@ -71,22 +75,23 @@ describe("crawl CLI integration", () => {
 		const outputDir = `${TEST_OUTPUT_DIR}/output-example`;
 
 		try {
-			const result = execSync(
-				`bun run src/crawl.ts "https://example.com" -d 0 -o "${outputDir}"`,
-				{
-					encoding: "utf-8",
-					cwd: process.cwd(),
-					stdio: "pipe",
-					timeout: 30000,
-				},
-			);
+			const result = execSync(`bun run src/crawl.ts "https://example.com" -d 0 -o "${outputDir}"`, {
+				encoding: "utf-8",
+				cwd: process.cwd(),
+				stdio: "pipe",
+				timeout: 30000,
+			});
 
 			// Should complete successfully
 			expect(result).toContain("Crawl complete");
-		} catch (error: any) {
+		} catch (error: unknown) {
 			// If it times out or has network issues, that's okay
 			// The important thing is it didn't fail with INVALID_ARGUMENTS (exit code 2)
-			expect(error.status).not.toBe(2);
+			if (error && typeof error === "object" && "status" in error) {
+				expect((error as { status: number }).status).not.toBe(2);
+			} else {
+				throw error;
+			}
 		}
 	}, 35000); // Increase timeout for real crawl
 
@@ -98,9 +103,13 @@ describe("crawl CLI integration", () => {
 				stdio: "pipe",
 			});
 			expect.fail("Should have thrown an error");
-		} catch (error: any) {
+		} catch (error: unknown) {
 			// Should exit with an error code (not 0)
-			expect(error.status).not.toBe(0);
+			if (error && typeof error === "object" && "status" in error) {
+				expect((error as { status: number }).status).not.toBe(0);
+			} else {
+				throw error;
+			}
 		}
 	});
 });
