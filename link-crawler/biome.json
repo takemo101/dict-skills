@@ -7,13 +7,7 @@
 		"useIgnoreFile": true
 	},
 	"files": {
-		"includes": [
-			"src/**/*.ts",
-			"tests/**/*.ts",
-			"!**/.worktrees/**/*",
-			"!**/node_modules/**/*",
-			"!dist/**/*"
-		],
+		"includes": ["src/**/*.ts", "tests/**/*.ts", "!**/node_modules/**/*", "!dist/**/*"],
 		"ignoreUnknown": true
 	},
 	"linter": {
