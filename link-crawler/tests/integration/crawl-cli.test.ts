@@ -8,7 +8,7 @@
  */
 
 import { execSync } from "node:child_process";
-import { existsSync, mkdirSync, rm } from "node:fs";
+import { existsSync, mkdirSync, rmSync } from "node:fs";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 const TEST_OUTPUT_DIR = "tests/integration/.test-crawl-cli";
@@ -17,7 +17,7 @@ describe("crawl CLI integration", () => {
 	beforeAll(() => {
 		// Ensure test output directory exists
 		if (existsSync(TEST_OUTPUT_DIR)) {
-			rm(TEST_OUTPUT_DIR, { recursive: true, force: true }, () => {});
+			rmSync(TEST_OUTPUT_DIR, { recursive: true, force: true });
 		}
 		mkdirSync(TEST_OUTPUT_DIR, { recursive: true });
 	});
@@ -25,7 +25,7 @@ describe("crawl CLI integration", () => {
 	afterAll(() => {
 		// Cleanup
 		if (existsSync(TEST_OUTPUT_DIR)) {
-			rm(TEST_OUTPUT_DIR, { recursive: true, force: true }, () => {});
+			rmSync(TEST_OUTPUT_DIR, { recursive: true, force: true });
 		}
 	});
 
