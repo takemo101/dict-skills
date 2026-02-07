@@ -87,6 +87,7 @@ link-crawler/
 │   │   ├── index.ts            # CrawlerEngine
 │   │   ├── fetcher.ts          # PlaywrightFetcher
 │   │   ├── logger.ts           # ログ出力
+│   │   ├── robots.ts           # robots.txt パーサー
 │   │   └── post-processor.ts   # 後処理
 │   │
 │   ├── parser/
@@ -125,6 +126,7 @@ link-crawler/
 | `Errors` | エラークラス定義（CrawlError, FetchError, ConfigError等） | Error情報 | Typed Error |
 | `CrawlerEngine` | クロール制御、再帰管理 | URL, Config | CrawledPages |
 | `PlaywrightFetcher` | ページ取得 | URL | HTML |
+| `RobotsChecker` | robots.txt のパースとURL許可判定 | robots.txt, URL | boolean |
 | `CrawlLogger` | クロールログ出力（開始、進捗、完了、エラー等） | Config, Events | コンソール出力 |
 | `PostProcessor` | 後処理実行（Merger/Chunker呼び出し、ページ内容読み込み） | CrawledPages | full.md, chunks/ |
 | `Extractor` | 本文抽出 | HTML | ContentHTML |
@@ -158,9 +160,18 @@ link-crawler/
 └──────────┬──────────┘
            │
            ▼
+┌─────────────────────┐
+│ 2.5 robots.txt 取得 │ respectRobots=true
+│     とパース        │ の場合のみ
+└──────────┬──────────┘
+           │
+           ▼
 ┌─────────────────────────────────────────┐
 │ 3. クロールループ                        │
 │  ┌─────────────────────────────────────┐│
+│  │ 3.0 robots.txt チェック             ││
+│  │     (respectRobots=true の場合)    ││
+│  │     └─ 不許可 → スキップ           ││
 │  │ 3.1 playwright-cli でHTML取得       ││
 │  │ 3.2 contentType判定 (API spec分岐)  ││
 │  │ 3.3 メタデータ抽出 (JSDOM)          ││
@@ -226,6 +237,8 @@ link-crawler/
 interface CrawlConfig {
   startUrl: string;
   maxDepth: number;
+  /** 最大クロールページ数（nullは無制限） */
+  maxPages: number | null;
   outputDir: string;
   sameDomain: boolean;
   includePattern: RegExp | null;
@@ -239,6 +252,8 @@ interface CrawlConfig {
   merge: boolean;
   chunks: boolean;
   keepSession: boolean;
+  /** robots.txt を尊重するか（デフォルト: true） */
+  respectRobots: boolean;
 }
 
 /** ページメタデータ */
