@@ -94,6 +94,24 @@ describe("BunRuntimeAdapter", () => {
 			expect(result.exitCode).toBe(-1);
 			expect(result.stderr).toBe("command not found");
 		});
+
+		it("should handle spawn error with non-Error object", async () => {
+			const mockBunApi: BunAPI = {
+				spawn: vi.fn().mockImplementation(() => {
+					// eslint-disable-next-line @typescript-eslint/only-throw-error
+					throw "string error"; // 文字列をスロー
+				}),
+				sleep: vi.fn(),
+				file: vi.fn(),
+			} as BunAPI;
+
+			const adapter = new BunRuntimeAdapter(mockBunApi);
+			const result = await adapter.spawn("nonexistent", []);
+
+			expect(result.success).toBe(false);
+			expect(result.exitCode).toBe(-1);
+			expect(result.stderr).toBe("command not found");
+		});
 	});
 
 	describe("sleep", () => {
@@ -216,6 +234,15 @@ describe("NodeRuntimeAdapter", () => {
 				await unlink(testFile).catch(() => {});
 			}
 		});
+
+		it("should reject when file does not exist", async () => {
+			const { join } = await import("node:path");
+			const { tmpdir } = await import("node:os");
+
+			const nonExistentFile = join(tmpdir(), `non-existent-${Date.now()}.txt`);
+
+			await expect(adapter.readFile(nonExistentFile)).rejects.toThrow();
+		});
 	});
 
 	describe("cwd", () => {
@@ -254,6 +281,20 @@ describe("createRuntimeAdapter", () => {
 			// Bun環境では、createRuntimeAdapterがBunRuntimeAdapterを返すことを確認
 			const adapter = createRuntimeAdapter();
 			expect(adapter).toBeInstanceOf(BunRuntimeAdapter);
+		}
+	});
+
+	it("should return NodeRuntimeAdapter when Bun is not available (mocked)", () => {
+		// globalThis.Bun を一時的に undefined にして Node.js パスをテスト
+		const originalBun = globalThis.Bun;
+		try {
+			// @ts-expect-error - テストのために一時的に undefined を設定
+			globalThis.Bun = undefined;
+			const adapter = createRuntimeAdapter();
+			expect(adapter).toBeInstanceOf(NodeRuntimeAdapter);
+		} finally {
+			// 元に戻す
+			globalThis.Bun = originalBun;
 		}
 	});
 });

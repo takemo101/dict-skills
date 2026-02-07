@@ -322,11 +322,11 @@ describe("extractLinks", () => {
 		expect(links[0]).toBe("https://example.com/page");
 	});
 
-	it("should exclude data: links", () => {
+	it("should exclude data: URIs", () => {
 		const html = `
 			<html>
 				<body>
-					<a href="data:text/html,<h1>Test</h1>">Data</a>
+					<a href="data:text/html,<h1>Test</h1>">Data URI</a>
 					<a href="/page">Page</a>
 				</body>
 			</html>
@@ -339,11 +339,11 @@ describe("extractLinks", () => {
 		expect(links[0]).toBe("https://example.com/page");
 	});
 
-	it("should exclude blob: links", () => {
+	it("should exclude blob: URLs", () => {
 		const html = `
 			<html>
 				<body>
-					<a href="blob:https://example.com/abc-123">Blob</a>
+					<a href="blob:https://example.com/some-guid">Blob</a>
 					<a href="/page">Page</a>
 				</body>
 			</html>
