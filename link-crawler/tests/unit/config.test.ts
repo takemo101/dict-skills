@@ -399,3 +399,176 @@ describe("parseConfig - boundary value validation", () => {
 		expect(config.maxDepth).toBe(5);
 	});
 });
+
+describe("parseConfig - ReDoS protection", () => {
+	it("should reject patterns with nested quantifiers", () => {
+		expect(() => {
+			parseConfig({ include: "(a+)+" }, "https://example.com");
+		}).toThrow(ConfigError);
+
+		expect(() => {
+			parseConfig({ include: "(a+)+" }, "https://example.com");
+		}).toThrowError(/catastrophic backtracking/);
+	});
+
+	it("should reject various forms of nested quantifiers in include pattern", () => {
+		const dangerousPatterns = ["(a+)+", "(a*)+", "(a+)*", "(a{1,10})+", "^/docs/(.*)+$"];
+
+		for (const pattern of dangerousPatterns) {
+			expect(() => {
+				parseConfig({ include: pattern }, "https://example.com");
+			}).toThrowError(/catastrophic backtracking/);
+		}
+	});
+
+	it("should reject nested quantifiers in exclude pattern", () => {
+		expect(() => {
+			parseConfig({ exclude: "(b+)+" }, "https://example.com");
+		}).toThrow(ConfigError);
+
+		expect(() => {
+			parseConfig({ exclude: "(b+)+" }, "https://example.com");
+		}).toThrowError(/catastrophic backtracking/);
+	});
+
+	it("should accept safe patterns without nested quantifiers", () => {
+		const safePatterns = [
+			"^/docs",
+			"\\.pdf$",
+			"^/(foo|bar)+$", // 単一の量指定子
+			"^/docs/.*$",
+		];
+
+		for (const pattern of safePatterns) {
+			expect(() => {
+				parseConfig({ include: pattern }, "https://example.com");
+			}).not.toThrow();
+		}
+	});
+
+	it("should set configKey in ConfigError for ReDoS pattern", () => {
+		try {
+			parseConfig({ include: "(a+)+" }, "https://example.com");
+			expect.fail("Should have thrown ConfigError");
+		} catch (error) {
+			expect(error).toBeInstanceOf(ConfigError);
+			expect((error as ConfigError).configKey).toBe("include");
+		}
+
+		try {
+			parseConfig({ exclude: "(b+)+" }, "https://example.com");
+			expect.fail("Should have thrown ConfigError");
+		} catch (error) {
+			expect(error).toBeInstanceOf(ConfigError);
+			expect((error as ConfigError).configKey).toBe("exclude");
+		}
+	});
+});
+
+describe("parseConfig - pattern length limit", () => {
+	it("should reject patterns longer than 200 characters", () => {
+		const longPattern = "a".repeat(201);
+
+		expect(() => {
+			parseConfig({ include: longPattern }, "https://example.com");
+		}).toThrow(ConfigError);
+
+		expect(() => {
+			parseConfig({ include: longPattern }, "https://example.com");
+		}).toThrowError(/pattern too long/);
+	});
+
+	it("should accept patterns up to 200 characters", () => {
+		const maxPattern = "a".repeat(200);
+
+		expect(() => {
+			parseConfig({ include: maxPattern }, "https://example.com");
+		}).not.toThrow();
+	});
+
+	it("should reject long exclude patterns", () => {
+		const longPattern = "b".repeat(201);
+
+		expect(() => {
+			parseConfig({ exclude: longPattern }, "https://example.com");
+		}).toThrow(ConfigError);
+
+		expect(() => {
+			parseConfig({ exclude: longPattern }, "https://example.com");
+		}).toThrowError(/pattern too long/);
+	});
+
+	it("should set configKey in ConfigError for long pattern", () => {
+		const longPattern = "a".repeat(201);
+
+		try {
+			parseConfig({ include: longPattern }, "https://example.com");
+			expect.fail("Should have thrown ConfigError");
+		} catch (error) {
+			expect(error).toBeInstanceOf(ConfigError);
+			expect((error as ConfigError).configKey).toBe("include");
+		}
+	});
+});
+
+describe("parseConfig - URL scheme validation", () => {
+	it("should accept https URLs", () => {
+		const config = parseConfig({}, "https://example.com");
+		expect(config.startUrl).toBe("https://example.com");
+	});
+
+	it("should accept http URLs", () => {
+		const config = parseConfig({}, "http://localhost:3000");
+		expect(config.startUrl).toBe("http://localhost:3000");
+	});
+
+	it("should reject file:// URLs", () => {
+		expect(() => {
+			parseConfig({}, "file:///etc/passwd");
+		}).toThrow(ConfigError);
+
+		expect(() => {
+			parseConfig({}, "file:///etc/passwd");
+		}).toThrowError(/Unsupported protocol.*file:/);
+	});
+
+	it("should reject javascript: URLs", () => {
+		expect(() => {
+			parseConfig({}, "javascript:alert(1)");
+		}).toThrow(ConfigError);
+
+		expect(() => {
+			parseConfig({}, "javascript:alert(1)");
+		}).toThrowError(/Unsupported protocol.*javascript:/);
+	});
+
+	it("should reject ftp:// URLs", () => {
+		expect(() => {
+			parseConfig({}, "ftp://example.com");
+		}).toThrow(ConfigError);
+
+		expect(() => {
+			parseConfig({}, "ftp://example.com");
+		}).toThrowError(/Unsupported protocol.*ftp:/);
+	});
+
+	it("should reject data: URLs", () => {
+		expect(() => {
+			parseConfig({}, "data:text/html,<html></html>");
+		}).toThrow(ConfigError);
+
+		expect(() => {
+			parseConfig({}, "data:text/html,<html></html>");
+		}).toThrowError(/Unsupported protocol.*data:/);
+	});
+
+	it("should set configKey to 'startUrl' in ConfigError for unsupported protocol", () => {
+		try {
+			parseConfig({}, "file:///etc/passwd");
+			expect.fail("Should have thrown ConfigError");
+		} catch (error) {
+			expect(error).toBeInstanceOf(ConfigError);
+			expect((error as ConfigError).configKey).toBe("startUrl");
+		}
+	});
+});

@@ -12,8 +12,23 @@ import { generateSiteName } from "./utils/site-name.js";
  */
 function parsePattern(pattern: string | undefined, name: string): RegExp | null {
 	if (!pattern) return null;
+
+	// パターン長の上限（過度に複雑なパターンを拒否）
+	if (pattern.length > 200) {
+		throw new ConfigError(`${name} pattern too long (max 200 chars)`, name);
+	}
+
 	try {
-		return new RegExp(String(pattern));
+		const regex = new RegExp(String(pattern));
+
+		// 簡易的なReDoSチェック: ネストした量指定子を拒否
+		// パターン: 量指定子 + 閉じ括弧 + 量指定子
+		// 例: (a+)+, (a*)+, (a+)*, (a{1,})+
+		if (/(\+|\*|\{[^}]*\})\s*\)(\+|\*|\{)/.test(pattern)) {
+			throw new ConfigError(`${name} pattern may cause catastrophic backtracking`, name);
+		}
+
+		return regex;
 	} catch (e) {
 		const errorMessage = e instanceof Error ? e.message : String(e);
 		throw new ConfigError(`Invalid ${name} pattern: ${errorMessage}`, name);
@@ -22,10 +37,19 @@ function parsePattern(pattern: string | undefined, name: string): RegExp | null 
 
 export function parseConfig(options: Record<string, unknown>, startUrl: string): CrawlConfig {
 	// Validate startUrl format
+	let parsed: URL;
 	try {
-		new URL(startUrl);
+		parsed = new URL(startUrl);
 	} catch {
 		throw new ConfigError(`Invalid URL: ${startUrl}`, "startUrl");
+	}
+
+	// Validate URL scheme (only http/https allowed)
+	if (!["http:", "https:"].includes(parsed.protocol)) {
+		throw new ConfigError(
+			`Unsupported protocol: ${parsed.protocol} (only http/https supported)`,
+			"startUrl",
+		);
 	}
 
 	// Generate site-specific output directory if not specified
