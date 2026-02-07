@@ -36,10 +36,7 @@ export function parseConfig(options: Record<string, unknown>, startUrl: string):
 	const depthValue = Number(options.depth);
 	const maxDepth = Math.max(
 		0,
-		Math.min(
-			Number.isNaN(depthValue) ? DEFAULTS.MAX_DEPTH : depthValue,
-			DEFAULTS.MAX_DEPTH_LIMIT,
-		),
+		Math.min(Number.isNaN(depthValue) ? DEFAULTS.MAX_DEPTH : depthValue, DEFAULTS.MAX_DEPTH_LIMIT),
 	);
 
 	const config: CrawlConfig = {
