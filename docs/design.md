@@ -254,6 +254,8 @@ interface CrawlConfig {
   keepSession: boolean;
   /** robots.txt を尊重するか（デフォルト: true） */
   respectRobots: boolean;
+  /** クローラーのバージョン（package.jsonから取得） */
+  version: string;
 }
 
 /** ページメタデータ */
@@ -282,6 +284,7 @@ interface CrawledPage {
 interface CrawlResult {
   crawledAt: string;
   baseUrl: string;
+  /** クロール設定の一部（実際にはmaxDepthとsameDomainのみ保存される） */
   config: Partial<CrawlConfig>;
   totalPages: number;
   pages: CrawledPage[];
