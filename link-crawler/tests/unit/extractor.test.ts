@@ -1843,7 +1843,7 @@ describe("extractContent - protectCodeBlocks nested elements (lines 53, 62)", ()
 			const initMatches = result.content.match(/git init/g);
 			const addMatches = result.content.match(/git add/g);
 			const commitMatches = result.content.match(/git commit/g);
-			
+
 			expect(initMatches?.length).toBe(1);
 			expect(addMatches?.length).toBe(1);
 			expect(commitMatches?.length).toBe(1);
@@ -1885,7 +1885,7 @@ describe("extractContent - protectCodeBlocks nested elements (lines 53, 62)", ()
 			// First code block should appear once
 			const createMatches = result.content.match(/create-next-app/g);
 			expect(createMatches?.length).toBe(1);
-			
+
 			// Second code block should appear once
 			const functionMatches = result.content.match(/export default function Page/g);
 			expect(functionMatches?.length).toBe(1);
