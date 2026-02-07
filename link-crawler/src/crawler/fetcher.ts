@@ -121,6 +121,10 @@ export class PlaywrightFetcher implements Fetcher {
 		// レンダリング待機
 		await this.runtime.sleep(this.config.spaWait);
 
+		// リダイレクト後のURLを取得
+		const urlResult = await this.runCli(["eval", "window.location.href"]);
+		const finalUrl = urlResult.success ? parseCliOutput(urlResult.stdout).trim() : url;
+
 		// コンテンツ取得
 		const result = await this.runCli(["eval", "document.documentElement.outerHTML"]);
 		if (!result.success) {
@@ -131,7 +135,7 @@ export class PlaywrightFetcher implements Fetcher {
 
 		return {
 			html,
-			finalUrl: url,
+			finalUrl,
 			contentType,
 		};
 	}

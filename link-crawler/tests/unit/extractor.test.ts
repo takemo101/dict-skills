@@ -1758,13 +1758,13 @@ describe("extractContent - protectCodeBlocks nested elements (lines 53, 62)", ()
 		const html = `<!DOCTYPE html><html><body>
 			<article>
 				<h1>Deep Nesting Test</h1>
-				<p>Code with deep nesting structure:</p>
+				<p>Code with nested structure example:</p>
 				<figure data-rehype-pretty-code-figure="">
 					<div data-rehype-pretty-code-fragment="">
 						<pre data-language="rust" tabindex="0">
 							<code class="language-rust">
 								<span class="line">fn main() {</span>
-								<span class="line">    println!("deep nesting");</span>
+								<span class="line">    println!("hello_rust");</span>
 								<span class="line">}</span>
 							</code>
 						</pre>
@@ -1780,10 +1780,115 @@ describe("extractContent - protectCodeBlocks nested elements (lines 53, 62)", ()
 
 		expect(result.content).not.toBeNull();
 		if (result.content) {
-			expect(result.content).toContain("deep nesting");
-			// Should appear once despite multiple nested selectors matching
-			const matches = result.content.match(/deep nesting/g);
+			expect(result.content).toContain("hello_rust");
+			// Should appear once despite multiple nested selectors matching (figure, fragment, pre, code)
+			const matches = result.content.match(/hello_rust/g);
 			expect(matches?.length).toBe(1);
+		}
+	});
+
+	it("should handle .highlight > pre > code nesting correctly (Issue #621)", () => {
+		// Classic GitHub Pages / Jekyll style nesting
+		const html = `<!DOCTYPE html><html><body>
+			<article>
+				<h1>Code Example</h1>
+				<p>Installation command:</p>
+				<div class="highlight">
+					<pre><code>npm install example-package</code></pre>
+				</div>
+				<p>More content here to ensure proper extraction.</p>
+				<p>Additional paragraph for Readability.</p>
+			</article>
+		</body></html>`;
+
+		const dom = new JSDOM(html, { url: "https://example.com/issue-621-highlight" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			// Should preserve the outer .highlight div
+			expect(result.content).toContain('class="highlight"');
+			// Code should appear only once
+			const matches = result.content.match(/npm install example-package/g);
+			expect(matches?.length).toBe(1);
+		}
+	});
+
+	it("should handle multiple independent .highlight blocks (Issue #621)", () => {
+		const html = `<!DOCTYPE html><html><body>
+			<article>
+				<h1>Multiple Code Examples</h1>
+				<p>First command:</p>
+				<div class="highlight">
+					<pre><code>git init</code></pre>
+				</div>
+				<p>Second command:</p>
+				<div class="highlight">
+					<pre><code>git add .</code></pre>
+				</div>
+				<p>Third command:</p>
+				<div class="highlight">
+					<pre><code>git commit -m "Initial commit"</code></pre>
+				</div>
+				<p>Final paragraph for proper extraction.</p>
+			</article>
+		</body></html>`;
+
+		const dom = new JSDOM(html, { url: "https://example.com/issue-621-multiple" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			// Each command should appear exactly once
+			const initMatches = result.content.match(/git init/g);
+			const addMatches = result.content.match(/git add/g);
+			const commitMatches = result.content.match(/git commit/g);
+			
+			expect(initMatches?.length).toBe(1);
+			expect(addMatches?.length).toBe(1);
+			expect(commitMatches?.length).toBe(1);
+		}
+	});
+
+	it("should handle complex real-world nested structure (Issue #621)", () => {
+		// Simulates Next.js docs style with multiple nested selectors
+		const html = `<!DOCTYPE html><html><body>
+			<article>
+				<h1>Getting Started with Next.js</h1>
+				<p>Create a new application:</p>
+				<div data-rehype-pretty-code-fragment="">
+					<pre data-language="bash" tabindex="0">
+						<code class="language-bash">
+							<span class="line">npx create-next-app@latest</span>
+						</code>
+					</pre>
+				</div>
+				<p>Configure TypeScript:</p>
+				<div data-rehype-pretty-code-fragment="">
+					<pre data-language="typescript">
+						<code class="language-typescript">
+							<span class="line">export default function Page() {</span>
+							<span class="line">  return &lt;h1&gt;Hello World&lt;/h1&gt;</span>
+							<span class="line">}</span>
+						</code>
+					</pre>
+				</div>
+				<p>Additional content for proper extraction by Readability.</p>
+			</article>
+		</body></html>`;
+
+		const dom = new JSDOM(html, { url: "https://example.com/issue-621-nextjs" });
+		const result = extractContent(dom);
+
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			// First code block should appear once
+			const createMatches = result.content.match(/create-next-app/g);
+			expect(createMatches?.length).toBe(1);
+			
+			// Second code block should appear once
+			const functionMatches = result.content.match(/export default function Page/g);
+			expect(functionMatches?.length).toBe(1);
 		}
 	});
 });

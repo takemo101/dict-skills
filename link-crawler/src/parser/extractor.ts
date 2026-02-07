@@ -33,47 +33,59 @@ function generateMarkerId(index: number): string {
 function protectCodeBlocks(doc: Document): Map<string, string> {
 	const codeBlockMap = new Map<string, string>();
 	let index = 0;
-	const processedElements = new Set<Element>();
 
-	// セレクタで検出した要素を処理（親から子の順）
-	// より具体的なセレクタを先に処理
+	// Phase 1: Collect all code block elements from all selectors
+	// This must be done before any DOM modifications to ensure we have accurate parent-child relationships
+	const allElements: Element[] = [];
 	for (const selector of CODE_BLOCK_PRIORITY_SELECTORS) {
 		const elements = Array.from(doc.querySelectorAll(selector));
-		for (const el of elements) {
-			// 既に処理済みの要素をスキップ
-			if (processedElements.has(el)) {
-				continue;
-			}
-			// 処理済み要素の子要素でもスキップ
-			let parent = el.parentElement;
-			let shouldSkip = false;
-			while (parent) {
-				if (processedElements.has(parent)) {
-					shouldSkip = true;
-					break;
-				}
-				parent = parent.parentElement;
-			}
-			if (shouldSkip) {
-				continue;
-			}
+		allElements.push(...elements);
+	}
 
-			const markerId = generateMarkerId(index);
-			const marker = `__CODEBLOCK_${markerId}__`;
-			codeBlockMap.set(marker, el.outerHTML);
+	// Phase 2: Filter out nested elements (children of other code blocks)
+	// Use a Set to track which elements we'll process to avoid duplicates
+	const elementsToProcess: Element[] = [];
+	const processedSet = new Set<Element>();
 
-			// プレースホルダー要素を作成
-			const placeholder = doc.createElement("span");
-			placeholder.setAttribute("data-codeblock-id", markerId);
-			placeholder.setAttribute("data-codeblock-placeholder", "true");
-			placeholder.textContent = marker;
-
-			// 元の要素を記録してから置換（ネスト検出のため）
-			processedElements.add(el);
-			el.replaceWith(placeholder);
-
-			index++;
+	for (const el of allElements) {
+		// Skip if already marked for processing
+		if (processedSet.has(el)) {
+			continue;
 		}
+
+		// Check if this element is a child of any other element in allElements
+		// Using contains() is more reliable than walking parentElement chain
+		let isNested = false;
+		for (const other of allElements) {
+			if (other !== el && other.contains(el)) {
+				isNested = true;
+				break;
+			}
+		}
+
+		// Only process top-level code block containers (not nested children)
+		if (!isNested) {
+			elementsToProcess.push(el);
+			processedSet.add(el);
+		}
+	}
+
+	// Phase 3: Replace filtered elements with placeholders
+	// Now that we know which elements to process, we can safely modify the DOM
+	for (const el of elementsToProcess) {
+		const markerId = generateMarkerId(index);
+		const marker = `__CODEBLOCK_${markerId}__`;
+		codeBlockMap.set(marker, el.outerHTML);
+
+		// Create placeholder element
+		const placeholder = doc.createElement("span");
+		placeholder.setAttribute("data-codeblock-id", markerId);
+		placeholder.setAttribute("data-codeblock-placeholder", "true");
+		placeholder.textContent = marker;
+
+		// Replace original element with placeholder
+		el.replaceWith(placeholder);
+		index++;
 	}
 
 	return codeBlockMap;
