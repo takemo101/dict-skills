@@ -25,9 +25,16 @@ export function parseConfig(options: Record<string, unknown>, startUrl: string):
 	const defaultOutputDir = `./.context/${generateSiteName(startUrl)}`;
 	const outputDir = String(options.output || defaultOutputDir);
 
+	// Parse depth value safely (handle 0 correctly)
+	const depthValue = Number(options.depth);
+	const maxDepth = Math.min(
+		Number.isNaN(depthValue) ? DEFAULTS.MAX_DEPTH : depthValue,
+		DEFAULTS.MAX_DEPTH_LIMIT,
+	);
+
 	const config: CrawlConfig = {
 		startUrl,
-		maxDepth: Math.min(Number(options.depth) || DEFAULTS.MAX_DEPTH, DEFAULTS.MAX_DEPTH_LIMIT),
+		maxDepth,
 		outputDir,
 		sameDomain: options.sameDomain !== false,
 		includePattern: parsePattern(options.include as string | undefined, "include"),
