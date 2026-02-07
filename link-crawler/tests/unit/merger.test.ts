@@ -35,7 +35,7 @@ describe("Merger", () => {
 
 	describe("stripTitle", () => {
 		it("should remove H1 title from markdown", () => {
-			const merger = new Merger(testOutputDir);
+			const merger = new Merger();
 			const markdown = "# Page Title\n\nSome content here.";
 
 			const result = merger.stripTitle(markdown);
@@ -44,7 +44,7 @@ describe("Merger", () => {
 		});
 
 		it("should handle markdown without H1", () => {
-			const merger = new Merger(testOutputDir);
+			const merger = new Merger();
 			const markdown = "Some content without title.";
 
 			const result = merger.stripTitle(markdown);
@@ -53,7 +53,7 @@ describe("Merger", () => {
 		});
 
 		it("should skip frontmatter and remove H1", () => {
-			const merger = new Merger(testOutputDir);
+			const merger = new Merger();
 			const markdown = `---
 url: https://example.com
 title: "Test"
@@ -69,7 +69,7 @@ Content after title.`;
 		});
 
 		it("should remove multiple blank lines after title", () => {
-			const merger = new Merger(testOutputDir);
+			const merger = new Merger();
 			const markdown = "# Title\n\n\n\nContent";
 
 			const result = merger.stripTitle(markdown);
@@ -80,7 +80,7 @@ Content after title.`;
 
 	describe("buildFullContent", () => {
 		it("should build full markdown content without writing to file", () => {
-			const merger = new Merger(testOutputDir);
+			const merger = new Merger();
 			const pages = [createPage("https://example.com/page1", "Page 1", "pages/page-001.md")];
 			const pageContents = new Map([["pages/page-001.md", "# Page 1\n\nThis is content."]]);
 
@@ -92,7 +92,7 @@ Content after title.`;
 		});
 
 		it("should merge multiple pages with separators", () => {
-			const merger = new Merger(testOutputDir);
+			const merger = new Merger();
 			const pages = [
 				createPage("https://example.com/page1", "Page 1", "pages/page-001.md"),
 				createPage("https://example.com/page2", "Page 2", "pages/page-002.md"),
@@ -113,7 +113,7 @@ Content after title.`;
 		});
 
 		it("should handle empty pages array", () => {
-			const merger = new Merger(testOutputDir);
+			const merger = new Merger();
 			const pages: CrawledPage[] = [];
 			const pageContents = new Map<string, string>();
 
@@ -123,7 +123,7 @@ Content after title.`;
 		});
 
 		it("should use URL as title when title is null", () => {
-			const merger = new Merger(testOutputDir);
+			const merger = new Merger();
 			const pages = [createPage("https://example.com/page1", null, "pages/page-001.md")];
 			const pageContents = new Map([["pages/page-001.md", "# Original Title\n\nContent"]]);
 
@@ -134,7 +134,7 @@ Content after title.`;
 		});
 
 		it("should strip frontmatter and title from content", () => {
-			const merger = new Merger(testOutputDir);
+			const merger = new Merger();
 			const pages = [createPage("https://example.com/page1", "Page 1", "pages/page-001.md")];
 			const pageContents = new Map([
 				[
@@ -162,7 +162,7 @@ Content after frontmatter`,
 
 	describe("buildFullContent + writeFileSync", () => {
 		it("should write full.md file", () => {
-			const merger = new Merger(testOutputDir);
+			const merger = new Merger();
 			const pages = [createPage("https://example.com/page1", "Page 1", "pages/page-001.md")];
 			const pageContents = new Map([["pages/page-001.md", "# Page 1\n\nThis is content."]]);
 
@@ -178,7 +178,7 @@ Content after frontmatter`,
 		});
 
 		it("should merge multiple pages with separators", () => {
-			const merger = new Merger(testOutputDir);
+			const merger = new Merger();
 			const pages = [
 				createPage("https://example.com/page1", "Page 1", "pages/page-001.md"),
 				createPage("https://example.com/page2", "Page 2", "pages/page-002.md"),
@@ -199,7 +199,7 @@ Content after frontmatter`,
 		});
 
 		it("should handle duplicate titles across pages", () => {
-			const merger = new Merger(testOutputDir);
+			const merger = new Merger();
 			const pages = [
 				createPage("https://example.com/page1", "Same Title", "pages/page-001.md"),
 				createPage("https://example.com/page2", "Same Title", "pages/page-002.md"),
@@ -223,7 +223,7 @@ Content after frontmatter`,
 		});
 
 		it("should handle empty content in pageContents", () => {
-			const merger = new Merger(testOutputDir);
+			const merger = new Merger();
 			const pages = [createPage("https://example.com/page1", "Page 1", "pages/page-001.md")];
 			const pageContents = new Map<string, string>([]);
 
@@ -239,7 +239,7 @@ Content after frontmatter`,
 		});
 
 		it("should handle pages with empty markdown content", () => {
-			const merger = new Merger(testOutputDir);
+			const merger = new Merger();
 			const pages = [createPage("https://example.com/page1", "Page 1", "pages/page-001.md")];
 			const pageContents = new Map([["pages/page-001.md", ""]]);
 
@@ -253,7 +253,7 @@ Content after frontmatter`,
 		});
 
 		it("should handle many pages efficiently", () => {
-			const merger = new Merger(testOutputDir);
+			const merger = new Merger();
 			const pages: CrawledPage[] = [];
 			const pageContents = new Map<string, string>();
 
