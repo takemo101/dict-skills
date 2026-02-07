@@ -128,14 +128,14 @@ link-crawler/
 | `PlaywrightFetcher` | ページ取得 | URL | HTML |
 | `RobotsChecker` | robots.txt のパースとURL許可判定 | robots.txt, URL | boolean |
 | `CrawlLogger` | クロールログ出力（開始、進捗、完了、エラー等） | Config, Events | コンソール出力 |
-| `PostProcessor` | 後処理実行（Merger/Chunker呼び出し、ページ内容読み込み） | CrawledPages | full.md, chunks/ |
+| `PostProcessor` | 後処理実行（Merger/Chunkerを呼び出し、ページ内容読み込み、full.md書き込み） | CrawledPages | full.md, chunks/ |
 | `Extractor` | 本文抽出 | HTML | ContentHTML |
 | `Converter` | Markdown変換 | ContentHTML | Markdown |
 | `LinksParser` | リンク抽出 | HTML | URLs |
 | `Hasher` | ハッシュ計算・比較 | Content | Hash, Changed |
 | `IndexManager` | index.jsonの読み込み・保存・管理 | CrawledPage | index.json |
 | `OutputWriter` | ページファイル保存、フロントマター付与 | Page | .md File |
-| `Merger` | 全ページ結合 | Pages | full.md |
+| `Merger` | 全ページ結合（メモリ上）、コンテンツ生成 | Pages | Markdown文字列 |
 | `Chunker` | チャンク分割 | full.md | chunks/*.md |
 | `RuntimeAdapter` | ランタイム抽象化（Bun/Node.js互換） | Command | SpawnResult |
 
@@ -592,10 +592,14 @@ if (hasher.isChanged(url, newHash)) {
 class Merger {
   constructor(outputDir: string)
   stripTitle(markdown: string): string
-  buildFullContent(pages: CrawledPage[], pageContents: Map<string, string>): string
-  writeFull(pages: CrawledPage[], pageContents: Map<string, string>): string
+  buildFullContent(pages: CrawledPage[], pageContents: Map<string, string>): string  // メイン API
+  writeFull(pages: CrawledPage[], pageContents: Map<string, string>): string         // ユーティリティ
 }
 ```
+
+**メソッドの役割:**
+- `buildFullContent()`: 全ページを結合したMarkdown文字列を生成（メモリ上）
+- `writeFull()`: `buildFullContent()` を呼び出してファイル出力するユーティリティメソッド（テスト用）
 
 #### 処理フロー
 
@@ -608,15 +612,32 @@ class Merger {
    <本文>
    ```
 3. **セパレータ結合**: セクション間を `\n\n---\n\n` で結合
-4. **ファイル出力**: `full.md` として保存
+4. **文字列返却**: 結合されたMarkdown文字列を返却
 
 #### 使用例
 
+**本番コードでの使用（PostProcessor）:**
 ```typescript
 const merger = new Merger(outputDir);
+
+// メモリ上でコンテンツを生成
+const fullContent = merger.buildFullContent(pages, pageContents);
+
+// ファイル書き込みは呼び出し側で実行
+const outputPath = join(outputDir, "full.md");
+writeFileSync(outputPath, fullContent);
+```
+
+**テスト/ユーティリティ用:**
+```typescript
+const merger = new Merger(outputDir);
+
+// buildFullContent() + writeFileSync() を一度に実行
 const fullPath = merger.writeFull(pages, pageContents);
 // → .context/<site>/full.md が生成される
 ```
+
+**Note**: 本番コード（PostProcessor）は、`buildFullContent()` を使用してメモリ上でコンテンツを生成し、ファイル書き込みは PostProcessor が担当します。これにより、`--no-merge --chunks` のような「mergeなしでchunksのみ」のケースでも、chunker用にコンテンツを再利用できます（Issue #710, #711 参照）。
 
 **実装詳細:** `link-crawler/src/output/merger.ts`
 
