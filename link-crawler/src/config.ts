@@ -21,6 +21,13 @@ function parsePattern(pattern: string | undefined, name: string): RegExp | null 
 }
 
 export function parseConfig(options: Record<string, unknown>, startUrl: string): CrawlConfig {
+	// Validate startUrl format
+	try {
+		new URL(startUrl);
+	} catch {
+		throw new ConfigError(`Invalid URL: ${startUrl}`, "startUrl");
+	}
+
 	// Generate site-specific output directory if not specified
 	const defaultOutputDir = `./.context/${generateSiteName(startUrl)}`;
 	const outputDir = String(options.output || defaultOutputDir);
