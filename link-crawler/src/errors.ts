@@ -3,14 +3,14 @@ export class CrawlError extends Error {
 	constructor(
 		message: string,
 		public readonly code: string,
-		public readonly cause?: Error,
+		cause?: Error,
 	) {
-		super(message);
+		super(message, cause ? { cause } : undefined);
 		this.name = "CrawlError";
 	}
 
 	toString(): string {
-		if (this.cause) {
+		if (this.cause instanceof Error) {
 			return `${this.name}[${this.code}]: ${this.message}\nCaused by: ${this.cause.message}`;
 		}
 		return `${this.name}[${this.code}]: ${this.message}`;
