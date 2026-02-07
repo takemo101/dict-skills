@@ -127,9 +127,8 @@ function extractAndPreserveCodeBlocks(doc: Document): {
 
 	// コンテンツにコードブロックが含まれていない場合、収集したものを追加
 	if (content && codeBlocks.length > 0) {
-		const hasCodeBlock = CODE_BLOCK_SELECTORS.some((selector) =>
-			content?.toLowerCase().includes(selector),
-		);
+		const selector = CODE_BLOCK_SELECTORS.join(",");
+		const hasCodeBlock = main?.querySelector(selector) !== null;
 		if (!hasCodeBlock) {
 			content = `${codeBlocks.join("\n")}\n${content}`;
 		}
