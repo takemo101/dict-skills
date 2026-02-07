@@ -47,7 +47,12 @@ export class PostProcessor {
 		if (this.config.merge) {
 			this.logger.logMergerStart();
 			const outputPath = this.merger.writeFull(pages, contents);
-			fullMdContent = readFileSync(outputPath, "utf-8"); // chunks用に読み直し
+
+			// chunks用に読み直し（必要な場合）
+			if (this.config.chunks) {
+				fullMdContent = readFileSync(outputPath, "utf-8");
+			}
+
 			this.logger.logMergerComplete(outputPath);
 		} else if (this.config.chunks) {
 			// mergeなしでchunksのみの場合は、Mergerを使ってメモリから結合内容を生成
