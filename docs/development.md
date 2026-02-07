@@ -34,6 +34,7 @@ link-crawler/
 │   ├── types.ts                # 型定義
 │   ├── constants.ts            # 定数定義
 │   ├── errors.ts               # エラークラス
+│   ├── error-handler.ts        # エラーハンドリング
 │   │
 │   ├── crawler/
 │   │   ├── index.ts            # CrawlerEngine
