@@ -127,9 +127,13 @@ function extractAndPreserveCodeBlocks(doc: Document): {
 
 	// コンテンツにコードブロックが含まれていない場合、収集したものを追加
 	if (content && codeBlocks.length > 0) {
-		const hasCodeBlock = CODE_BLOCK_SELECTORS.some((selector) =>
-			content?.toLowerCase().includes(selector),
-		);
+		// HTMLタグ/属性として実際に存在するかチェック（単語のサブストリングマッチを避ける）
+		const hasCodeBlock = content
+			? /\<(pre|code)\b/i.test(content) ||
+			  /class="[^"]*(?:highlight|hljs|prism-code|shiki|code-block)[^"]*"/i.test(content) ||
+			  /data-language=/i.test(content) ||
+			  /data-rehype-pretty-code/i.test(content)
+			: false;
 		if (!hasCodeBlock) {
 			content = `${codeBlocks.join("\n")}\n${content}`;
 		}
