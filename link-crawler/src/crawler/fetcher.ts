@@ -37,17 +37,20 @@ export class PlaywrightFetcher implements Fetcher {
 	private playwrightPath: string = "playwright-cli";
 	private runtime: RuntimeAdapter;
 	private pathConfig: PlaywrightPathConfig;
+	private debug: boolean;
 
 	constructor(
 		private config: CrawlConfig,
 		runtime?: RuntimeAdapter,
 		pathConfig?: PlaywrightPathConfig,
+		debug?: boolean,
 	) {
 		this.runtime = runtime ?? createRuntimeAdapter();
 		this.pathConfig = pathConfig ?? {
 			nodePaths: PATHS.NODE_PATHS,
 			cliPaths: PATHS.PLAYWRIGHT_PATHS,
 		};
+		this.debug = debug ?? false;
 	}
 
 	/** Playwright CLIが利用可能かチェック */
@@ -212,7 +215,7 @@ export class PlaywrightFetcher implements Fetcher {
 					await this.runCli(["session-stop"]);
 				} catch (cleanupError) {
 					// クリーンアップエラーは無視（セッションが既に閉じている可能性）
-					if (process.env.DEBUG === "1") {
+					if (this.debug) {
 						console.log(`[DEBUG] session-stop on timeout failed: ${cleanupError}`);
 					}
 				}
@@ -234,7 +237,7 @@ export class PlaywrightFetcher implements Fetcher {
 			await this.runCli(["session-stop"]);
 		} catch (error) {
 			// セッションが既に閉じている場合は無視（デバッグログのみ）
-			if (process.env.DEBUG === "1") {
+			if (this.debug) {
 				console.log(`[DEBUG] session-stop failed (expected if already closed): ${error}`);
 			}
 		}
@@ -248,7 +251,7 @@ export class PlaywrightFetcher implements Fetcher {
 				}
 			} catch (error) {
 				// クリーンアップ失敗は無視（デバッグログのみ）
-				if (process.env.DEBUG === "1") {
+				if (this.debug) {
 					console.log(`[DEBUG] .playwright-cli cleanup failed: ${error}`);
 				}
 			}
