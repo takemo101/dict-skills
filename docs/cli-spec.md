@@ -19,10 +19,12 @@ crawl <url> [options]
 | オプション | 短縮 | デフォルト | 説明 |
 |-----------|------|-----------|------|
 | `--depth <num>` | `-d` | `1` | 最大クロール深度（上限10） |
+| `--max-pages <num>` | | `無制限` | 最大クロールページ数（0=無制限） |
 | `--delay <ms>` | | `500` | リクエスト間隔（ミリ秒） |
 | `--timeout <sec>` | | `30` | リクエストタイムアウト（秒） |
 | `--wait <ms>` | | `2000` | ページレンダリング待機時間（ミリ秒） |
 | `--headed` | | `false` | ブラウザを表示（デバッグ用） |
+| `--no-robots` | | | robots.txt を無視（非推奨） |
 
 ### 3.2 スコープ制御
 
@@ -106,7 +108,19 @@ crawl https://docs.example.com --no-merge
 crawl https://docs.example.com --no-pages --no-merge --chunks
 ```
 
-### 4.5 デバッグ・調整
+### 4.5 robots.txt の制御
+
+```bash
+# デフォルト: robots.txt を尊重（推奨）
+crawl https://docs.example.com -d 2
+
+# robots.txt を無視（開発・テスト用、非推奨）
+crawl https://docs.example.com -d 2 --no-robots
+```
+
+**注意**: `--no-robots` オプションは開発やテスト目的でのみ使用してください。本番環境では常に robots.txt を尊重することを推奨します。
+
+### 4.6 デバッグ・調整
 
 ```bash
 # ブラウザを表示して動作確認
@@ -117,6 +131,12 @@ crawl https://slow-site.example.com --wait 5000
 
 # サーバー負荷軽減のためリクエスト間隔延長
 crawl https://docs.example.com --delay 2000
+
+# 最大100ページまでクロール
+crawl https://docs.example.com --max-pages 100
+
+# 深度は大きくてもページ数で制限
+crawl https://docs.example.com -d 10 --max-pages 50
 ```
 
 ---
