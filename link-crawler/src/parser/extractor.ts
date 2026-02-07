@@ -101,6 +101,19 @@ function restoreCodeBlocks(html: string, codeBlockMap: Map<string, string>): str
 	return restored;
 }
 
+/** コードブロックを検出するための HTML パターン */
+const CODE_BLOCK_HTML_PATTERNS = [
+	/<pre[\s>]/i, // <pre> タグ
+	/<code[\s>]/i, // <code> タグ
+	/data-language=/i, // data-language 属性
+	/data-rehype-pretty-code-fragment/i, // data-rehype-pretty-code-fragment 属性
+	/class="[^"]*\bcode-block\b/i, // code-block クラス
+	/class="[^"]*\bhighlight\b/i, // highlight クラス
+	/class="[^"]*\bhljs\b/i, // hljs クラス
+	/class="[^"]*\bprism-code\b/i, // prism-code クラス
+	/class="[^"]*\bshiki\b/i, // shiki クラス
+];
+
 /** フォールバック抽出時にコードブロックを保護 */
 function extractAndPreserveCodeBlocks(doc: Document): {
 	title: string | null;
@@ -127,9 +140,7 @@ function extractAndPreserveCodeBlocks(doc: Document): {
 
 	// コンテンツにコードブロックが含まれていない場合、収集したものを追加
 	if (content && codeBlocks.length > 0) {
-		const hasCodeBlock = CODE_BLOCK_SELECTORS.some((selector) =>
-			content?.toLowerCase().includes(selector),
-		);
+		const hasCodeBlock = CODE_BLOCK_HTML_PATTERNS.some((pattern) => pattern.test(content));
 		if (!hasCodeBlock) {
 			content = `${codeBlocks.join("\n")}\n${content}`;
 		}
