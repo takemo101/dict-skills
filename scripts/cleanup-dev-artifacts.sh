@@ -89,6 +89,20 @@ log_verbose() {
     fi
 }
 
+# Portable size formatting function
+format_size() {
+    local size=$1
+    if (( size >= 1073741824 )); then
+        echo "$(( size / 1073741824 ))GiB"
+    elif (( size >= 1048576 )); then
+        echo "$(( size / 1048576 ))MiB"
+    elif (( size >= 1024 )); then
+        echo "$(( size / 1024 ))KiB"
+    else
+        echo "${size}B"
+    fi
+}
+
 # Cleanup .improve-logs (if exists)
 # Note: This directory is created by pi-runner but is not commonly used
 cleanup_improve_logs() {
@@ -117,7 +131,7 @@ cleanup_improve_logs() {
 
     if [[ $file_count -gt 0 ]]; then
         local size_human
-        size_human=$(numfmt --to=iec-i --suffix=B "$total_size" 2>/dev/null || echo "${total_size}B")
+        size_human=$(format_size "$total_size")
         if [[ "$DRY_RUN" == "true" ]]; then
             log_info "Would delete ${file_count} files (${size_human}) from .improve-logs/"
         else
