@@ -613,7 +613,6 @@ if (hasher.isChanged(url, newHash)) {
 
 ```typescript
 class Merger {
-  constructor(_outputDir: string)
   stripTitle(markdown: string): string
   buildFullContent(pages: CrawledPage[], pageContents: Map<string, string>): string
 }
@@ -640,7 +639,7 @@ class Merger {
 
 **本番コードでの使用（PostProcessor）:**
 ```typescript
-const merger = new Merger(outputDir);
+const merger = new Merger();
 
 // メモリ上でコンテンツを生成
 const fullContent = merger.buildFullContent(pages, pageContents);
