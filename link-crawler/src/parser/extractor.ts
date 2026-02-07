@@ -2,18 +2,27 @@ import { Readability } from "@mozilla/readability";
 import type { JSDOM } from "jsdom";
 import type { PageMetadata } from "../types.js";
 
-/** コードブロックを検出するためのセレクタ一覧 */
-const CODE_BLOCK_SELECTORS = [
-	"pre",
-	"code",
-	"[data-language]",
+/**
+ * コードブロック検出用セレクタ（優先順位順）
+ *
+ * より具体的なセレクタを先に処理することで、
+ * ネストされたコードブロックを正しく扱います。
+ *
+ * 新しいコードブロック形式を追加する場合は、
+ * この配列に追加するだけで全機能に反映されます。
+ */
+const CODE_BLOCK_PRIORITY_SELECTORS = [
 	"[data-rehype-pretty-code-fragment]",
+	"[data-rehype-pretty-code-figure]",
 	".code-block",
-	".highlight",
 	".hljs",
 	".prism-code",
 	".shiki",
-];
+	".highlight",
+	"[data-language]",
+	"pre",
+	"code",
+] as const;
 
 /** 一意なマーカーIDを生成 */
 function generateMarkerId(index: number): string {
@@ -28,20 +37,7 @@ function protectCodeBlocks(doc: Document): Map<string, string> {
 
 	// セレクタで検出した要素を処理（親から子の順）
 	// より具体的なセレクタを先に処理
-	const prioritySelectors = [
-		"[data-rehype-pretty-code-fragment]",
-		"[data-rehype-pretty-code-figure]",
-		".code-block",
-		".hljs",
-		".prism-code",
-		".shiki",
-		".highlight",
-		"[data-language]",
-		"pre",
-		"code",
-	];
-
-	for (const selector of prioritySelectors) {
+	for (const selector of CODE_BLOCK_PRIORITY_SELECTORS) {
 		const elements = Array.from(doc.querySelectorAll(selector));
 		for (const el of elements) {
 			// 既に処理済みの要素をスキップ
@@ -101,18 +97,29 @@ function restoreCodeBlocks(html: string, codeBlockMap: Map<string, string>): str
 	return restored;
 }
 
-/** コードブロックを検出するための HTML パターン */
-const CODE_BLOCK_HTML_PATTERNS = [
-	/<pre[\s>]/i, // <pre> タグ
-	/<code[\s>]/i, // <code> タグ
-	/data-language=/i, // data-language 属性
-	/data-rehype-pretty-code-fragment/i, // data-rehype-pretty-code-fragment 属性
-	/class="[^"]*\bcode-block\b/i, // code-block クラス
-	/class="[^"]*\bhighlight\b/i, // highlight クラス
-	/class="[^"]*\bhljs\b/i, // hljs クラス
-	/class="[^"]*\bprism-code\b/i, // prism-code クラス
-	/class="[^"]*\bshiki\b/i, // shiki クラス
-];
+/**
+ * HTML文字列にコードブロックが含まれているかチェック
+ * DOM-based検出により、文字列マッチングによる誤検知を防ぎます
+ */
+function hasCodeBlockInHTML(htmlString: string, doc: Document): boolean {
+	// 空の場合は false
+	if (!htmlString || htmlString.trim() === "") {
+		return false;
+	}
+
+	// 一時的なコンテナ要素を作成してHTMLをパース
+	const tempDiv = doc.createElement("div");
+	tempDiv.innerHTML = htmlString;
+
+	// CODE_BLOCK_PRIORITY_SELECTORS のいずれかにマッチする要素があるかチェック
+	for (const selector of CODE_BLOCK_PRIORITY_SELECTORS) {
+		if (tempDiv.querySelector(selector)) {
+			return true;
+		}
+	}
+
+	return false;
+}
 
 /** フォールバック抽出時にコードブロックを保護 */
 function extractAndPreserveCodeBlocks(doc: Document): {
@@ -123,7 +130,7 @@ function extractAndPreserveCodeBlocks(doc: Document): {
 
 	// コードブロックを収集（削除前に保存）
 	const codeBlocks: string[] = [];
-	for (const selector of CODE_BLOCK_SELECTORS) {
+	for (const selector of CODE_BLOCK_PRIORITY_SELECTORS) {
 		const elements = Array.from(body.querySelectorAll(selector));
 		for (const el of elements) {
 			codeBlocks.push(el.outerHTML);
@@ -140,8 +147,7 @@ function extractAndPreserveCodeBlocks(doc: Document): {
 
 	// コンテンツにコードブロックが含まれていない場合、収集したものを追加
 	if (content && codeBlocks.length > 0) {
-		const currentContent = content;
-		const hasCodeBlock = CODE_BLOCK_HTML_PATTERNS.some((pattern) => pattern.test(currentContent));
+		const hasCodeBlock = hasCodeBlockInHTML(content, doc);
 		if (!hasCodeBlock) {
 			content = `${codeBlocks.join("\n")}\n${content}`;
 		}
