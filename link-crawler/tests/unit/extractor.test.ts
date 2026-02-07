@@ -2609,8 +2609,8 @@ describe("extractContent - DOM mutation isolation (Issue #712)", () => {
 		`;
 
 		const dom = new JSDOM(html, { url: "https://example.com" });
-		const visited = new Set<string>();
-		const config = {
+		const _visited = new Set<string>();
+		const _config = {
 			startUrl: "https://example.com",
 			maxDepth: 2,
 			maxPages: null,
@@ -2686,8 +2686,8 @@ describe("extractContent - DOM mutation isolation (Issue #712)", () => {
 
 		const dom1 = new JSDOM(html, { url: "https://example.com" });
 		const dom2 = new JSDOM(html, { url: "https://example.com" });
-		const visited = new Set<string>();
-		const config = {
+		const _visited = new Set<string>();
+		const _config = {
 			startUrl: "https://example.com",
 			maxDepth: 2,
 			maxPages: null,
