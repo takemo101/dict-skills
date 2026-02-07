@@ -572,3 +572,76 @@ describe("parseConfig - URL scheme validation", () => {
 		}
 	});
 });
+
+describe("parseConfig - maxPages validation", () => {
+	it("should set maxPages to null by default (unlimited)", () => {
+		const config = parseConfig({}, "https://example.com");
+		expect(config.maxPages).toBeNull();
+	});
+
+	it("should parse positive integer maxPages", () => {
+		const config = parseConfig({ maxPages: 100 }, "https://example.com");
+		expect(config.maxPages).toBe(100);
+	});
+
+	it("should parse maxPages as string", () => {
+		const config = parseConfig({ maxPages: "50" }, "https://example.com");
+		expect(config.maxPages).toBe(50);
+	});
+
+	it("should set maxPages to null when 0 (unlimited)", () => {
+		const config = parseConfig({ maxPages: 0 }, "https://example.com");
+		expect(config.maxPages).toBeNull();
+	});
+
+	it("should set maxPages to null when negative (unlimited)", () => {
+		const config = parseConfig({ maxPages: -1 }, "https://example.com");
+		expect(config.maxPages).toBeNull();
+
+		const config2 = parseConfig({ maxPages: -100 }, "https://example.com");
+		expect(config2.maxPages).toBeNull();
+	});
+
+	it("should set maxPages to null when NaN (unlimited)", () => {
+		const config = parseConfig({ maxPages: "abc" }, "https://example.com");
+		expect(config.maxPages).toBeNull();
+
+		const config2 = parseConfig({ maxPages: "not-a-number" }, "https://example.com");
+		expect(config2.maxPages).toBeNull();
+	});
+
+	it("should floor decimal maxPages values", () => {
+		const config = parseConfig({ maxPages: 42.7 }, "https://example.com");
+		expect(config.maxPages).toBe(42);
+
+		const config2 = parseConfig({ maxPages: 99.9 }, "https://example.com");
+		expect(config2.maxPages).toBe(99);
+	});
+
+	it("should handle very large maxPages values", () => {
+		const config = parseConfig({ maxPages: 1000000 }, "https://example.com");
+		expect(config.maxPages).toBe(1000000);
+	});
+});
+
+describe("parseConfig - respectRobots validation", () => {
+	it("should set respectRobots to true by default", () => {
+		const config = parseConfig({}, "https://example.com");
+		expect(config.respectRobots).toBe(true);
+	});
+
+	it("should set respectRobots to false when robots option is false", () => {
+		const config = parseConfig({ robots: false }, "https://example.com");
+		expect(config.respectRobots).toBe(false);
+	});
+
+	it("should set respectRobots to true when robots option is true", () => {
+		const config = parseConfig({ robots: true }, "https://example.com");
+		expect(config.respectRobots).toBe(true);
+	});
+
+	it("should set respectRobots to true when robots option is undefined", () => {
+		const config = parseConfig({ robots: undefined }, "https://example.com");
+		expect(config.respectRobots).toBe(true);
+	});
+});
