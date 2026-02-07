@@ -6,7 +6,6 @@ set -euo pipefail
 RETENTION_DAYS=30
 DRY_RUN=true
 VERBOSE=false
-FORCE=false
 
 # Colors for output
 RED='\033[0;31m'
@@ -107,20 +106,22 @@ cleanup_improve_logs() {
 
     while IFS= read -r -d '' file; do
         ((file_count++))
-        local size=$(stat -f%z "$file" 2>/dev/null || stat -c%s "$file" 2>/dev/null || echo 0)
+        local size
+        size=$(stat -f%z "$file" 2>/dev/null || stat -c%s "$file" 2>/dev/null || echo 0)
         ((total_size+=size))
         
-        log_verbose "  - $file ($(numfmt --to=iec-i --suffix=B $size 2>/dev/null || echo "${size}B"))"
+        log_verbose "  - $file ($(numfmt --to=iec-i --suffix=B "$size" 2>/dev/null || echo "${size}B"))"
         
         if [[ "$DRY_RUN" == "false" ]]; then
             rm -f "$file"
         fi
-    done < <(find .improve-logs/ -type f -mtime +${RETENTION_DAYS} -print0)
+    done < <(find .improve-logs/ -type f -mtime +"${RETENTION_DAYS}" -print0)
 
     if [[ $file_count -eq 0 ]]; then
         log_info "No files older than ${RETENTION_DAYS} days found in .improve-logs/"
     else
-        local size_human=$(numfmt --to=iec-i --suffix=B $total_size 2>/dev/null || echo "${total_size}B")
+        local size_human
+        size_human=$(numfmt --to=iec-i --suffix=B "$total_size" 2>/dev/null || echo "${total_size}B")
         if [[ "$DRY_RUN" == "true" ]]; then
             log_warn "Would delete ${file_count} files (${size_human}) from .improve-logs/"
         else
