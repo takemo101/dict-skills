@@ -500,58 +500,60 @@ crawl https://docs.example.com --keep-session
 
 ## 8. 差分クロール
 
-### 8.1 ハッシュ計算
+### 8.1 設計意図
+
+`--diff` オプション使用時、前回クロール時のコンテンツハッシュと比較し、変更があったページのみを処理します。これにより：
+
+- 不要なリクエストを削減し、クロール時間を短縮
+- サーバー負荷を軽減
+- ネットワーク帯域を節約
+
+### 8.2 ハッシュ計算
+
+ページのMarkdownコンテンツからSHA256ハッシュを計算します。
 
 ```typescript
-import { createHash } from "crypto";
-
-function computeHash(content: string): string {
-  return createHash("sha256").update(content, "utf8").digest("hex");
-}
+function computeHash(content: string): string
 ```
 
-### 8.2 差分検知
+- 入力: MarkdownコンテンツのUTF-8文字列
+- 出力: SHA256ハッシュ（16進数64文字）
+
+### 8.3 差分検知
+
+`Hasher` クラスが前回のハッシュ値と新しいハッシュ値を比較し、変更有無を判定します。
+
+**主要インターフェース:**
 
 ```typescript
-/**
- * ハッシュ管理クラス
- * 差分検知を行う
- * 
- * Note: ファイルI/Oは IndexManager が担当し、
- * Hasher は純粋なロジッククラスとして実装
- */
 class Hasher {
-  private hashes: Map<string, string>;
-
-  /**
-   * @param existingHashes 既存のハッシュMap（URL → hash）
-   */
-  constructor(existingHashes: Map<string, string> = new Map()) {
-    this.hashes = new Map(existingHashes);
-  }
-
-  /**
-   * URLのコンテンツが変更されたかを判定
-   * @param url 対象URL
-   * @param newHash 新しいハッシュ値
-   * @returns 変更があればtrue、なければfalse
-   */
-  isChanged(url: string, newHash: string): boolean {
-    const existingHash = this.hashes.get(url);
-    if (existingHash === undefined) {
-      return true; // 新規ページは変更扱い
-    }
-    return existingHash !== newHash;
-  }
-
-  /**
-   * 読み込まれたハッシュの数を取得
-   */
-  get size(): number {
-    return this.hashes.size;
-  }
+  constructor(existingHashes: Map<string, string>)
+  isChanged(url: string, newHash: string): boolean
+  getHash(url: string): string | undefined
+  get size(): number
 }
 ```
+
+**責務分離:**
+- `Hasher`: 純粋なロジッククラス（ハッシュ比較のみ）
+- `IndexManager`: ファイルI/O（`index.json`の読み書き）
+
+**使用例:**
+
+```typescript
+// IndexManagerから既存ハッシュを読み込み
+const existingHashes = indexManager.getHashMap();
+const hasher = new Hasher(existingHashes);
+
+// クロール中
+if (hasher.isChanged(url, newHash)) {
+  // 変更あり: ページを保存
+} else {
+  // 変更なし: スキップ
+}
+```
+
+**実装詳細:** `link-crawler/src/diff/hasher.ts`
 
 ---
 
@@ -559,209 +561,101 @@ class Hasher {
 
 ### 9.1 Merger（全ページ結合）
 
+#### 設計意図
+
+全クロール済みページを1つの `full.md` に結合します。これにより：
+
+- LLMへのコンテキスト入力が容易
+- 全体検索が可能
+- セクション構造を維持しながら統一フォーマットで提供
+
+#### 主要インターフェース
+
 ```typescript
-/**
- * ページ結合クラス
- * 全ページを結合してfull.mdを生成
- */
 class Merger {
-  constructor(private outputDir: string) {}
-
-  /**
-   * Markdownから先頭のH1タイトルを除去
-   * frontmatterがある場合は考慮する
-   * @param markdown Markdown文字列
-   * @returns タイトル除去後のMarkdown
-   */
-  stripTitle(markdown: string): string {
-    // frontmatterをスキップ
-    let content = markdown;
-    if (content.startsWith("---")) {
-      const endIndex = content.indexOf("---", 3);
-      if (endIndex !== -1) {
-        content = content.slice(endIndex + 3).trimStart();
-      }
-    }
-
-    // 先頭のH1を除去
-    const lines = content.split("\n");
-    if (lines.length > 0 && lines[0].startsWith("# ")) {
-      lines.shift();
-      // タイトル後の空行も除去
-      while (lines.length > 0 && lines[0].trim() === "") {
-        lines.shift();
-      }
-    }
-
-    return lines.join("\n");
-  }
-
-  /**
-   * Markdownを結合してfull.md内容を生成（ファイル書き込みなし）
-   * @param pages クロール済みページ一覧
-   * @param pageContents ページ内容のMap (file -> markdown)
-   * @returns 結合されたMarkdown文字列
-   */
-  buildFullContent(pages: CrawledPage[], pageContents: Map<string, string>): string {
-    const sections: string[] = [];
-
-    for (const page of pages) {
-      const title = page.title || page.url;
-      const header = `# ${title}`;
-      const urlLine = `> Source: ${page.url}`;
-
-      const rawContent = pageContents.get(page.file) || "";
-      const content = this.stripTitle(rawContent);
-
-      sections.push(`${header}\n\n${urlLine}\n\n${content}`);
-    }
-
-    return sections.join("\n\n---\n\n");
-  }
-
-  /**
-   * full.mdを出力
-   * @param pages クロール済みページ一覧
-   * @param pageContents ページ内容のMap (file -> markdown)
-   * @returns 出力ファイルパス
-   */
-  writeFull(pages: CrawledPage[], pageContents: Map<string, string>): string {
-    const fullContent = this.buildFullContent(pages, pageContents);
-    const outputPath = join(this.outputDir, "full.md");
-    writeFileSync(outputPath, fullContent);
-
-    return outputPath;
-  }
+  constructor(outputDir: string)
+  stripTitle(markdown: string): string
+  buildFullContent(pages: CrawledPage[], pageContents: Map<string, string>): string
+  writeFull(pages: CrawledPage[], pageContents: Map<string, string>): string
 }
 ```
+
+#### 処理フロー
+
+1. **タイトル除去**: 各ページのfrontmatterと先頭H1を除去（`stripTitle`）
+2. **セクション構築**: 各ページを以下の形式で構築
+   ```markdown
+   # <タイトル>
+   > Source: <URL>
+   
+   <本文>
+   ```
+3. **セパレータ結合**: セクション間を `\n\n---\n\n` で結合
+4. **ファイル出力**: `full.md` として保存
+
+#### 使用例
+
+```typescript
+const merger = new Merger(outputDir);
+const fullPath = merger.writeFull(pages, pageContents);
+// → .context/<site>/full.md が生成される
+```
+
+**実装詳細:** `link-crawler/src/output/merger.ts`
 
 ### 9.2 Chunker（見出しベース分割）
 
+#### 設計意図
+
+`full.md` をH1見出し単位でチャンク分割します。これにより：
+
+- LLMのコンテキスト長制限に対応
+- 大規模ドキュメントを扱いやすく
+- トピック単位での読み込みが可能
+
+#### 主要インターフェース
+
 ```typescript
-/**
- * Markdownチャンク分割クラス
- * full.mdをH1見出しベースでチャンク分割
- */
 class Chunker {
-  constructor(private outputDir: string) {}
-
-  /**
-   * MarkdownをH1見出しで分割
-   * @param fullMarkdown 結合されたMarkdown文字列
-   * @returns 分割されたチャンクの配列
-   */
-  chunk(fullMarkdown: string): string[] {
-    // 空入力ガード
-    if (!fullMarkdown.trim()) {
-      return [];
-    }
-
-    // H1見出し（# ）で分割
-    // ただし、frontmatter内の#は除外
-    const chunks: string[] = [];
-    const lines = fullMarkdown.split("\n");
-    let currentChunk: string[] = [];
-    let inFrontmatter = false;
-    let frontmatterEnded = false; // frontmatter終了フラグ
-    let isFirstH1 = true;
-    let seenNonEmptyLine = false; // 非空行検出フラグ
-
-    for (const line of lines) {
-      // frontmatter検出（ファイル先頭のみ）
-      if (line.trim() === "---" && !frontmatterEnded) {
-        // 先頭の空行をスキップした後の最初の---
-        if (!seenNonEmptyLine) {
-          inFrontmatter = true;
-          currentChunk.push(line);
-          seenNonEmptyLine = true;
-          continue;
-        }
-
-        // frontmatter内で2番目の---を検出
-        if (inFrontmatter) {
-          inFrontmatter = false;
-          frontmatterEnded = true;
-          currentChunk.push(line);
-          continue;
-        }
-      }
-
-      // 非空行を検出（frontmatterがない場合）
-      if (line.trim() !== "" && !seenNonEmptyLine) {
-        seenNonEmptyLine = true;
-        frontmatterEnded = true; // frontmatterなし確定
-      }
-
-      // frontmatter内は無条件で追加
-      if (inFrontmatter) {
-        currentChunk.push(line);
-        continue;
-      }
-
-      // H1見出しの検出（行頭が"# "）
-      if (line.startsWith("# ")) {
-        if (!isFirstH1 && currentChunk.length > 0) {
-          // 前のチャンクを保存
-          chunks.push(currentChunk.join("\n").trim());
-          currentChunk = [];
-        }
-        isFirstH1 = false;
-      }
-
-      currentChunk.push(line);
-    }
-
-    // 最後のチャンクを追加
-    if (currentChunk.length > 0) {
-      chunks.push(currentChunk.join("\n").trim());
-    }
-
-    return chunks.filter((chunk) => chunk.length > 0);
-  }
-
-  /**
-   * チャンクをファイルに出力
-   * @param chunks チャンクの配列
-   * @returns 出力されたファイルパスの配列
-   */
-  writeChunks(chunks: string[]): string[] {
-    // 空チェック
-    if (chunks.length === 0) {
-      return [];
-    }
-
-    // chunksディレクトリ作成（古いチャンクを削除してから）
-    const chunksDir = join(this.outputDir, "chunks");
-    if (existsSync(chunksDir)) {
-      rmSync(chunksDir, { recursive: true, force: true });
-    }
-    mkdirSync(chunksDir, { recursive: true });
-
-    const outputPaths: string[] = [];
-
-    for (let i = 0; i < chunks.length; i++) {
-      const chunkNum = String(i + 1).padStart(3, "0");
-      const chunkFile = `chunk-${chunkNum}.md`;
-      const chunkPath = join(chunksDir, chunkFile);
-
-      writeFileSync(chunkPath, chunks[i]);
-      outputPaths.push(chunkPath);
-    }
-
-    return outputPaths;
-  }
-
-  /**
-   * full.mdを読み込んでチャンク分割し、ファイルに出力
-   * @param fullMarkdown 結合されたMarkdown文字列
-   * @returns 出力されたファイルパスの配列
-   */
-  chunkAndWrite(fullMarkdown: string): string[] {
-    const chunks = this.chunk(fullMarkdown);
-    return this.writeChunks(chunks);
-  }
+  constructor(outputDir: string)
+  chunk(fullMarkdown: string): string[]
+  writeChunks(chunks: string[]): string[]
+  chunkAndWrite(fullMarkdown: string): string[]
 }
 ```
+
+#### 分割ロジック
+
+- **分割境界**: `#`（H1見出し）を新チャンクの開始とする
+- **frontmatter処理**: ファイル先頭のfrontmatter（`---`で囲まれた部分）は最初のチャンクに含める
+- **空チャンク除外**: 空のチャンクは出力しない
+
+**分割例:**
+
+```markdown
+# Section A
+## A-1
+## A-2
+# Section B
+## B-1
+```
+
+↓ 分割後
+
+```
+chunk-001.md: # Section A, ## A-1, ## A-2
+chunk-002.md: # Section B, ## B-1
+```
+
+#### 使用例
+
+```typescript
+const chunker = new Chunker(outputDir);
+const chunkPaths = chunker.chunkAndWrite(fullMarkdown);
+// → .context/<site>/chunks/chunk-001.md, chunk-002.md, ... が生成される
+```
+
+**実装詳細:** `link-crawler/src/output/chunker.ts`
 
 ---
 
