@@ -33,6 +33,7 @@ export interface PlaywrightPathConfig {
  */
 export class PlaywrightFetcher implements Fetcher {
 	private initialized = false;
+	private isClosed = false;
 	private nodePath: string = "node";
 	private playwrightPath: string = "playwright-cli";
 	private runtime: RuntimeAdapter;
@@ -245,6 +246,15 @@ export class PlaywrightFetcher implements Fetcher {
 	}
 
 	async close(): Promise<void> {
+		// Idempotency guard: prevent double close
+		if (this.isClosed) {
+			if (this.debug) {
+				console.log("[DEBUG] close() called but already closed (skipping)");
+			}
+			return;
+		}
+		this.isClosed = true;
+
 		try {
 			// デフォルトセッションを停止
 			// Note: 以前は ["close", "--session", sessionId] だったが、

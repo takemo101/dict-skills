@@ -69,8 +69,18 @@ async function main(): Promise<void> {
 		process.exit(EXIT_CODES.GENERAL_ERROR);
 	};
 
-	process.on("SIGINT", () => handleShutdown("SIGINT"));
-	process.on("SIGTERM", () => handleShutdown("SIGTERM"));
+	process.on("SIGINT", () =>
+		handleShutdown("SIGINT").catch((err) => {
+			console.error("Error during shutdown:", err);
+			process.exit(EXIT_CODES.GENERAL_ERROR);
+		}),
+	);
+	process.on("SIGTERM", () =>
+		handleShutdown("SIGTERM").catch((err) => {
+			console.error("Error during shutdown:", err);
+			process.exit(EXIT_CODES.GENERAL_ERROR);
+		}),
+	);
 
 	try {
 		const config = parseConfig(options, startUrl);
