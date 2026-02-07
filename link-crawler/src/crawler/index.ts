@@ -242,13 +242,15 @@ export class Crawler {
 			description: metadata.description?.substring(0, 100),
 		});
 
-		// コンテンツ抽出（JSDOMを渡す）
-		const { title, content } = extractContent(dom);
-		this.logger.logDebug("Content extracted", { title, contentLength: content?.length || 0 });
-
-		// リンク抽出（JSDOMを渡す）
+		// リンク抽出（extractContent より前に実行し、DOM 破壊的変更の影響を回避）
+		// Issue #712: extractContent は DOM を変更するため、extractLinks を先に呼ぶ必要がある
 		const links = extractLinks(dom, this.visited, this.config);
 		this.logger.logDebug("Links extracted", { linkCount: links.length, links: links.slice(0, 5) });
+
+		// コンテンツ抽出（JSDOMを渡す）
+		// 注意: この関数は DOM を破壊的に変更する（nav/header/footer 等を削除）
+		const { title, content } = extractContent(dom);
+		this.logger.logDebug("Content extracted", { title, contentLength: content?.length || 0 });
 
 		// Markdown変換
 		const markdown = content ? htmlToMarkdown(content) : "";
