@@ -159,10 +159,13 @@ export function extractMetadata(dom: JSDOM): PageMetadata {
 
 /** HTMLから本文コンテンツを抽出（JSDOMインスタンスを使用） */
 export function extractContent(dom: JSDOM): { title: string | null; content: string | null } {
-	// コードブロックを保護してからReadabilityを実行
-	const codeBlockMap = protectCodeBlocks(dom.window.document);
+	// DOM を破壊しないようにクローンを使用 (Issue #745)
+	const clonedDoc = dom.window.document.cloneNode(true) as Document;
 
-	const reader = new Readability(dom.window.document.cloneNode(true) as Document);
+	// クローンに対してコードブロック保護を実行
+	const codeBlockMap = protectCodeBlocks(clonedDoc);
+
+	const reader = new Readability(clonedDoc);
 	const article = reader.parse();
 
 	if (article?.content) {
@@ -172,7 +175,7 @@ export function extractContent(dom: JSDOM): { title: string | null; content: str
 	}
 
 	// フォールバック: main タグなどから抽出
-	const fallback = extractFallbackContent(dom.window.document);
+	const fallback = extractFallbackContent(clonedDoc);
 	// マーカーを復元してコードブロックを正しく保持
 	if (fallback.content) {
 		fallback.content = restoreCodeBlocks(fallback.content, codeBlockMap);
