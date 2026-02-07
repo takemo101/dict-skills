@@ -92,6 +92,20 @@ log_verbose() {
     fi
 }
 
+# Portable size formatting function
+format_size() {
+    local size=$1
+    if (( size >= 1073741824 )); then
+        echo "$(( size / 1073741824 ))GiB"
+    elif (( size >= 1048576 )); then
+        echo "$(( size / 1048576 ))MiB"
+    elif (( size >= 1024 )); then
+        echo "$(( size / 1024 ))KiB"
+    else
+        echo "${size}B"
+    fi
+}
+
 # Main cleanup function
 cleanup_improve_logs() {
     log_info "Cleaning up .improve-logs/ (retention: ${RETENTION_DAYS} days)..."
@@ -110,7 +124,7 @@ cleanup_improve_logs() {
         size=$(stat -f%z "$file" 2>/dev/null || stat -c%s "$file" 2>/dev/null || echo 0)
         ((total_size+=size))
         
-        log_verbose "  - $file ($(numfmt --to=iec-i --suffix=B "$size" 2>/dev/null || echo "${size}B"))"
+        log_verbose "  - $file ($(format_size "$size"))"
         
         if [[ "$DRY_RUN" == "false" ]]; then
             rm -f "$file"
@@ -121,7 +135,7 @@ cleanup_improve_logs() {
         log_info "No files older than ${RETENTION_DAYS} days found in .improve-logs/"
     else
         local size_human
-        size_human=$(numfmt --to=iec-i --suffix=B "$total_size" 2>/dev/null || echo "${total_size}B")
+        size_human=$(format_size "$total_size")
         if [[ "$DRY_RUN" == "true" ]]; then
             log_warn "Would delete ${file_count} files (${size_human}) from .improve-logs/"
         else
