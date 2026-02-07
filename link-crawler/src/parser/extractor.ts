@@ -15,19 +15,6 @@ const CODE_BLOCK_SELECTORS = [
 	".shiki",
 ];
 
-/** HTML内でコードブロックを検出するためのインジケータ（実際にHTML文字列に現れる形式） */
-const CODE_BLOCK_INDICATORS = [
-	"<pre",
-	"<code",
-	"hljs",
-	"shiki",
-	"prism-code",
-	"highlight",
-	"code-block",
-	"data-language",
-	"data-rehype-pretty-code",
-];
-
 /** 一意なマーカーIDを生成 */
 function generateMarkerId(index: number): string {
 	return `CODEBLOCK_${index}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -114,6 +101,19 @@ function restoreCodeBlocks(html: string, codeBlockMap: Map<string, string>): str
 	return restored;
 }
 
+/** コードブロックを検出するための HTML パターン */
+const CODE_BLOCK_HTML_PATTERNS = [
+	/<pre[\s>]/i, // <pre> タグ
+	/<code[\s>]/i, // <code> タグ
+	/data-language=/i, // data-language 属性
+	/data-rehype-pretty-code-fragment/i, // data-rehype-pretty-code-fragment 属性
+	/class="[^"]*\bcode-block\b/i, // code-block クラス
+	/class="[^"]*\bhighlight\b/i, // highlight クラス
+	/class="[^"]*\bhljs\b/i, // hljs クラス
+	/class="[^"]*\bprism-code\b/i, // prism-code クラス
+	/class="[^"]*\bshiki\b/i, // shiki クラス
+];
+
 /** フォールバック抽出時にコードブロックを保護 */
 function extractAndPreserveCodeBlocks(doc: Document): {
 	title: string | null;
@@ -140,13 +140,7 @@ function extractAndPreserveCodeBlocks(doc: Document): {
 
 	// コンテンツにコードブロックが含まれていない場合、収集したものを追加
 	if (content && codeBlocks.length > 0) {
-		// HTMLタグ/属性として実際に存在するかチェック（単語のサブストリングマッチを避ける）
-		const hasCodeBlock = content
-			? /\<(pre|code)\b/i.test(content) ||
-			  /class="[^"]*(?:highlight|hljs|prism-code|shiki|code-block)[^"]*"/i.test(content) ||
-			  /data-language=/i.test(content) ||
-			  /data-rehype-pretty-code/i.test(content)
-			: false;
+		const hasCodeBlock = CODE_BLOCK_HTML_PATTERNS.some((pattern) => pattern.test(content!));
 		if (!hasCodeBlock) {
 			content = `${codeBlocks.join("\n")}\n${content}`;
 		}
