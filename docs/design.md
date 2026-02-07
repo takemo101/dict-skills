@@ -29,7 +29,7 @@
 
 | カテゴリ | 技術 | バージョン | 選定理由 |
 |----------|------|-----------|----------|
-| Runtime | Bun | 1.3.x | 高速起動、TypeScriptネイティブ |
+| Runtime | Bun | 1.0+ | 高速起動、TypeScriptネイティブ |
 | Language | TypeScript | 5.8.x | 型安全性 |
 | Linter/Formatter | Biome | 2.x | 高速、設定シンプル |
 | Test Framework | Vitest | 4.x | 高速、ESM対応、Bun互換 |
