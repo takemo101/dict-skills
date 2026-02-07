@@ -1144,6 +1144,366 @@ describe("PlaywrightFetcher", () => {
 			expect(result).toBeNull();
 		});
 
+		it("should accept 201 Created status code", async () => {
+			const config = createMockConfig();
+			const mockRuntime = createMockRuntime();
+			let callCount = 0;
+			mockRuntime.spawn = vi.fn().mockImplementation(() => {
+				callCount++;
+				if (callCount === 1) {
+					// checkPlaywrightCli
+					return Promise.resolve({
+						success: true,
+						stdout: "1.0.0",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				if (callCount === 2) {
+					// open command
+					return Promise.resolve({
+						success: true,
+						stdout: "",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				if (callCount === 3) {
+					// network command
+					return Promise.resolve({
+						success: true,
+						stdout: "[Network](../path/to/network.log)",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				// eval command
+				return Promise.resolve({
+					success: true,
+					stdout: '### Result\n"<html>Created</html>"\n### Ran Playwright code',
+					stderr: "",
+					exitCode: 0,
+				} as SpawnResult);
+			});
+			mockRuntime.sleep = vi.fn().mockResolvedValue(undefined);
+			mockRuntime.readFile = vi.fn().mockResolvedValue("status: 201\ncontent-type: text/html");
+			mockExistsSync.mockReturnValue(true);
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			const result = await fetcher.fetch("https://example.com/created");
+
+			expect(result).not.toBeNull();
+			expect(result?.html).toBe("<html>Created</html>");
+		});
+
+		it("should accept 203 Non-Authoritative Information status code", async () => {
+			const config = createMockConfig();
+			const mockRuntime = createMockRuntime();
+			let callCount = 0;
+			mockRuntime.spawn = vi.fn().mockImplementation(() => {
+				callCount++;
+				if (callCount === 1) {
+					// checkPlaywrightCli
+					return Promise.resolve({
+						success: true,
+						stdout: "1.0.0",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				if (callCount === 2) {
+					// open command
+					return Promise.resolve({
+						success: true,
+						stdout: "",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				if (callCount === 3) {
+					// network command
+					return Promise.resolve({
+						success: true,
+						stdout: "[Network](../path/to/network.log)",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				// eval command
+				return Promise.resolve({
+					success: true,
+					stdout: '### Result\n"<html>Non-Auth</html>"\n### Ran Playwright code',
+					stderr: "",
+					exitCode: 0,
+				} as SpawnResult);
+			});
+			mockRuntime.sleep = vi.fn().mockResolvedValue(undefined);
+			mockRuntime.readFile = vi.fn().mockResolvedValue("status: 203\ncontent-type: text/html");
+			mockExistsSync.mockReturnValue(true);
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			const result = await fetcher.fetch("https://example.com/proxy");
+
+			expect(result).not.toBeNull();
+			expect(result?.html).toBe("<html>Non-Auth</html>");
+		});
+
+		it("should accept 204 No Content status code", async () => {
+			const config = createMockConfig();
+			const mockRuntime = createMockRuntime();
+			let callCount = 0;
+			mockRuntime.spawn = vi.fn().mockImplementation(() => {
+				callCount++;
+				if (callCount === 1) {
+					// checkPlaywrightCli
+					return Promise.resolve({
+						success: true,
+						stdout: "1.0.0",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				if (callCount === 2) {
+					// open command
+					return Promise.resolve({
+						success: true,
+						stdout: "",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				if (callCount === 3) {
+					// network command
+					return Promise.resolve({
+						success: true,
+						stdout: "[Network](../path/to/network.log)",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				// eval command
+				return Promise.resolve({
+					success: true,
+					stdout: '### Result\n"<html></html>"\n### Ran Playwright code',
+					stderr: "",
+					exitCode: 0,
+				} as SpawnResult);
+			});
+			mockRuntime.sleep = vi.fn().mockResolvedValue(undefined);
+			mockRuntime.readFile = vi.fn().mockResolvedValue("status: 204\ncontent-type: text/html");
+			mockExistsSync.mockReturnValue(true);
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			const result = await fetcher.fetch("https://example.com/nocontent");
+
+			expect(result).not.toBeNull();
+			expect(result?.html).toBe("<html></html>");
+		});
+
+		it("should accept 206 Partial Content status code", async () => {
+			const config = createMockConfig();
+			const mockRuntime = createMockRuntime();
+			let callCount = 0;
+			mockRuntime.spawn = vi.fn().mockImplementation(() => {
+				callCount++;
+				if (callCount === 1) {
+					// checkPlaywrightCli
+					return Promise.resolve({
+						success: true,
+						stdout: "1.0.0",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				if (callCount === 2) {
+					// open command
+					return Promise.resolve({
+						success: true,
+						stdout: "",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				if (callCount === 3) {
+					// network command
+					return Promise.resolve({
+						success: true,
+						stdout: "[Network](../path/to/network.log)",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				// eval command
+				return Promise.resolve({
+					success: true,
+					stdout: '### Result\n"<html>Partial</html>"\n### Ran Playwright code',
+					stderr: "",
+					exitCode: 0,
+				} as SpawnResult);
+			});
+			mockRuntime.sleep = vi.fn().mockResolvedValue(undefined);
+			mockRuntime.readFile = vi.fn().mockResolvedValue("status: 206\ncontent-type: text/html");
+			mockExistsSync.mockReturnValue(true);
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			const result = await fetcher.fetch("https://example.com/partial");
+
+			expect(result).not.toBeNull();
+			expect(result?.html).toBe("<html>Partial</html>");
+		});
+
+		it("should accept 299 (maximum 2xx) status code", async () => {
+			const config = createMockConfig();
+			const mockRuntime = createMockRuntime();
+			let callCount = 0;
+			mockRuntime.spawn = vi.fn().mockImplementation(() => {
+				callCount++;
+				if (callCount === 1) {
+					// checkPlaywrightCli
+					return Promise.resolve({
+						success: true,
+						stdout: "1.0.0",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				if (callCount === 2) {
+					// open command
+					return Promise.resolve({
+						success: true,
+						stdout: "",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				if (callCount === 3) {
+					// network command
+					return Promise.resolve({
+						success: true,
+						stdout: "[Network](../path/to/network.log)",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				// eval command
+				return Promise.resolve({
+					success: true,
+					stdout: '### Result\n"<html>Max 2xx</html>"\n### Ran Playwright code',
+					stderr: "",
+					exitCode: 0,
+				} as SpawnResult);
+			});
+			mockRuntime.sleep = vi.fn().mockResolvedValue(undefined);
+			mockRuntime.readFile = vi.fn().mockResolvedValue("status: 299\ncontent-type: text/html");
+			mockExistsSync.mockReturnValue(true);
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			const result = await fetcher.fetch("https://example.com/max");
+
+			expect(result).not.toBeNull();
+			expect(result?.html).toBe("<html>Max 2xx</html>");
+		});
+
+		it("should skip pages with 300 Multiple Choices status code", async () => {
+			const config = createMockConfig();
+			const mockRuntime = createMockRuntime();
+			let callCount = 0;
+			mockRuntime.spawn = vi.fn().mockImplementation(() => {
+				callCount++;
+				if (callCount === 1) {
+					// checkPlaywrightCli
+					return Promise.resolve({
+						success: true,
+						stdout: "1.0.0",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				if (callCount === 2) {
+					// open command
+					return Promise.resolve({
+						success: true,
+						stdout: "",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				if (callCount === 3) {
+					// network command
+					return Promise.resolve({
+						success: true,
+						stdout: "[Network](../path/to/network.log)",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				return Promise.resolve({
+					success: true,
+					stdout: "",
+					stderr: "",
+					exitCode: 0,
+				} as SpawnResult);
+			});
+			mockRuntime.sleep = vi.fn().mockResolvedValue(undefined);
+			mockRuntime.readFile = vi.fn().mockResolvedValue("status: 300\ncontent-type: text/html");
+			mockExistsSync.mockReturnValue(true);
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			const result = await fetcher.fetch("https://example.com/redirect");
+
+			expect(result).toBeNull();
+		});
+
+		it("should skip pages with 199 (below 2xx range) status code", async () => {
+			const config = createMockConfig();
+			const mockRuntime = createMockRuntime();
+			let callCount = 0;
+			mockRuntime.spawn = vi.fn().mockImplementation(() => {
+				callCount++;
+				if (callCount === 1) {
+					// checkPlaywrightCli
+					return Promise.resolve({
+						success: true,
+						stdout: "1.0.0",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				if (callCount === 2) {
+					// open command
+					return Promise.resolve({
+						success: true,
+						stdout: "",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				if (callCount === 3) {
+					// network command
+					return Promise.resolve({
+						success: true,
+						stdout: "[Network](../path/to/network.log)",
+						stderr: "",
+						exitCode: 0,
+					} as SpawnResult);
+				}
+				return Promise.resolve({
+					success: true,
+					stdout: "",
+					stderr: "",
+					exitCode: 0,
+				} as SpawnResult);
+			});
+			mockRuntime.sleep = vi.fn().mockResolvedValue(undefined);
+			mockRuntime.readFile = vi.fn().mockResolvedValue("status: 199\ncontent-type: text/html");
+			mockExistsSync.mockReturnValue(true);
+
+			const fetcher = new PlaywrightFetcher(config, mockRuntime);
+			const result = await fetcher.fetch("https://example.com/invalid");
+
+			expect(result).toBeNull();
+		});
+
 		it("should skip pages with ERR_HTTP_RESPONSE_CODE_FAILURE", async () => {
 			const config = createMockConfig();
 			const mockRuntime = createMockRuntime();
