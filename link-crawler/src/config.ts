@@ -35,7 +35,11 @@ function parsePattern(pattern: string | undefined, name: string): RegExp | null 
 	}
 }
 
-export function parseConfig(options: Record<string, unknown>, startUrl: string, version: string): CrawlConfig {
+export function parseConfig(
+	options: Record<string, unknown>,
+	startUrl: string,
+	version: string,
+): CrawlConfig {
 	// Validate startUrl format
 	let parsed: URL;
 	try {
