@@ -1,16 +1,16 @@
-# Pi Agent
+# === Pi Agent ===
 .pi
 !.pi/skills/
 !.pi/skills/delete-environment/
 !.pi/skills/delete-environment/**
 
-# Development artifacts
-.improve-logs/
-.worktrees/
-test-output-*/
-.playwright-cli/
+# === Development Artifacts ===
+.improve-logs/        # Pi agent improvement logs
+.worktrees/          # Git worktree directories
+test-output-*/       # Test output directories
+.playwright-cli/     # Playwright CLI cache
 
-# pi-issue-runner
+# === Pi Issue Runner ===
 .pi-runner.yaml.local
 .pi-prompt.md
 *.swp
@@ -18,14 +18,14 @@ docs/plans/*.md
 !docs/plans/README.md
 .context/
 
-# Dependencies
+# === Dependencies ===
 node_modules/
 
-# Build output
+# === Build Output ===
 dist/
 
-# Coverage
+# === Coverage Reports ===
 **/coverage/
 
-# Test fixture directories
+# === Test Fixtures ===
 link-crawler/tests/**/.test-*/
