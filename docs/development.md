@@ -39,6 +39,7 @@ link-crawler/
 │   │   ├── index.ts            # CrawlerEngine
 │   │   ├── fetcher.ts          # PlaywrightFetcher
 │   │   ├── logger.ts           # ログ出力
+│   │   ├── robots.ts           # robots.txt パーサー
 │   │   └── post-processor.ts   # 後処理
 │   │
 │   ├── parser/
@@ -78,8 +79,10 @@ link-crawler/
 │   │   ├── index-manager.test.ts
 │   │   ├── links.test.ts
 │   │   ├── logger.test.ts
+│   │   ├── max-pages.test.ts
 │   │   ├── merger.test.ts
 │   │   ├── post-processor.test.ts
+│   │   ├── robots.test.ts
 │   │   ├── runtime.test.ts
 │   │   ├── site-name.test.ts
 │   │   └── writer.test.ts
