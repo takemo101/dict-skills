@@ -557,7 +557,7 @@ info:
 	describe("cleanup method", () => {
 		it("should wait for fetcherPromise to resolve during cleanup", async () => {
 			// fetcherの初期化を遅延させるモック
-			let resolveFetcher: ((value: Fetcher) => void) | null = null;
+			let resolveFetcher: ((value: Fetcher) => void) | undefined;
 			const delayedFetcherPromise = new Promise<Fetcher>((resolve) => {
 				resolveFetcher = resolve;
 			});
