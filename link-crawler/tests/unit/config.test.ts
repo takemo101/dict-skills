@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { parseConfig } from "../../src/config.js";
 import { ConfigError } from "../../src/errors.js";
 
@@ -151,5 +151,62 @@ describe("parseConfig - regex pattern validation", () => {
 			expect(error).toBeInstanceOf(ConfigError);
 			expect((error as ConfigError).configKey).toBe("exclude");
 		}
+	});
+});
+
+describe("parseConfig - output format warnings", () => {
+	it("should warn when all output formats are disabled", () => {
+		const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+		parseConfig({ pages: false, merge: false, chunks: false }, "https://example.com");
+
+		expect(consoleSpy).toHaveBeenCalledWith(
+			"⚠️  Warning: All output formats are disabled (--no-pages --no-merge without --chunks).",
+		);
+		expect(consoleSpy).toHaveBeenCalledWith(
+			"   Only index.json will be generated. Consider adding --chunks.",
+		);
+
+		consoleSpy.mockRestore();
+	});
+
+	it("should not warn when at least one output format is enabled - pages", () => {
+		const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+		parseConfig({ pages: true, merge: false, chunks: false }, "https://example.com");
+
+		expect(consoleSpy).not.toHaveBeenCalled();
+
+		consoleSpy.mockRestore();
+	});
+
+	it("should not warn when at least one output format is enabled - merge", () => {
+		const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+		parseConfig({ pages: false, merge: true, chunks: false }, "https://example.com");
+
+		expect(consoleSpy).not.toHaveBeenCalled();
+
+		consoleSpy.mockRestore();
+	});
+
+	it("should not warn when at least one output format is enabled - chunks", () => {
+		const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+		parseConfig({ pages: false, merge: false, chunks: true }, "https://example.com");
+
+		expect(consoleSpy).not.toHaveBeenCalled();
+
+		consoleSpy.mockRestore();
+	});
+
+	it("should not warn with default configuration", () => {
+		const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+		parseConfig({}, "https://example.com");
+
+		expect(consoleSpy).not.toHaveBeenCalled();
+
+		consoleSpy.mockRestore();
 	});
 });
