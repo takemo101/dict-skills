@@ -476,7 +476,8 @@ class PlaywrightFetcher implements Fetcher {
       this.initialized = true;
     }
 
-    // タイムアウト処理
+    // タイムアウト処理（簡略版）
+    // Note: 実際の実装では clearTimeout でタイマーをクリアしています
     const timeoutPromise = new Promise<never>((_, reject) => {
       setTimeout(() => {
         reject(new TimeoutError(`Request timeout after ${this.config.timeout}ms`, this.config.timeout));
