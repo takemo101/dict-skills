@@ -134,7 +134,7 @@ export class RobotsChecker {
 				.split("*")
 				.map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
 				.join(".*");
-			const regex = new RegExp("^" + regexStr + (exactEnd ? "$" : ""));
+			const regex = new RegExp(`^${regexStr}${exactEnd ? "$" : ""}`);
 			return regex.test(path);
 		}
 

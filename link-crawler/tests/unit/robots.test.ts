@@ -339,9 +339,7 @@ Disallow: /*/download/*.pdf$
 
 				const checker = new RobotsChecker(robotsTxt);
 				expect(checker.isAllowed("https://example.com/docs/download/file.pdf")).toBe(false);
-				expect(checker.isAllowed("https://example.com/docs/download/file.pdf?id=1")).toBe(
-					true,
-				);
+				expect(checker.isAllowed("https://example.com/docs/download/file.pdf?id=1")).toBe(true);
 				expect(checker.isAllowed("https://example.com/docs/download/file.txt")).toBe(true);
 			});
 		});
