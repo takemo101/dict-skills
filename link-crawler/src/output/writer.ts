@@ -133,7 +133,7 @@ export class OutputWriter {
 			`url: ${url}`,
 			`title: "${(metadata.title || title || "").replace(/"/g, '\\"')}"`,
 			metadata.description ? `description: "${metadata.description.replace(/"/g, '\\"')}"` : null,
-			metadata.keywords ? `keywords: "${metadata.keywords}"` : null,
+			metadata.keywords ? `keywords: "${metadata.keywords.replace(/"/g, '\\"')}"` : null,
 			hash ? `hash: "${hash}"` : null,
 			`crawledAt: ${pageCrawledAt}`,
 			`depth: ${depth}`,
