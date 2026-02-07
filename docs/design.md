@@ -654,10 +654,12 @@ class PlaywrightFetcher implements Fetcher {
 
 **実装の主な特徴：**
 - `runtime.spawn()` によるコマンド実行（stdout/stderrを分離取得）
-- タイムアウト処理（`Promise.race` による競合）
+- タイムアウト処理（`Promise.race` による競合、`clearTimeout` で適切にクリーンアップ）
 - HTTPステータスコード確認（2xx範囲外をスキップ）
 - エラーページ検出（chrome-error://をスキップ）
 - セッション後のクリーンアップ（`.playwright-cli` ディレクトリ削除）
+- `this.runtime.cwd()` の使用（テスタビリティ向上、PR #474で修正）
+- デバッグログ（`debug` フラグ有効時にセッション停止やクリーンアップのエラーを出力）
 
 詳細な実装は `src/crawler/fetcher.ts` および `src/utils/runtime.ts` を参照してください。
 
