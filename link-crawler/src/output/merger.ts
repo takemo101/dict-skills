@@ -1,5 +1,3 @@
-import { writeFileSync } from "node:fs";
-import { join } from "node:path";
 import type { CrawledPage } from "../types.js";
 
 /**
@@ -61,17 +59,5 @@ export class Merger {
 		return sections.join("\n\n---\n\n");
 	}
 
-	/**
-	 * full.mdを出力
-	 * @param pages クロール済みページ一覧
-	 * @param pageContents ページ内容のMap (file -> markdown)
-	 * @returns 出力ファイルパス
-	 */
-	writeFull(pages: CrawledPage[], pageContents: Map<string, string>): string {
-		const fullContent = this.buildFullContent(pages, pageContents);
-		const outputPath = join(this.outputDir, "full.md");
-		writeFileSync(outputPath, fullContent);
 
-		return outputPath;
-	}
 }

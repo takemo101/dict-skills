@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, rmSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Merger } from "../../src/output/merger.js";
@@ -160,13 +160,15 @@ Content after frontmatter`,
 		});
 	});
 
-	describe("writeFull", () => {
+	describe("buildFullContent + writeFileSync", () => {
 		it("should write full.md file", () => {
 			const merger = new Merger(testOutputDir);
 			const pages = [createPage("https://example.com/page1", "Page 1", "pages/page-001.md")];
 			const pageContents = new Map([["pages/page-001.md", "# Page 1\n\nThis is content."]]);
 
-			const outputPath = merger.writeFull(pages, pageContents);
+			const fullContent = merger.buildFullContent(pages, pageContents);
+			const outputPath = join(testOutputDir, "full.md");
+			writeFileSync(outputPath, fullContent);
 
 			expect(outputPath).toBe(join(testOutputDir, "full.md"));
 			const content = readFileSync(outputPath, "utf-8");
@@ -186,7 +188,9 @@ Content after frontmatter`,
 				["pages/page-002.md", "# Page 2\n\nContent 2"],
 			]);
 
-			const outputPath = merger.writeFull(pages, pageContents);
+			const fullContent = merger.buildFullContent(pages, pageContents);
+			const outputPath = join(testOutputDir, "full.md");
+			writeFileSync(outputPath, fullContent);
 
 			const content = readFileSync(outputPath, "utf-8");
 			expect(content).toContain("---");
@@ -205,7 +209,9 @@ Content after frontmatter`,
 				["pages/page-002.md", "# Same Title\n\nContent from page 2"],
 			]);
 
-			const outputPath = merger.writeFull(pages, pageContents);
+			const fullContent = merger.buildFullContent(pages, pageContents);
+			const outputPath = join(testOutputDir, "full.md");
+			writeFileSync(outputPath, fullContent);
 
 			const content = readFileSync(outputPath, "utf-8");
 			// Both pages should be present with their content
@@ -221,7 +227,9 @@ Content after frontmatter`,
 			const pages = [createPage("https://example.com/page1", "Page 1", "pages/page-001.md")];
 			const pageContents = new Map<string, string>([]);
 
-			const outputPath = merger.writeFull(pages, pageContents);
+			const fullContent = merger.buildFullContent(pages, pageContents);
+			const outputPath = join(testOutputDir, "full.md");
+			writeFileSync(outputPath, fullContent);
 
 			const content = readFileSync(outputPath, "utf-8");
 			expect(content).toContain("# Page 1");
@@ -235,7 +243,9 @@ Content after frontmatter`,
 			const pages = [createPage("https://example.com/page1", "Page 1", "pages/page-001.md")];
 			const pageContents = new Map([["pages/page-001.md", ""]]);
 
-			const outputPath = merger.writeFull(pages, pageContents);
+			const fullContent = merger.buildFullContent(pages, pageContents);
+			const outputPath = join(testOutputDir, "full.md");
+			writeFileSync(outputPath, fullContent);
 
 			const content = readFileSync(outputPath, "utf-8");
 			expect(content).toContain("# Page 1");
@@ -253,7 +263,9 @@ Content after frontmatter`,
 				pageContents.set(file, `# Page ${i}\n\nContent ${i}`);
 			}
 
-			const outputPath = merger.writeFull(pages, pageContents);
+			const fullContent = merger.buildFullContent(pages, pageContents);
+			const outputPath = join(testOutputDir, "full.md");
+			writeFileSync(outputPath, fullContent);
 
 			const content = readFileSync(outputPath, "utf-8");
 			expect(content).toContain("# Page 1");
