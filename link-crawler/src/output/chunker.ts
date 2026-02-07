@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 /**
@@ -91,8 +91,11 @@ export class Chunker {
 			return [];
 		}
 
-		// chunksディレクトリ作成
+		// chunksディレクトリ作成（古いチャンクを削除してから）
 		const chunksDir = join(this.outputDir, "chunks");
+		if (existsSync(chunksDir)) {
+			rmSync(chunksDir, { recursive: true, force: true });
+		}
 		mkdirSync(chunksDir, { recursive: true });
 
 		const outputPaths: string[] = [];

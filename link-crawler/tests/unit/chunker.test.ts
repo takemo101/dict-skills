@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Chunker } from "../../src/output/chunker.js";
@@ -255,6 +255,32 @@ Content 2.`;
 
 			const stats = readFileSync(join(testOutputDir, "chunks", "chunk-001.md"));
 			expect(stats).toBeDefined();
+		});
+
+		it("should remove old chunk files on re-write", () => {
+			const chunker = new Chunker(testOutputDir);
+
+			// 1回目: 3つのチャンクを書き込み
+			const firstChunks = ["# Chunk 1", "# Chunk 2", "# Chunk 3"];
+			chunker.writeChunks(firstChunks);
+
+			// 3つのファイルが存在することを確認
+			expect(existsSync(join(testOutputDir, "chunks", "chunk-001.md"))).toBe(true);
+			expect(existsSync(join(testOutputDir, "chunks", "chunk-002.md"))).toBe(true);
+			expect(existsSync(join(testOutputDir, "chunks", "chunk-003.md"))).toBe(true);
+
+			// 2回目: 2つのチャンクを書き込み
+			const secondChunks = ["# New Chunk 1", "# New Chunk 2"];
+			chunker.writeChunks(secondChunks);
+
+			// 2つのファイルのみ存在することを確認（3つ目は削除されている）
+			expect(existsSync(join(testOutputDir, "chunks", "chunk-001.md"))).toBe(true);
+			expect(existsSync(join(testOutputDir, "chunks", "chunk-002.md"))).toBe(true);
+			expect(existsSync(join(testOutputDir, "chunks", "chunk-003.md"))).toBe(false);
+
+			// 内容が更新されていることを確認
+			const content1 = readFileSync(join(testOutputDir, "chunks", "chunk-001.md"), "utf-8");
+			expect(content1).toBe("# New Chunk 1");
 		});
 	});
 
