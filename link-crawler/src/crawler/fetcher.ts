@@ -90,6 +90,14 @@ export class PlaywrightFetcher implements Fetcher {
 			if (!["http:", "https:"].includes(parsed.protocol)) {
 				return null;
 			}
+			// URL長の上限チェックを追加
+			if (url.length > 2048) {
+				return null;
+			}
+			// 制御文字のチェックを追加
+			if (/[\x00-\x1f\x7f]/.test(url)) {
+				return null;
+			}
 		} catch {
 			// URL解析に失敗した場合もnullを返す
 			return null;
