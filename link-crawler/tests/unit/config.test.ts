@@ -57,6 +57,42 @@ describe("parseConfig", () => {
 		expect(config.maxDepth).toBe(0);
 	});
 
+	it("should handle delay 0 correctly", () => {
+		const config = parseConfig({ delay: 0 }, "https://example.com");
+
+		expect(config.delay).toBe(0);
+	});
+
+	it("should handle delay as string '0' correctly", () => {
+		const config = parseConfig({ delay: "0" }, "https://example.com");
+
+		expect(config.delay).toBe(0);
+	});
+
+	it("should handle timeout 0 correctly", () => {
+		const config = parseConfig({ timeout: 0 }, "https://example.com");
+
+		expect(config.timeout).toBe(0);
+	});
+
+	it("should handle timeout as string '0' correctly", () => {
+		const config = parseConfig({ timeout: "0" }, "https://example.com");
+
+		expect(config.timeout).toBe(0);
+	});
+
+	it("should handle spaWait 0 correctly", () => {
+		const config = parseConfig({ wait: 0 }, "https://example.com");
+
+		expect(config.spaWait).toBe(0);
+	});
+
+	it("should handle spaWait as string '0' correctly", () => {
+		const config = parseConfig({ wait: "0" }, "https://example.com");
+
+		expect(config.spaWait).toBe(0);
+	});
+
 	it("should parse include/exclude patterns", () => {
 		const config = parseConfig(
 			{
