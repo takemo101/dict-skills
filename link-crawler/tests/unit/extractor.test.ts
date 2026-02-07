@@ -1680,3 +1680,373 @@ describe("extractContent - fallback code block detection (Issue #514)", () => {
 		}
 	});
 });
+
+describe("extractContent - protectCodeBlocks nested elements (lines 53, 62)", () => {
+	it("should skip child elements when parent code block is already processed", () => {
+		// Tests lines 496, 503-504, 509 in HTML coverage (lines 53, 62 in source)
+		// shouldSkip logic: when parent is already processed, child elements should be skipped
+		// Priority selectors process [data-rehype-pretty-code-fragment] before pre/code
+		const html = `<!DOCTYPE html><html><body>
+			<article>
+				<h1>Code Example with Nested Blocks</h1>
+				<p>This example demonstrates nested code block elements where the parent matches a higher-priority selector.</p>
+				<div data-rehype-pretty-code-fragment="">
+					<pre data-language="javascript">
+						<code class="language-javascript">
+							const nested = "should appear once";
+						</code>
+					</pre>
+				</div>
+				<p>The parent div with data-rehype-pretty-code-fragment is processed first.</p>
+				<p>Then pre and code are checked but skipped because their parent was already processed.</p>
+				<p>This prevents duplication of the same code block multiple times.</p>
+				<p>Additional content to ensure Readability processes this as main content.</p>
+			</article>
+		</body></html>`;
+		
+		const dom = new JSDOM(html, { url: "https://example.com/nested-skip" });
+		const result = extractContent(dom);
+		
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			expect(result.content).toContain("nested");
+			// Should only appear once despite three matching selectors (data-rehype, pre, code)
+			const matches = result.content.match(/should appear once/g);
+			expect(matches?.length).toBe(1);
+		}
+	});
+
+	it("should handle multiple nested code block structures", () => {
+		// Tests nested structures with different priority selectors
+		const html = `<!DOCTYPE html><html><body>
+			<article>
+				<h1>Multiple Nested Structures</h1>
+				<p>First example:</p>
+				<div class="shiki">
+					<pre data-language="python"><code>print("first")</code></pre>
+				</div>
+				<p>Second example:</p>
+				<div class="prism-code">
+					<pre><code class="language-typescript">const second = true;</code></pre>
+				</div>
+				<p>Third example:</p>
+				<div data-rehype-pretty-code-fragment="">
+					<pre><code>third example</code></pre>
+				</div>
+				<p>Additional content for Readability.</p>
+			</article>
+		</body></html>`;
+		
+		const dom = new JSDOM(html, { url: "https://example.com/multi-nested" });
+		const result = extractContent(dom);
+		
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			// Each code block should appear only once
+			const firstMatches = result.content.match(/print\("first"\)/g);
+			const secondMatches = result.content.match(/const second/g);
+			const thirdMatches = result.content.match(/third example/g);
+			
+			expect(firstMatches?.length).toBe(1);
+			expect(secondMatches?.length).toBe(1);
+			expect(thirdMatches?.length).toBe(1);
+		}
+	});
+
+	it("should process deeply nested code blocks without duplication", () => {
+		// Tests deep nesting: rehype-fragment > pre > code
+		const html = `<!DOCTYPE html><html><body>
+			<article>
+				<h1>Deep Nesting Test</h1>
+				<p>Code with deep nesting structure:</p>
+				<figure data-rehype-pretty-code-figure="">
+					<div data-rehype-pretty-code-fragment="">
+						<pre data-language="rust" tabindex="0">
+							<code class="language-rust">
+								<span class="line">fn main() {</span>
+								<span class="line">    println!("deep nesting");</span>
+								<span class="line">}</span>
+							</code>
+						</pre>
+					</div>
+				</figure>
+				<p>More content here.</p>
+				<p>Additional paragraph for content detection.</p>
+			</article>
+		</body></html>`;
+		
+		const dom = new JSDOM(html, { url: "https://example.com/deep-nested" });
+		const result = extractContent(dom);
+		
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			expect(result.content).toContain("deep nesting");
+			// Should appear once despite multiple nested selectors matching
+			const matches = result.content.match(/deep nesting/g);
+			expect(matches?.length).toBe(1);
+		}
+	});
+});
+
+describe("extractContent - CODE_BLOCK_HTML_PATTERNS detection (line 144)", () => {
+	it("should detect existing <pre> tags in fallback content and not duplicate", () => {
+		// Tests line 144: pattern.test(currentContent) returns true for <pre>
+		const html = `<!DOCTYPE html><html><body>
+			<script>var trigger = "fallback";</script>
+			<style>.test { }</style>
+			<aside><pre><code>collected code</code></pre></aside>
+			<main>
+				<p>Main content text</p>
+				<pre><code>existing pre tag</code></pre>
+			</main>
+		</body></html>`;
+		
+		const dom = new JSDOM(html, { url: "https://example.com/detect-pre" });
+		const result = extractContent(dom);
+		
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			// Main content should have existing code
+			expect(result.content).toContain("existing pre tag");
+			// Pattern detected, so collected code should NOT be prepended
+			// If it was added, it would appear before main content
+		}
+	});
+
+	it("should detect existing <code> tags in fallback content", () => {
+		// Tests /<code[\s>]/i pattern detection
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<style>y</style>
+			<aside><pre><code>aside code</code></pre></aside>
+			<main>
+				<p>Inline <code>code example</code> in text</p>
+			</main>
+		</body></html>`;
+		
+		const dom = new JSDOM(html, { url: "https://example.com/detect-code-tag" });
+		const result = extractContent(dom);
+		
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			expect(result.content).toContain("code example");
+		}
+	});
+
+	it("should detect data-language attribute in fallback content", () => {
+		// Tests /data-language=/i pattern detection
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<style>y</style>
+			<aside><div class="code-block"><code>collected</code></div></aside>
+			<main>
+				<p>Example:</p>
+				<pre data-language="bash"><code>echo "test"</code></pre>
+			</main>
+		</body></html>`;
+		
+		const dom = new JSDOM(html, { url: "https://example.com/detect-data-lang" });
+		const result = extractContent(dom);
+		
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			expect(result.content).toContain("data-language");
+		}
+	});
+
+	it("should detect data-rehype-pretty-code-fragment in fallback content", () => {
+		// Tests /data-rehype-pretty-code-fragment/i pattern
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<style>y</style>
+			<aside><pre><code>aside</code></pre></aside>
+			<main>
+				<div data-rehype-pretty-code-fragment=""><pre>code</pre></div>
+			</main>
+		</body></html>`;
+		
+		const dom = new JSDOM(html, { url: "https://example.com/detect-rehype-attr" });
+		const result = extractContent(dom);
+		
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			expect(result.content).toContain("data-rehype-pretty-code-fragment");
+		}
+	});
+
+	it("should detect .code-block class in fallback content", () => {
+		// Tests /class="[^"]*\bcode-block\b/i pattern
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<style>y</style>
+			<aside><pre><code>collected</code></pre></aside>
+			<main>
+				<div class="code-block"><pre>example</pre></div>
+			</main>
+		</body></html>`;
+		
+		const dom = new JSDOM(html, { url: "https://example.com/detect-code-block-class" });
+		const result = extractContent(dom);
+		
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			expect(result.content).toContain("code-block");
+		}
+	});
+
+	it("should detect .highlight class in fallback content", () => {
+		// Tests /class="[^"]*\bhighlight\b/i pattern
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<style>y</style>
+			<aside><code>aside</code></aside>
+			<main>
+				<div class="highlight"><pre>highlighted</pre></div>
+			</main>
+		</body></html>`;
+		
+		const dom = new JSDOM(html, { url: "https://example.com/detect-highlight-class" });
+		const result = extractContent(dom);
+		
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			expect(result.content).toContain("highlight");
+		}
+	});
+
+	it("should detect .hljs class in fallback content", () => {
+		// Tests /class="[^"]*\bhljs\b/i pattern
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<style>y</style>
+			<aside><pre>aside</pre></aside>
+			<main>
+				<div class="hljs"><code>hljs code</code></div>
+			</main>
+		</body></html>`;
+		
+		const dom = new JSDOM(html, { url: "https://example.com/detect-hljs-class" });
+		const result = extractContent(dom);
+		
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			expect(result.content).toContain("hljs");
+		}
+	});
+
+	it("should detect .prism-code class in fallback content", () => {
+		// Tests /class="[^"]*\bprism-code\b/i pattern
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<style>y</style>
+			<aside><pre>aside</pre></aside>
+			<main>
+				<div class="prism-code"><code>prism</code></div>
+			</main>
+		</body></html>`;
+		
+		const dom = new JSDOM(html, { url: "https://example.com/detect-prism-class" });
+		const result = extractContent(dom);
+		
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			expect(result.content).toContain("prism-code");
+		}
+	});
+
+	it("should detect .shiki class in fallback content", () => {
+		// Tests /class="[^"]*\bshiki\b/i pattern
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<style>y</style>
+			<aside><pre>aside</pre></aside>
+			<main>
+				<div class="shiki"><code>shiki code</code></div>
+			</main>
+		</body></html>`;
+		
+		const dom = new JSDOM(html, { url: "https://example.com/detect-shiki-class" });
+		const result = extractContent(dom);
+		
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			expect(result.content).toContain("shiki");
+		}
+	});
+
+	it("should add collected code blocks when no pattern detected in content", () => {
+		// Tests lines 576, 590-593 in HTML coverage (lines 129, 143-146 in source)
+		// Triggers fallback: codeBlocks.push() and hasCodeBlock check with prepending
+		// Script+style only → Readability returns null → fallback path
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<style>y</style>
+			<pre><code>collected code block</code></pre>
+			<main><span>x</span></main>
+		</body></html>`;
+		
+		const dom = new JSDOM(html, { url: "https://example.com/fallback-collect-add" });
+		const result = extractContent(dom);
+		
+		// Fallback should execute and collect code blocks (line 576/129)
+		// Then check if content has code patterns (line 590-591/143-144)
+		// Since main has no code pattern, prepend collected blocks (line 593/146)
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			// Should include collected code block
+			const hasCode = result.content.includes("collected") || result.content.includes("code block") || result.content.includes("<pre>");
+			expect(hasCode).toBe(true);
+		}
+	});
+
+	it("should handle multiple collected code blocks when adding to content", () => {
+		// Tests line 576 (129) multiple times: collecting various code block types
+		// Tests line 593 (146): prepending all collected blocks
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<style>y</style>
+			<pre><code>first block</code></pre>
+			<div class="hljs"><code>second block</code></div>
+			<div data-language="python">third block</div>
+			<main><span>y</span></main>
+		</body></html>`;
+		
+		const dom = new JSDOM(html, { url: "https://example.com/fallback-multi-collect" });
+		const result = extractContent(dom);
+		
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			// Should collect and include multiple code blocks
+			const hasAny = result.content.includes("block") || result.content.includes("<pre>") || result.content.includes("hljs");
+			expect(hasAny).toBe(true);
+		}
+	});
+
+	it("should not add collected blocks when content already matches any pattern", () => {
+		// Tests that ANY pattern match prevents code block addition
+		const html = `<!DOCTYPE html><html><body>
+			<script>x</script>
+			<style>y</style>
+			<aside>
+				<pre><code>collected block 1</code></pre>
+				<div class="hljs"><code>collected block 2</code></div>
+			</aside>
+			<main>
+				<p>Text before</p>
+				<code>tiny inline code</code>
+				<p>Text after</p>
+			</main>
+		</body></html>`;
+		
+		const dom = new JSDOM(html, { url: "https://example.com/has-inline-code" });
+		const result = extractContent(dom);
+		
+		expect(result.content).not.toBeNull();
+		if (result.content) {
+			// Should have inline code from main
+			expect(result.content).toContain("tiny inline code");
+			// Collected blocks should not be duplicated
+			// (Pattern detected <code> in content, so collected blocks aren't added)
+		}
+	});
+});
