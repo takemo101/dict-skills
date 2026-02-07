@@ -104,7 +104,7 @@ bun run src/crawl.ts https://nextjs.org/docs \
 
 ```bash
 # 全テスト実行
-bun test
+bun run test
 
 # ウォッチモード
 bun run test:watch
