@@ -2186,9 +2186,10 @@ describe("extractContent - nested code block deduplication (Issue #631)", () => 
 		if (result.content) {
 			// ネストされた要素が重複処理されないことを確認
 			// 外側のdivが処理され、内側は自動的に含まれる
-			const hasContent = result.content.includes("nested code") || 
-			                   result.content.includes("Outer content") || 
-			                   result.content.includes("Inner content");
+			const hasContent =
+				result.content.includes("nested code") ||
+				result.content.includes("Outer content") ||
+				result.content.includes("Inner content");
 			expect(hasContent).toBe(true);
 		}
 	});
@@ -2225,8 +2226,8 @@ describe("extractContent - nested code block deduplication (Issue #631)", () => 
 		expect(result.content).not.toBeNull();
 		if (result.content) {
 			// 深くネストされたコードブロックも正しく処理される
-			const hasNested = result.content.includes("deeply nested") || 
-			                  result.content.includes("Level");
+			const hasNested =
+				result.content.includes("deeply nested") || result.content.includes("Level");
 			expect(hasNested).toBe(true);
 		}
 	});
