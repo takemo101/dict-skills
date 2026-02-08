@@ -1,5 +1,5 @@
 import { JSDOM } from "jsdom";
-import { computeHash, Hasher } from "../diff/hasher.js";
+import { computeHash, Hasher } from "../diff/index.js";
 import { OutputWriter } from "../output/writer.js";
 import { htmlToMarkdown } from "../parser/converter.js";
 import { extractContent, extractMetadata } from "../parser/extractor.js";
