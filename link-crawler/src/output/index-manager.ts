@@ -27,6 +27,8 @@ export class IndexManager {
 	private pageCount = 0;
 	/** 訪問済みURL（差分クロール時のマージ範囲制限用） */
 	private visitedUrls: Set<string> | null = null;
+	/** マージ済みフラグ（saveIndex複数回呼び出し対策） */
+	private mergedAlready = false;
 
 	constructor(
 		private outputDir: string,
@@ -161,11 +163,19 @@ export class IndexManager {
 	/**
 	 * 既存のページ情報を結果にマージ
 	 * 差分クロール時、スキップされたページの情報を保持するために使用
+	 * べき等性を保証（複数回呼ばれても安全）
 	 */
 	private mergeExistingPages(): void {
+		// 既にマージ済みの場合は何もしない（べき等性保証）
+		if (this.mergedAlready) return;
+		this.mergedAlready = true;
+
+		// O(1)の重複チェックのためSetを使用
+		const registeredUrls = new Set(this.result.pages.map((p) => p.url));
+
 		for (const [url, page] of this.existingPages) {
 			// 既に登録済みのページはスキップ
-			if (this.result.pages.some((p) => p.url === url)) {
+			if (registeredUrls.has(url)) {
 				continue;
 			}
 
