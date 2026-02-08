@@ -128,6 +128,9 @@ export class Crawler {
 		// 後処理: MergerとChunkerの実行
 		this.postProcessor.process(result.pages, this.pageContents);
 
+		// メモリ解放
+		this.pageContents.clear();
+
 		// 完了ログ
 		this.logger.logComplete(result.totalPages, result.specs.length, indexPath);
 	}
@@ -146,6 +149,9 @@ export class Crawler {
 		try {
 			// 0. リトライ情報のクリア
 			this.failedUrls.clear();
+
+			// メモリ解放
+			this.pageContents.clear();
 
 			// 1. 途中結果を保存
 			if (this.config.diff) {
