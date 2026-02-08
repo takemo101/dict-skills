@@ -77,7 +77,7 @@ export class Crawler {
 
 			const result = await this.fetcher.fetch(robotsUrl);
 			if (result?.contentType.includes("text/plain")) {
-				this.robotsChecker = new RobotsChecker(result.html);
+				this.robotsChecker = new RobotsChecker(result.html, "link-crawler");
 				this.logger.logDebug("robots.txt loaded and parsed", { url: robotsUrl });
 			} else {
 				this.logger.logDebug("robots.txt not available (allowing all)");
