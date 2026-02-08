@@ -8,48 +8,36 @@
 
 ### Overview
 
-This pi skill recursively crawls web pages starting from a specified URL and saves the collected content as structured Markdown optimized for AI context.
+**link-crawler** recursively crawls web pages starting from a specified URL and saves the collected content as structured Markdown optimized for AI context. Perfect for importing documentation into AI coding assistants.
 
 **Key Features:**
-- Recursive link exploration with depth control
-- Same-domain crawling support
-- Structured output (pages/chunks/full.md)
-- Differential crawling for efficient updates
-- Merged Markdown output for AI context
+- 🕷️ Recursive link exploration with depth control
+- 🎯 Flexible scope control (same-domain, include/exclude patterns)
+- 📝 AI-optimized Markdown output (full.md for LLM context)
+- 🔄 Differential crawling for efficient updates
+- ⚡ Fast processing with Playwright + Bun
 
 ### Quick Start
 
-**Prerequisites:**
-- [Bun](https://bun.sh/) 1.0+
-- [@playwright/cli](https://www.npmjs.com/package/@playwright/cli): `npm install -g @playwright/cli`
+See the [link-crawler README](link-crawler/README.md) for installation and setup instructions.
 
-**Installation:**
 ```bash
-# Clone the repository
-git clone https://github.com/takemo101/dict-skills.git
-cd dict-skills
-
-# Install dependencies
-cd link-crawler
-bun install
-```
-
-**Basic Usage:**
-```bash
-# Crawl a URL with depth 2 (outputs to .context/<site-name>/)
+# Basic crawl example
 bun run link-crawler/src/crawl.ts https://nextjs.org/docs -d 2
-# → outputs to .context/nextjs-docs/
 ```
 
-### Documentation
+### 📚 Documentation Guide
 
-| Document | Target Audience | Content |
-|----------|----------------|---------|
-| [SKILL.md](link-crawler/SKILL.md) | **pi users** | Concise usage as a pi skill |
-| [CLI Specification](docs/cli-spec.md) | **CLI users** | Complete option list, examples, output format specifications |
-| [Design Document](docs/design.md) | **Developers** | Architecture, data structures, technical specifications |
-| [Development Guide](docs/development.md) | **Developers** | Setup, testing, coding standards |
-| [Maintenance Guide](docs/maintenance.md) | **Maintainers** | Regular maintenance and cleanup procedures |
+**Choose your path based on your role:**
+
+| I want to... | Read this |
+|-------------|-----------|
+| Use as a **pi skill** | [SKILL.md](link-crawler/SKILL.md) |
+| Use as a **CLI tool** | [link-crawler/README.md](link-crawler/README.md) |
+| See **all CLI options** | [CLI Specification](docs/cli-spec.md) |
+| **Develop/contribute** | [Development Guide](docs/development.md) |
+| Understand **architecture** | [Design Document](docs/design.md) |
+| **Maintain** the project | [Maintenance Guide](docs/maintenance.md) |
 
 ### Contributing
 
@@ -67,65 +55,38 @@ MIT
 
 技術ドキュメントサイトをクロールし、AIコンテキスト用のMarkdownとして保存する pi スキル
 
-## 概要
+### 概要
 
-このスキルは、指定されたWebページを起点として、リンクを再帰的に辿りながら情報を収集し、AIが読みやすいMarkdown形式で保存します。
+**link-crawler** は、指定されたWebページを起点として、リンクを再帰的に辿りながら情報を収集し、AIコーディングアシスタントへのインポートに最適な構造化Markdown形式で保存します。
 
-### 主要機能
+**主要機能:**
+- 🕷️ 指定URLからのリンク探索（深さ制限付き）
+- 🎯 柔軟なスコープ制御（同一ドメイン、include/exclude パターン）
+- 📝 AI最適化Markdown出力（LLMコンテキスト用のfull.md）
+- 🔄 差分クロールによる効率的な更新
+- ⚡ Playwright + Bunによる高速処理
 
-- 指定URLからのリンク探索（深さ制限付き）
-- 同一ドメイン内の再帰的クローリング
-- 収集した情報の構造化（pages/chunks/full.md）
-- 差分クロールによる効率的な更新
-- AIコンテキスト用の結合Markdown出力
+### クイックスタート
 
-## クイックスタート
-
-### 前提条件
-
-- [Bun](https://bun.sh/) 1.0以上
-- [@playwright/cli](https://www.npmjs.com/package/@playwright/cli): `npm install -g @playwright/cli`
-
-### インストール
+インストールとセットアップについては [link-crawler README](link-crawler/README.md) を参照してください。
 
 ```bash
-# リポジトリをクローン
-git clone https://github.com/takemo101/dict-skills.git
-cd dict-skills
-
-# 依存関係をインストール
-cd link-crawler
-bun install
-```
-
-### 基本的な使い方
-
-```bash
-# 深度2で指定URLをクロール（自動的に .context/<サイト名>/ に出力）
+# 基本的なクロール例
 bun run link-crawler/src/crawl.ts https://nextjs.org/docs -d 2
-# → .context/nextjs-docs/ に出力
 ```
 
-## ドキュメント
+### 📚 ドキュメントガイド
 
-| ドキュメント | 対象読者 | 内容 |
-|-------------|---------|------|
-| [SKILL.md](link-crawler/SKILL.md) | **piユーザー** | piスキルとしての簡潔な使い方 |
-| [CLI仕様書](docs/cli-spec.md) | **CLIユーザー** | 完全なオプション一覧・詳細な使用例・出力形式の仕様 |
-| [設計書](docs/design.md) | **開発者** | アーキテクチャ・データ構造・技術仕様 |
-| [開発ガイド](docs/development.md) | **開発者** | 開発環境セットアップ・テスト・コーディング規約 |
-| [メンテナンスガイド](docs/maintenance.md) | **運用者** | 定期メンテナンス・クリーンアップ手順 |
+**あなたの目的に応じてお選びください:**
 
-### 情報の所在
-
-| 知りたいこと | 参照先 |
-|-------------|--------|
-| 全オプションの詳細 | [CLI仕様書](docs/cli-spec.md#3-オプション一覧) |
-| 使用例・ユースケース | [CLI仕様書](docs/cli-spec.md#4-使用例) |
-| 出力形式の仕様 | [CLI仕様書](docs/cli-spec.md#5-出力構造) |
-| 終了コード・環境変数 | [CLI仕様書](docs/cli-spec.md#6-終了コード) |
-| piスキルとしての使い方 | [SKILL.md](link-crawler/SKILL.md) |
-| アーキテクチャ・設計 | [設計書](docs/design.md) |
+| こんな場合は | このドキュメントを読む |
+|-------------|---------------------|
+| **piスキル**として使いたい | [SKILL.md](link-crawler/SKILL.md) |
+| **CLIツール**として使いたい | [link-crawler/README.md](link-crawler/README.md) |
+| **全オプション**を知りたい | [CLI仕様書](docs/cli-spec.md) |
+| **開発・貢献**したい | [開発ガイド](docs/development.md) |
+| **アーキテクチャ**を理解したい | [設計書](docs/design.md) |
+| プロジェクトを**運用**したい | [メンテナンスガイド](docs/maintenance.md) |
 
 ## コントリビューション
 

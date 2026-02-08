@@ -65,20 +65,17 @@ bun run src/crawl.ts https://nextjs.org/docs \
   --exclude "/api-reference/"
 ```
 
-### 主要オプション
+### よく使うオプション
 
 | オプション | 説明 | デフォルト |
 |-----------|------|-----------|
 | `-d, --depth <num>` | 最大クロール深度 | `1` |
-| `--max-pages <num>` | 最大クロールページ数（0=無制限） | 無制限 |
 | `-o, --output <dir>` | 出力ディレクトリ | `./.context/<サイト名>/` |
 | `--diff` | 差分クロール（変更ページのみ） | `false` |
-| `--same-domain` | 同一ドメインのみ追跡 | `true` |
 | `--include <pattern>` | 含めるURLパターン（正規表現） | - |
 | `--exclude <pattern>` | 除外するURLパターン（正規表現） | - |
-| `--delay <ms>` | リクエスト間隔 | `500` |
 
-**完全なオプション一覧は [CLI仕様書](https://github.com/takemo101/dict-skills/blob/main/docs/cli-spec.md) を参照してください。**
+> **📖 完全なオプション一覧**: [CLI仕様書](https://github.com/takemo101/dict-skills/blob/main/docs/cli-spec.md#3-オプション一覧) を参照
 
 ## 出力ファイル
 
@@ -90,6 +87,8 @@ bun run src/crawl.ts https://nextjs.org/docs \
 | `pages/*.md` | ページ単位のMarkdown |
 | `chunks/*.md` | 見出しベースで分割されたMarkdown（`--chunks`有効時） |
 | `index.json` | メタデータ・ハッシュ・クロール情報 |
+
+> **📖 詳細な出力構造**: [CLI仕様書](https://github.com/takemo101/dict-skills/blob/main/docs/cli-spec.md#5-出力構造) を参照
 
 ## ドキュメント
 
