@@ -169,4 +169,4 @@ Issue実装時の計画書。自動生成され、PRマージ後に削除され�
 
 - [GitHubリポジトリ](https://github.com/takemo101/dict-skills)
 - [piエージェント公式](https://github.com/badlogic/pi)
-- [playwright-cli](https://www.npmjs.com/package/@playwright/cli)
+- [@playwright/cli](https://www.npmjs.com/package/@playwright/cli)
