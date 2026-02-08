@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { OutputWriter } from "../../src/output/writer.js";
@@ -44,7 +44,7 @@ describe("OutputWriter", () => {
 	afterEach(() => {
 		rmSync(testOutputDir, { recursive: true, force: true });
 		// 一時ディレクトリもクリーンアップ
-		const entries = readdirSync(".").filter(e => e.startsWith("test-output-writer"));
+		const entries = readdirSync(".").filter((e) => e.startsWith("test-output-writer"));
 		for (const entry of entries) {
 			rmSync(entry, { recursive: true, force: true });
 		}
