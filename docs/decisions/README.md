@@ -17,6 +17,7 @@ NNN-問題名.md
 | [003](003-issue-946-duplicate.md) | Issue #946 は PR #944 で解決済み | 解決済み |
 | [004](004-issue-965-duplicate.md) | Issue #965 は Issue #961 と重複 | 解決済み |
 | [005](005-issue-581-unreachable-code.md) | extractor.ts ブランチカバレッジ改善 | 解決済み |
+| [006](006-skill-output-directory.md) | スキル実行時の出力ディレクトリ問題 | 有効 |
 
 ## 記録すべき内容
 

@@ -10,6 +10,7 @@
 |------|------|------|
 | デフォルトセッション使用 | playwright-cli 0.0.63+ の仕様変更 | [001](docs/decisions/001-playwright-cli-session.md) |
 | 並列クロール不可 | 上記の制約による | [001](docs/decisions/001-playwright-cli-session.md) |
+| スキル実行時は `-o` で絶対パス指定必須 | cwdがスキルディレクトリになるため | [006](docs/decisions/006-skill-output-directory.md) |
 
 <!-- 
   ⚠️ このテーブルには「現在有効な制約・注意点」のみを記載
