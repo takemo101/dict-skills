@@ -10,7 +10,7 @@ export class RobotsChecker {
 	private rules: RobotsRule[] = [];
 	private userAgent: string;
 
-	constructor(robotsTxt: string, userAgent = "*") {
+	constructor(robotsTxt: string, userAgent = "link-crawler") {
 		this.userAgent = userAgent;
 		// HTMLタグを除去してからパース（playwright-cli互換性のため）
 		const plainText = this.stripHtml(robotsTxt);

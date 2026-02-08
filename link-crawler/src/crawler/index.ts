@@ -77,7 +77,7 @@ export class Crawler {
 
 			const result = await this.fetcher.fetch(robotsUrl);
 			if (result?.contentType.includes("text/plain")) {
-				this.robotsChecker = new RobotsChecker(result.html);
+				this.robotsChecker = new RobotsChecker(result.html, "link-crawler");
 				this.logger.logDebug("robots.txt loaded and parsed", { url: robotsUrl });
 			} else {
 				this.logger.logDebug("robots.txt not available (allowing all)");
@@ -150,20 +150,33 @@ export class Crawler {
 			// 0. リトライ情報のクリア
 			this.failedUrls.clear();
 
-			// メモリ解放
-			this.pageContents.clear();
-
-			// 1. 途中結果を保存
+			// 1. 途中結果を保存（diffモード時のみ）
 			if (this.config.diff) {
 				this.writer.setVisitedUrls(this.visited);
+				const indexPath = this.writer.saveIndex();
+				this.logger.logDebug("Saved partial index", { path: indexPath });
 			}
-			const indexPath = this.writer.saveIndex();
-			this.logger.logDebug("Saved partial index", { path: indexPath });
 
-			// 2. 失敗時: 一時ディレクトリを削除（既存出力は保持）
+			// 2. 途中結果からfull.md/chunksを生成（ベストエフォート）
+			try {
+				const result = this.writer.getResult();
+				if (result.pages.length > 0) {
+					this.postProcessor.process(result.pages, this.pageContents);
+					this.logger.logDebug("Generated partial outputs during cleanup");
+				}
+			} catch (error) {
+				this.logger.logDebug("Failed to generate partial outputs (non-fatal)", {
+					error: String(error),
+				});
+			}
+
+			// 3. メモリ解放
+			this.pageContents.clear();
+
+			// 4. 失敗時: 一時ディレクトリを削除（既存出力は保持）
 			this.writer.cleanup();
 
-			// 3. Fetcher をクローズ（初期化中の場合も待機）
+			// 5. Fetcher をクローズ（初期化中の場合も待機）
 			if (this.fetcherPromise) {
 				try {
 					const fetcher = await this.fetcherPromise;
