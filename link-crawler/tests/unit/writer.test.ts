@@ -1,6 +1,14 @@
-import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import {
+	existsSync,
+	mkdirSync,
+	readdirSync,
+	readFileSync,
+	renameSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { OutputWriter } from "../../src/output/writer.js";
 import type { CrawlConfig, CrawlResult, PageMetadata } from "../../src/types.js";
 
@@ -972,7 +980,7 @@ describe("OutputWriter", () => {
 				null,
 			);
 			writer2.saveIndex();
-			
+
 			// finalize() 成功
 			writer2.finalize();
 
@@ -1014,7 +1022,7 @@ describe("OutputWriter", () => {
 		it("should not affect diff mode (no temp directory)", () => {
 			// diff モードでは一時ディレクトリを使用しない
 			const writer = new OutputWriter({ ...defaultConfig, diff: true });
-			
+
 			writer.savePage(
 				"https://example.com/page",
 				"# Content",
@@ -1184,7 +1192,7 @@ describe("OutputWriter", () => {
 
 			// 3. diffモードで新しいクロール（リカバリは発動しない）
 			const writer2 = new OutputWriter({ ...defaultConfig, diff: true });
-			
+
 			// diffモードでは既存ディレクトリを直接使用するため、
 			// 最終ディレクトリが存在しない場合は新規作成される
 			writer2.savePage(
