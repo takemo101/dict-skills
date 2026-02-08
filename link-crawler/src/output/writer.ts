@@ -40,18 +40,25 @@ export class OutputWriter {
 			},
 			this.logger,
 		);
+	}
 
-		// ディレクトリをクリーンアップしてから作成（diff モードでは既存ファイルを保持）
-		const pagesDir = join(config.outputDir, FILENAME.PAGES_DIR);
-		const specsDir = join(config.outputDir, FILENAME.SPECS_DIR);
+	/**
+	 * 出力ディレクトリを初期化
+	 * diff モードでは既存ファイルを保持、通常モードではクリーンアップ
+	 */
+	async init(): Promise<void> {
+		const pagesDir = join(this.config.outputDir, FILENAME.PAGES_DIR);
+		const specsDir = join(this.config.outputDir, FILENAME.SPECS_DIR);
 
-		if (!config.diff && existsSync(pagesDir)) {
+		// 非 diff モード時のみディレクトリをクリーンアップ
+		if (!this.config.diff && existsSync(pagesDir)) {
 			rmSync(pagesDir, { recursive: true, force: true });
 		}
-		if (!config.diff && existsSync(specsDir)) {
+		if (!this.config.diff && existsSync(specsDir)) {
 			rmSync(specsDir, { recursive: true, force: true });
 		}
 
+		// ディレクトリを作成
 		mkdirSync(pagesDir, { recursive: true });
 		mkdirSync(specsDir, { recursive: true });
 	}
