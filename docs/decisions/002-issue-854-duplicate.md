@@ -1,4 +1,4 @@
-# 854: Issue #854 is Duplicate of #848 (2026-02-08)
+# 002: Issue #854 is Duplicate of #848 (2026-02-08)
 
 ## Context
 Issue #854 requested refactoring `generateMarkerId()` in `link-crawler/src/parser/extractor.ts` to remove non-deterministic values (`Date.now()` and `Math.random()`).
