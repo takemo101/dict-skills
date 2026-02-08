@@ -218,4 +218,191 @@ describe("Crawler - Error Handling", () => {
 			);
 		});
 	});
+
+	describe("フェッチ失敗URLのリトライ機構", () => {
+		it("一時的なエラー後、他ページからのリンクでリトライされる", async () => {
+			// ページ1: 成功（page2へのリンク）
+			const page1Result: FetchResult = {
+				html: '<html><head><title>Page 1</title></head><body><a href="https://example.com/page2">Link to Page 2</a></body></html>',
+				finalUrl: "https://example.com",
+				contentType: "text/html",
+			};
+
+			// ページ2: 1回目は失敗、2回目は成功
+			const timeoutError = new TimeoutError("Request timeout", 5000);
+			const page2Result: FetchResult = {
+				html: '<html><head><title>Page 2</title></head><body><p>Content</p></body></html>',
+				finalUrl: "https://example.com/page2",
+				contentType: "text/html",
+			};
+
+			// ページ3: 成功（page2へのリンク）
+			const page3Result: FetchResult = {
+				html: '<html><head><title>Page 3</title></head><body><a href="https://example.com/page2">Link to Page 2</a></body></html>',
+				finalUrl: "https://example.com/page3",
+				contentType: "text/html",
+			};
+
+			// ページ1に page3 へのリンクを追加
+			const page1WithPage3: FetchResult = {
+				html: '<html><head><title>Page 1</title></head><body><a href="https://example.com/page2">Page 2</a><a href="https://example.com/page3">Page 3</a></body></html>',
+				finalUrl: "https://example.com",
+				contentType: "text/html",
+			};
+
+			(mockFetcher.fetch as Mock)
+				.mockResolvedValueOnce(page1WithPage3) // 1. page1 成功
+				.mockRejectedValueOnce(timeoutError) // 2. page2 失敗（1回目）
+				.mockResolvedValueOnce(page3Result) // 3. page3 成功
+				.mockResolvedValueOnce(page2Result); // 4. page2 成功（リトライ）
+
+			// クロール実行
+			// @ts-expect-error - private method access for testing
+			await expect(crawler.crawl("https://example.com", 0)).resolves.toBeUndefined();
+
+			// fetch() は4回呼ばれる
+			expect(mockFetcher.fetch).toHaveBeenCalledTimes(4);
+
+			// page2は2回フェッチされる（1回失敗 + 1回成功）
+			expect(mockFetcher.fetch).toHaveBeenNthCalledWith(2, "https://example.com/page2");
+			expect(mockFetcher.fetch).toHaveBeenNthCalledWith(4, "https://example.com/page2");
+
+			// logFetchError() は1回（page2の1回目失敗）
+			expect(mockLogger.logFetchError).toHaveBeenCalledTimes(1);
+		});
+
+		it("リトライ上限（2回）到達後はリトライされない", async () => {
+			// 複数ページから page2 へリンク、3回失敗させる
+			// MAX_RETRIES = 2 の場合、初回 + リトライ2回 = 合計3回までフェッチされる
+			const page1Result: FetchResult = {
+				html: '<html><head><title>Page 1</title></head><body><a href="https://example.com/page2">Page 2</a><a href="https://example.com/page3">Page 3</a><a href="https://example.com/page4">Page 4</a></body></html>',
+				finalUrl: "https://example.com",
+				contentType: "text/html",
+			};
+
+			const page3Result: FetchResult = {
+				html: '<html><head><title>Page 3</title></head><body><a href="https://example.com/page2">Page 2</a></body></html>',
+				finalUrl: "https://example.com/page3",
+				contentType: "text/html",
+			};
+
+			const page4Result: FetchResult = {
+				html: '<html><head><title>Page 4</title></head><body><a href="https://example.com/page2">Page 2</a></body></html>',
+				finalUrl: "https://example.com/page4",
+				contentType: "text/html",
+			};
+
+			const fetchError = new FetchError("Network error", "https://example.com/page2");
+
+			(mockFetcher.fetch as Mock)
+				.mockResolvedValueOnce(page1Result) // 1. page1 成功
+				.mockRejectedValueOnce(fetchError) // 2. page2 失敗（初回）
+				.mockResolvedValueOnce(page3Result) // 3. page3 成功
+				.mockRejectedValueOnce(fetchError) // 4. page2 失敗（リトライ1回目）
+				.mockResolvedValueOnce(page4Result) // 5. page4 成功
+				.mockRejectedValueOnce(fetchError); // 6. page2 失敗（リトライ2回目）
+			// 7回目以降: page2 はスキップ（visited.has()がtrue、リトライ上限到達）
+
+			// クロール実行
+			// @ts-expect-error - private method access for testing
+			await expect(crawler.crawl("https://example.com", 0)).resolves.toBeUndefined();
+
+			// fetch() は6回呼ばれる（page1, page2×3, page3, page4）
+			expect(mockFetcher.fetch).toHaveBeenCalledTimes(6);
+
+			// page2は3回フェッチされる（初回 + リトライ2回）
+			expect(mockFetcher.fetch).toHaveBeenNthCalledWith(2, "https://example.com/page2");
+			expect(mockFetcher.fetch).toHaveBeenNthCalledWith(4, "https://example.com/page2");
+			expect(mockFetcher.fetch).toHaveBeenNthCalledWith(6, "https://example.com/page2");
+
+			// logFetchError() は3回（page2の3回の失敗）
+			expect(mockLogger.logFetchError).toHaveBeenCalledTimes(3);
+		});
+
+		it("fetch()がnullを返す場合（404等）もリトライ上限が適用される", async () => {
+			// 404エラーもリトライ対象とする
+			const page1Result: FetchResult = {
+				html: '<html><head><title>Page 1</title></head><body><a href="https://example.com/page2">Page 2</a><a href="https://example.com/page3">Page 3</a></body></html>',
+				finalUrl: "https://example.com",
+				contentType: "text/html",
+			};
+
+			const page3Result: FetchResult = {
+				html: '<html><head><title>Page 3</title></head><body><a href="https://example.com/page2">Page 2</a></body></html>',
+				finalUrl: "https://example.com/page3",
+				contentType: "text/html",
+			};
+
+			(mockFetcher.fetch as Mock)
+				.mockResolvedValueOnce(page1Result) // 1. page1 成功
+				.mockResolvedValueOnce(null) // 2. page2 失敗（404）
+				.mockResolvedValueOnce(page3Result) // 3. page3 成功
+				.mockResolvedValueOnce(null); // 4. page2 失敗（404、2回目）
+
+			// クロール実行
+			// @ts-expect-error - private method access for testing
+			await expect(crawler.crawl("https://example.com", 0)).resolves.toBeUndefined();
+
+			// fetch() は4回呼ばれる
+			expect(mockFetcher.fetch).toHaveBeenCalledTimes(4);
+
+			// page2は2回フェッチされる
+			expect(mockFetcher.fetch).toHaveBeenNthCalledWith(2, "https://example.com/page2");
+			expect(mockFetcher.fetch).toHaveBeenNthCalledWith(4, "https://example.com/page2");
+
+			// logFetchError() は2回
+			expect(mockLogger.logFetchError).toHaveBeenCalledTimes(2);
+		});
+
+		it("フェッチ成功後、リトライカウントがクリアされる", async () => {
+			// page2: 1回失敗 → 2回目成功 → 3回目はvisitedによりスキップ
+			const page1Result: FetchResult = {
+				html: '<html><head><title>Page 1</title></head><body><a href="https://example.com/page2">Page 2</a><a href="https://example.com/page3">Page 3</a><a href="https://example.com/page4">Page 4</a></body></html>',
+				finalUrl: "https://example.com",
+				contentType: "text/html",
+			};
+
+			const page2Result: FetchResult = {
+				html: '<html><head><title>Page 2</title></head><body><p>Content</p></body></html>',
+				finalUrl: "https://example.com/page2",
+				contentType: "text/html",
+			};
+
+			const page3Result: FetchResult = {
+				html: '<html><head><title>Page 3</title></head><body><a href="https://example.com/page2">Page 2</a></body></html>',
+				finalUrl: "https://example.com/page3",
+				contentType: "text/html",
+			};
+
+			const page4Result: FetchResult = {
+				html: '<html><head><title>Page 4</title></head><body><a href="https://example.com/page2">Page 2</a></body></html>',
+				finalUrl: "https://example.com/page4",
+				contentType: "text/html",
+			};
+
+			const fetchError = new FetchError("Network error", "https://example.com/page2");
+
+			(mockFetcher.fetch as Mock)
+				.mockResolvedValueOnce(page1Result) // 1. page1 成功
+				.mockRejectedValueOnce(fetchError) // 2. page2 失敗
+				.mockResolvedValueOnce(page3Result) // 3. page3 成功
+				.mockResolvedValueOnce(page2Result) // 4. page2 成功（リトライ）
+				.mockResolvedValueOnce(page4Result); // 5. page4 成功
+			// 6. page2 はスキップ（visited.has()がtrue、ただしfailedUrlsには存在しない）
+
+			// クロール実行
+			// @ts-expect-error - private method access for testing
+			await expect(crawler.crawl("https://example.com", 0)).resolves.toBeUndefined();
+
+			// fetch() は5回呼ばれる（page2は2回フェッチ、3回目はスキップ）
+			expect(mockFetcher.fetch).toHaveBeenCalledTimes(5);
+
+			// page2は2回フェッチされる
+			expect(mockFetcher.fetch).toHaveBeenNthCalledWith(2, "https://example.com/page2");
+			expect(mockFetcher.fetch).toHaveBeenNthCalledWith(4, "https://example.com/page2");
+
+			// logFetchError() は1回（page2の1回目失敗のみ）
+			expect(mockLogger.logFetchError).toHaveBeenCalledTimes(1);
+		});
+	});
 });
