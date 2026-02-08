@@ -10,8 +10,14 @@ export class CrawlError extends Error {
 	}
 
 	toString(): string {
-		if (this.cause instanceof Error) {
-			return `${this.name}[${this.code}]: ${this.message}\nCaused by: ${this.cause.message}`;
+		if (this.cause !== undefined) {
+			const causeMsg =
+				this.cause instanceof Error
+					? this.cause.message
+					: typeof this.cause === "object"
+						? JSON.stringify(this.cause)
+						: String(this.cause);
+			return `${this.name}[${this.code}]: ${this.message}\nCaused by: ${causeMsg}`;
 		}
 		return `${this.name}[${this.code}]: ${this.message}`;
 	}
