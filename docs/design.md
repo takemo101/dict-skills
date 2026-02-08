@@ -467,6 +467,7 @@ interface RuntimeAdapter {
   spawn(command: string, args: string[]): Promise<SpawnResult>;
   sleep(ms: number): Promise<void>;
   readFile(path: string): Promise<string>;
+  cwd(): string;
 }
 ```
 
