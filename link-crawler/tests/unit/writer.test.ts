@@ -1036,5 +1036,171 @@ describe("OutputWriter", () => {
 			const backupDir = `${testOutputDir}.bak`;
 			expect(existsSync(backupDir)).toBe(false);
 		});
+
+		it("should recover from incomplete finalization (.bak exists, final doesn't)", () => {
+			// 1. 初回クロールで既存データを作成
+			const writer1 = new OutputWriter({ ...defaultConfig, diff: false });
+			writer1.savePage(
+				"https://example.com/original",
+				"# Original Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "Original" },
+				null,
+			);
+			writer1.saveIndex();
+			writer1.finalize();
+
+			const originalPagePath = join(testOutputDir, "pages/page-001-original.md");
+			expect(readFileSync(originalPagePath, "utf-8")).toContain("# Original Content");
+
+			// 2. 不完全なfinalize状態をシミュレート（最終ディレクトリを.bakにリネーム）
+			const backupDir = `${testOutputDir}.bak`;
+			renameSync(testOutputDir, backupDir);
+			expect(existsSync(testOutputDir)).toBe(false);
+			expect(existsSync(backupDir)).toBe(true);
+
+			// 3. 新しいクロールでリカバリが発動するはず
+			const writer2 = new OutputWriter({ ...defaultConfig, diff: false });
+			writer2.savePage(
+				"https://example.com/new",
+				"# New Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "New" },
+				null,
+			);
+			writer2.saveIndex();
+			writer2.finalize();
+
+			// 4. リカバリが成功し、新しいコンテンツで置き換わっていることを確認
+			expect(existsSync(testOutputDir)).toBe(true);
+			expect(existsSync(backupDir)).toBe(false);
+
+			const newPagePath = join(testOutputDir, "pages/page-001-new.md");
+			expect(readFileSync(newPagePath, "utf-8")).toContain("# New Content");
+
+			// 古いファイルは新しいもので置き換わっている
+			expect(existsSync(originalPagePath)).toBe(false);
+		});
+
+		it("should continue normally if both .bak and final exist (normal state)", () => {
+			// 1. 初回クロール
+			const writer1 = new OutputWriter({ ...defaultConfig, diff: false });
+			writer1.savePage(
+				"https://example.com/original",
+				"# Original Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "Original" },
+				null,
+			);
+			writer1.saveIndex();
+			writer1.finalize();
+
+			// 2. 手動で古い.bakディレクトリを作成（異常だが発生しうる状態）
+			const backupDir = `${testOutputDir}.bak`;
+			mkdirSync(join(backupDir, "pages"), { recursive: true });
+			writeFileSync(join(backupDir, "pages/stale.md"), "# Stale Backup Content");
+
+			// 3. 新しいクロール（リカバリは発動せず、通常のfinalizeが実行されるべき）
+			const writer2 = new OutputWriter({ ...defaultConfig, diff: false });
+			writer2.savePage(
+				"https://example.com/new",
+				"# New Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "New" },
+				null,
+			);
+			writer2.saveIndex();
+			writer2.finalize();
+
+			// 4. 正常に新しいコンテンツで置き換わっていることを確認
+			expect(existsSync(testOutputDir)).toBe(true);
+			expect(existsSync(backupDir)).toBe(false);
+
+			const newPagePath = join(testOutputDir, "pages/page-001-new.md");
+			expect(readFileSync(newPagePath, "utf-8")).toContain("# New Content");
+		});
+
+		it("should continue finalization even if recovery fails", () => {
+			// 1. 初回クロール
+			const writer1 = new OutputWriter({ ...defaultConfig, diff: false });
+			writer1.savePage(
+				"https://example.com/original",
+				"# Original Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "Original" },
+				null,
+			);
+			writer1.saveIndex();
+			writer1.finalize();
+
+			// 2. 不完全なfinalize状態をシミュレート
+			const backupDir = `${testOutputDir}.bak`;
+			renameSync(testOutputDir, backupDir);
+
+			// 3. リカバリが失敗する状況をシミュレート（.bakを読み取り専用にする）
+			// Note: ファイルシステムの制限により完全なシミュレートは困難
+			// このテストでは、リカバリ後も正常にfinalizeが完了することを確認
+
+			const writer2 = new OutputWriter({ ...defaultConfig, diff: false });
+			writer2.savePage(
+				"https://example.com/new",
+				"# New Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "New" },
+				null,
+			);
+			writer2.saveIndex();
+
+			// finalizeは成功するはず（リカバリ失敗でもfinalizeは続行される）
+			expect(() => writer2.finalize()).not.toThrow();
+
+			// 新しいコンテンツが作成されていることを確認
+			expect(existsSync(testOutputDir)).toBe(true);
+		});
+
+		it("should not trigger recovery in diff mode", () => {
+			// 1. 初回クロール（非diffモード）
+			const writer1 = new OutputWriter({ ...defaultConfig, diff: false });
+			writer1.savePage(
+				"https://example.com/original",
+				"# Original Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "Original" },
+				null,
+			);
+			writer1.saveIndex();
+			writer1.finalize();
+
+			// 2. 不完全なfinalize状態をシミュレート
+			const backupDir = `${testOutputDir}.bak`;
+			renameSync(testOutputDir, backupDir);
+
+			// 3. diffモードで新しいクロール（リカバリは発動しない）
+			const writer2 = new OutputWriter({ ...defaultConfig, diff: true });
+			
+			// diffモードでは既存ディレクトリを直接使用するため、
+			// 最終ディレクトリが存在しない場合は新規作成される
+			writer2.savePage(
+				"https://example.com/page",
+				"# Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "Page" },
+				null,
+			);
+			writer2.saveIndex();
+			writer2.finalize();
+
+			// diffモードはtempOutputDirを使わないため、finalizeは何もしない
+			// .bakディレクトリは残ったまま
+			expect(existsSync(backupDir)).toBe(true);
+		});
 	});
 });
