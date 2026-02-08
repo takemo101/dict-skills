@@ -205,8 +205,28 @@ export class OutputWriter {
 			to: this.finalOutputDir,
 		});
 
-		// バックアップ作成（既存ディレクトリがある場合）
 		const backupDir = `${this.finalOutputDir}.bak`;
+
+		// Recovery logic: 前回のfinalizeが中断された場合の復旧
+		// (.bakが存在するが最終ディレクトリが存在しない = Step 1完了後、Step 2実行前にクラッシュ)
+		if (existsSync(backupDir) && !existsSync(this.finalOutputDir)) {
+			this.logger?.logDebug("Detected incomplete previous finalization, recovering from backup", {
+				backupDir,
+				finalOutputDir: this.finalOutputDir,
+			});
+
+			try {
+				renameSync(backupDir, this.finalOutputDir);
+				this.logger?.logDebug("Successfully recovered from backup");
+			} catch (error) {
+				this.logger?.logDebug("Failed to recover from backup", {
+					error: error instanceof Error ? error.message : String(error),
+				});
+				// リカバリに失敗しても通常のfinalizeを続行
+			}
+		}
+
+		// バックアップ作成（既存ディレクトリがある場合）
 		if (existsSync(this.finalOutputDir)) {
 			if (existsSync(backupDir)) {
 				rmSync(backupDir, { recursive: true, force: true });
