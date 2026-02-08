@@ -222,7 +222,7 @@ describe("Crawler - Error Handling", () => {
 	describe("フェッチ失敗URLのリトライ機構", () => {
 		it("一時的なエラー後、他ページからのリンクでリトライされる", async () => {
 			// ページ1: 成功（page2へのリンク）
-			const page1Result: FetchResult = {
+			const _page1Result: FetchResult = {
 				html: '<html><head><title>Page 1</title></head><body><a href="https://example.com/page2">Link to Page 2</a></body></html>',
 				finalUrl: "https://example.com",
 				contentType: "text/html",
@@ -231,7 +231,7 @@ describe("Crawler - Error Handling", () => {
 			// ページ2: 1回目は失敗、2回目は成功
 			const timeoutError = new TimeoutError("Request timeout", 5000);
 			const page2Result: FetchResult = {
-				html: '<html><head><title>Page 2</title></head><body><p>Content</p></body></html>',
+				html: "<html><head><title>Page 2</title></head><body><p>Content</p></body></html>",
 				finalUrl: "https://example.com/page2",
 				contentType: "text/html",
 			};
@@ -363,7 +363,7 @@ describe("Crawler - Error Handling", () => {
 			};
 
 			const page2Result: FetchResult = {
-				html: '<html><head><title>Page 2</title></head><body><p>Content</p></body></html>',
+				html: "<html><head><title>Page 2</title></head><body><p>Content</p></body></html>",
 				finalUrl: "https://example.com/page2",
 				contentType: "text/html",
 			};
