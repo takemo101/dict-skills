@@ -11,7 +11,12 @@
 | デフォルトセッション使用 | playwright-cli 0.0.63+ の仕様変更 | [001](docs/decisions/001-playwright-cli-session.md) |
 | 並列クロール不可 | 上記の制約による | [001](docs/decisions/001-playwright-cli-session.md) |
 
-<!-- エージェントが重要な知見を発見した際、上の表に1行追加し、docs/decisions/ に詳細を記録する -->
+<!-- 
+  ⚠️ このテーブルには「現在有効な制約・注意点」のみを記載
+  - エージェントが重要な知見を発見した際、上の表に1行追加し、docs/decisions/ に詳細を記録する
+  - 解決済み・不要になった項目は削除する（docs/decisions/ には履歴として残す）
+  - 全ての意思決定ログ（解決済み含む）は docs/decisions/README.md を参照
+-->
 
 ## 設計方針
 
@@ -29,4 +34,5 @@
 
 - [docs/design.md](docs/design.md) - 詳細設計
 - [docs/cli-spec.md](docs/cli-spec.md) - CLIオプション
-- [docs/decisions/](docs/decisions/) - 意思決定ログ
+- [docs/decisions/README.md](docs/decisions/README.md) - 意思決定ログ一覧（解決済み含む）
+- [docs/decisions/](docs/decisions/) - 個別の意思決定ログ
