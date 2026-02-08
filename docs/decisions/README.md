@@ -15,6 +15,7 @@ NNN-問題名.md
 | [001](001-playwright-cli-session.md) | playwright-cli セッション問題 | 有効 |
 | [002](002-issue-854-duplicate.md) | Issue #854 is Duplicate of #848 | 解決済み |
 | [003](003-issue-946-duplicate.md) | Issue #946 は PR #944 で解決済み | 解決済み |
+| [004](004-issue-965-duplicate.md) | Issue #965 は Issue #961 と重複 | 解決済み |
 
 ## 記録すべき内容
 
