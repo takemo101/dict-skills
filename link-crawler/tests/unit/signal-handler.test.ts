@@ -201,6 +201,34 @@ describe("SignalHandler", () => {
 			expect(() => handler.uninstall()).not.toThrow();
 		});
 
+		it("should prevent listener leak when install() is called multiple times", () => {
+			const cleanupFn = vi.fn();
+			const handler = new SignalHandler({
+				onShutdown: cleanupFn,
+				console: mockConsole,
+			});
+
+			// Get initial listener count
+			const initialSigintCount = process.listenerCount("SIGINT");
+			const initialSigtermCount = process.listenerCount("SIGTERM");
+
+			// Install handlers multiple times
+			handler.install();
+			handler.install();
+			handler.install();
+
+			// Should only have +1 listener for each signal (not +3)
+			expect(process.listenerCount("SIGINT")).toBe(initialSigintCount + 1);
+			expect(process.listenerCount("SIGTERM")).toBe(initialSigtermCount + 1);
+
+			// Cleanup
+			handler.uninstall();
+
+			// Should be back to initial count
+			expect(process.listenerCount("SIGINT")).toBe(initialSigintCount);
+			expect(process.listenerCount("SIGTERM")).toBe(initialSigtermCount);
+		});
+
 		it("should catch errors in signal handler callbacks", async () => {
 			const error = new Error("Shutdown error");
 			const cleanupFn = vi.fn().mockRejectedValue(error);
