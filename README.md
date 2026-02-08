@@ -21,7 +21,7 @@ This pi skill recursively crawls web pages starting from a specified URL and sav
 
 **Prerequisites:**
 - [Bun](https://bun.sh/) 1.0+
-- [playwright-cli](https://www.npmjs.com/package/@playwright/cli): `npm install -g @playwright/cli`
+- [@playwright/cli](https://www.npmjs.com/package/@playwright/cli): `npm install -g @playwright/cli`
 
 **Installation:**
 ```bash
@@ -84,7 +84,7 @@ MIT
 ### 前提条件
 
 - [Bun](https://bun.sh/) 1.0以上
-- [playwright-cli](https://www.npmjs.com/package/@playwright/cli): `npm install -g @playwright/cli`
+- [@playwright/cli](https://www.npmjs.com/package/@playwright/cli): `npm install -g @playwright/cli`
 
 ### インストール
 
