@@ -163,16 +163,9 @@ export class RobotsChecker {
 		const exactEnd = rulePath.endsWith("$");
 		const pattern = exactEnd ? rulePath.slice(0, -1) : rulePath;
 
-		// * ワイルドカードが含まれる場合
+		// * ワイルドカードが含まれる場合 - 手動マッチング（ReDoS回避）
 		if (pattern.includes("*")) {
-			// ワイルドカードを正規表現に変換
-			// 正規表現の特殊文字をエスケープしつつ、*を.*に変換
-			const regexStr = pattern
-				.split("*")
-				.map((s) => s.replace(/[.+?^${}()|[\]\\]/g, "\\$&"))
-				.join(".*");
-			const regex = new RegExp(`^${regexStr}${exactEnd ? "$" : ""}`);
-			return regex.test(path);
+			return this.matchWildcard(path, pattern, exactEnd);
 		}
 
 		// 通常の前方一致（既存の動作を維持）
@@ -180,5 +173,66 @@ export class RobotsChecker {
 			return path === pattern;
 		}
 		return path.startsWith(pattern);
+	}
+
+	/** ワイルドカードパターンマッチング（正規表現を使わない安全な実装） */
+	private matchWildcard(text: string, pattern: string, exactEnd: boolean): boolean {
+		const segments = pattern.split("*");
+		let textIndex = 0;
+
+		for (let i = 0; i < segments.length; i++) {
+			const segment = segments[i];
+			const isFirstSegment = i === 0;
+			const isLastSegment = i === segments.length - 1;
+
+			// 空のセグメントはスキップ（連続する ** の場合など）
+			if (segment.length === 0) {
+				continue;
+			}
+
+			if (isFirstSegment) {
+				// 最初のセグメント: 前方一致でなければならない
+				if (!text.startsWith(segment)) {
+					return false;
+				}
+				textIndex = segment.length;
+			} else if (isLastSegment) {
+				// 最後のセグメント
+				if (exactEnd) {
+					// 終端マーカーあり: 後方一致でなければならない
+					if (!text.endsWith(segment)) {
+						return false;
+					}
+					// さらに、このセグメントが現在位置より後ろにあることを確認
+					const remainingText = text.slice(textIndex);
+					const segmentIndex = remainingText.indexOf(segment);
+					if (segmentIndex === -1) {
+						return false;
+					}
+					// 終端マーカーなので、セグメント終了位置がテキスト末尾と一致する必要がある
+					if (textIndex + segmentIndex + segment.length !== text.length) {
+						return false;
+					}
+				} else {
+					// 終端マーカーなし: 現在位置以降のどこかにあればOK
+					const remainingText = text.slice(textIndex);
+					const segmentIndex = remainingText.indexOf(segment);
+					if (segmentIndex === -1) {
+						return false;
+					}
+					textIndex += segmentIndex + segment.length;
+				}
+			} else {
+				// 中間セグメント: 現在位置以降のどこかにあればOK
+				const remainingText = text.slice(textIndex);
+				const segmentIndex = remainingText.indexOf(segment);
+				if (segmentIndex === -1) {
+					return false;
+				}
+				textIndex += segmentIndex + segment.length;
+			}
+		}
+
+		return true;
 	}
 }
