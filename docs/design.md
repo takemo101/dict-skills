@@ -27,17 +27,19 @@
 
 ## 2. 技術スタック
 
-| カテゴリ | 技術 | バージョン | 選定理由 |
-|----------|------|-----------|----------|
-| Runtime | Bun | 1.0+ | 高速起動、TypeScriptネイティブ |
-| Language | TypeScript | 5.8.x | 型安全性 |
-| Linter/Formatter | Biome | 2.x | 高速、設定シンプル |
-| Test Framework | Vitest | 4.x | 高速、ESM対応、Bun互換 |
-| CLI Parser | Commander | 13.x | 軽量、標準的 |
-| Browser | playwright-cli | latest | SPA完全対応、セッション管理 |
-| DOM Parser | JSDOM | 28.x | Node.js標準的なDOM実装 |
-| Content Extractor | @mozilla/readability | 0.6.x | Firefox由来、高品質 |
-| Markdown Converter | Turndown | 7.x | GFM対応、カスタマイズ可能 |
+| カテゴリ | 技術 | 選定理由 |
+|----------|------|----------|
+| Runtime | Bun | 高速起動、TypeScriptネイティブ |
+| Language | TypeScript | 型安全性 |
+| Linter/Formatter | Biome | 高速、設定シンプル |
+| Test Framework | Vitest | 高速、ESM対応、Bun互換 |
+| CLI Parser | Commander | 軽量、標準的 |
+| Browser | playwright-cli | SPA完全対応、セッション管理 |
+| DOM Parser | JSDOM | Node.js標準的なDOM実装 |
+| Content Extractor | @mozilla/readability | Firefox由来、高品質 |
+| Markdown Converter | Turndown | GFM対応、カスタマイズ可能 |
+
+**Note**: 各ライブラリの実際のバージョンは `link-crawler/package.json` を参照してください。
 
 ---
 
@@ -83,6 +85,7 @@ link-crawler/
 │   ├── constants.ts            # 定数定義
 │   ├── errors.ts               # エラークラス
 │   ├── error-handler.ts        # エラーハンドリング
+│   ├── signal-handler.ts       # シグナルハンドリング（SIGINT/SIGTERM）
 │   │
 │   ├── crawler/
 │   │   ├── index.ts            # Crawler
@@ -126,6 +129,7 @@ link-crawler/
 | `Constants` | 定数定義（デフォルト値、ファイル名、パターン、終了コード） | - | 定数オブジェクト |
 | `Errors` | エラークラス定義（CrawlError, FetchError, ConfigError等） | Error情報 | Typed Error |
 | `ErrorHandler` | エラー種別判定、メッセージ生成、終了コード決定 | Error | ErrorHandlerResult |
+| `SignalHandler` | SIGINT/SIGTERMシグナルの捕捉、グレースフルシャットダウン制御 | Signal, onShutdown callback | Cleanup → process.exit |
 | `Crawler` | クロール制御、再帰管理 | URL, Config | CrawledPages |
 | `PlaywrightFetcher` | ページ取得 | URL | HTML |
 | `RobotsChecker` | robots.txt のパースとURL許可判定 | robots.txt, URL | boolean |

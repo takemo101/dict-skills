@@ -78,7 +78,7 @@ bun run src/crawl.ts https://nextjs.org/docs \
 | `--exclude <pattern>` | 除外するURLパターン（正規表現） | - |
 | `--delay <ms>` | リクエスト間隔 | `500` |
 
-**完全なオプション一覧は [CLI仕様書](../docs/cli-spec.md) を参照してください。**
+**完全なオプション一覧は [CLI仕様書](https://github.com/takemo101/dict-skills/blob/main/docs/cli-spec.md) を参照してください。**
 
 ## 出力ファイル
 
@@ -96,8 +96,8 @@ bun run src/crawl.ts https://nextjs.org/docs \
 | ドキュメント | 対象読者 | 内容 |
 |-------------|---------|------|
 | [SKILL.md](./SKILL.md) | **piユーザー** | piスキルとしての使い方・オプション一覧 |
-| [CLI仕様書](../docs/cli-spec.md) | **CLIユーザー** | 完全なオプション一覧・詳細な使用例・出力形式 |
-| [設計書](../docs/design.md) | **開発者** | アーキテクチャ・データ構造・技術仕様 |
+| [CLI仕様書](https://github.com/takemo101/dict-skills/blob/main/docs/cli-spec.md) | **CLIユーザー** | 完全なオプション一覧・詳細な使用例・出力形式 |
+| [設計書](https://github.com/takemo101/dict-skills/blob/main/docs/design.md) | **開発者** | アーキテクチャ・データ構造・技術仕様 |
 
 ## 開発
 

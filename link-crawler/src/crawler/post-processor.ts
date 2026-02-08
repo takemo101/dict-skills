@@ -19,7 +19,7 @@ export class PostProcessor {
 		logger?: CrawlLogger,
 	) {
 		this.logger = logger ?? new CrawlLogger(config);
-		this.merger = new Merger();
+		this.merger = new Merger(this.logger);
 		this.chunker = new Chunker(config.outputDir);
 	}
 
@@ -28,7 +28,7 @@ export class PostProcessor {
 	 * @param pages クロール済みページ一覧
 	 * @param pageContents ページ内容のMap (--no-pages時に使用)
 	 */
-	async process(pages: CrawledPage[], pageContents?: Map<string, string>): Promise<void> {
+	process(pages: CrawledPage[], pageContents?: Map<string, string>): void {
 		if (pages.length === 0) {
 			this.logger.logPostProcessingSkipped();
 			return;

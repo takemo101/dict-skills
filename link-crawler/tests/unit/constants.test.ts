@@ -16,7 +16,7 @@ describe("PATHS constants", () => {
 			expect(PATHS.NODE_PATHS).toContain("node");
 		});
 
-		it("should have correct order: specific paths before fallback", () => {
+		it("should have correct order: fallback before specific paths", () => {
 			const paths = PATHS.NODE_PATHS;
 			const fallbackIndex = paths.indexOf("node");
 			const macOSIndices = [
@@ -25,9 +25,9 @@ describe("PATHS constants", () => {
 			];
 			const linuxIndex = paths.indexOf("/usr/bin/node");
 
-			// All specific paths should come before the fallback
+			// PATH fallback should come first, before specific paths
 			for (const index of [...macOSIndices, linuxIndex]) {
-				expect(index).toBeLessThan(fallbackIndex);
+				expect(index).toBeGreaterThan(fallbackIndex);
 			}
 		});
 	});
@@ -42,7 +42,7 @@ describe("PATHS constants", () => {
 			expect(PATHS.PLAYWRIGHT_PATHS).toContain("playwright-cli");
 		});
 
-		it("should have correct order: specific paths before fallback", () => {
+		it("should have correct order: fallback before specific paths", () => {
 			const paths = PATHS.PLAYWRIGHT_PATHS;
 			const fallbackIndex = paths.indexOf("playwright-cli");
 			const macOSIndices = [
@@ -50,9 +50,9 @@ describe("PATHS constants", () => {
 				paths.indexOf("/usr/local/bin/playwright-cli"),
 			];
 
-			// All specific paths should come before the fallback
+			// PATH fallback should come first, before specific paths
 			for (const index of macOSIndices) {
-				expect(index).toBeLessThan(fallbackIndex);
+				expect(index).toBeGreaterThan(fallbackIndex);
 			}
 		});
 
@@ -63,9 +63,9 @@ describe("PATHS constants", () => {
 			}
 		});
 
-		it("should have fallback as last element", () => {
+		it("should have fallback as first element", () => {
 			const paths = PATHS.PLAYWRIGHT_PATHS;
-			expect(paths[paths.length - 1]).toBe("playwright-cli");
+			expect(paths[0]).toBe("playwright-cli");
 		});
 	});
 });

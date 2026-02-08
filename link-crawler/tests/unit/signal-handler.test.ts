@@ -255,6 +255,72 @@ describe("SignalHandler", () => {
 
 			handler.uninstall();
 		});
+
+		it("should catch and handle errors from handleShutdown in SIGINT handler", async () => {
+			const error = new Error("handleShutdown failed");
+			const cleanupFn = vi.fn().mockResolvedValue(undefined);
+			const handler = new SignalHandler({
+				onShutdown: cleanupFn,
+				exitCode: 5,
+				console: mockConsole,
+			});
+
+			// Spy and mock handleShutdown to reject
+			vi.spyOn(handler, "handleShutdown").mockRejectedValue(error);
+
+			handler.install();
+
+			// Get the installed SIGINT handler
+			const listeners = process.listeners("SIGINT");
+			const sigintHandler = listeners[listeners.length - 1];
+
+			// Trigger SIGINT
+			if (typeof sigintHandler === "function") {
+				sigintHandler("SIGINT");
+			}
+
+			// Wait for async error handling
+			await new Promise((resolve) => setTimeout(resolve, 10));
+
+			// Verify .catch() path was executed (lines 63-64)
+			expect(mockConsole.error).toHaveBeenCalledWith("Error during shutdown:", error);
+			expect(processExitSpy).toHaveBeenCalledWith(5);
+
+			handler.uninstall();
+		});
+
+		it("should catch and handle errors from handleShutdown in SIGTERM handler", async () => {
+			const error = new Error("handleShutdown failed");
+			const cleanupFn = vi.fn().mockResolvedValue(undefined);
+			const handler = new SignalHandler({
+				onShutdown: cleanupFn,
+				exitCode: 7,
+				console: mockConsole,
+			});
+
+			// Spy and mock handleShutdown to reject
+			vi.spyOn(handler, "handleShutdown").mockRejectedValue(error);
+
+			handler.install();
+
+			// Get the installed SIGTERM handler
+			const listeners = process.listeners("SIGTERM");
+			const sigtermHandler = listeners[listeners.length - 1];
+
+			// Trigger SIGTERM
+			if (typeof sigtermHandler === "function") {
+				sigtermHandler("SIGTERM");
+			}
+
+			// Wait for async error handling
+			await new Promise((resolve) => setTimeout(resolve, 10));
+
+			// Verify .catch() path was executed (lines 70-71)
+			expect(mockConsole.error).toHaveBeenCalledWith("Error during shutdown:", error);
+			expect(processExitSpy).toHaveBeenCalledWith(7);
+
+			handler.uninstall();
+		});
 	});
 
 	describe("isCleanupInProgress", () => {

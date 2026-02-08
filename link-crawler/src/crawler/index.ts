@@ -37,6 +37,10 @@ export class Crawler {
 	private maxPagesReachedLogged = false;
 	/** クリーンアップ進行中フラグ（重複実行防止） */
 	private isCleaningUp = false;
+	/** フェッチ失敗URLのリトライ管理 */
+	private failedUrls = new Map<string, number>(); // URL → retry count
+	/** リトライ上限 */
+	private static readonly MAX_RETRIES = 2;
 
 	constructor(
 		private config: CrawlConfig,
@@ -119,7 +123,10 @@ export class Crawler {
 		const result = this.writer.getResult();
 
 		// 後処理: MergerとChunkerの実行
-		await this.postProcessor.process(result.pages, this.pageContents);
+		this.postProcessor.process(result.pages, this.pageContents);
+
+		// メモリ解放
+		this.pageContents.clear();
 
 		// クロール成功時: 一時ディレクトリを確定
 		this.writer.finalize();
@@ -140,6 +147,12 @@ export class Crawler {
 		this.logger.logDebug("Cleanup initiated");
 
 		try {
+			// 0. リトライ情報のクリア
+			this.failedUrls.clear();
+
+			// メモリ解放
+			this.pageContents.clear();
+
 			// 1. 途中結果を保存
 			if (this.config.diff) {
 				this.writer.setVisitedUrls(this.visited);
@@ -182,8 +195,13 @@ export class Crawler {
 		// 3. フェッチ
 		const result = await this.fetchPage(url, depth);
 		if (!result) {
+			// フェッチ失敗時のリトライ管理
+			this.handleFetchFailure(url);
 			return;
 		}
+
+		// フェッチ成功時はリトライカウントをクリア
+		this.failedUrls.delete(url);
 
 		// 4. コンテンツタイプ判定
 		if (!result.contentType.includes("text/html")) {
@@ -193,6 +211,28 @@ export class Crawler {
 
 		// 5. HTML処理（抽出、変換、保存、再帰）
 		await this.processHtmlPage(url, result.html, depth);
+	}
+
+	/** フェッチ失敗時のリトライ管理 */
+	private handleFetchFailure(url: string): void {
+		const retries = this.failedUrls.get(url) ?? 0;
+
+		if (retries < Crawler.MAX_RETRIES) {
+			// リトライ可能: visitedから削除してカウントを増やす
+			this.failedUrls.set(url, retries + 1);
+			this.visited.delete(url);
+			this.logger.logDebug("Fetch failed, will retry if linked again", {
+				url,
+				retries: retries + 1,
+				maxRetries: Crawler.MAX_RETRIES,
+			});
+		} else {
+			// リトライ上限到達: visitedに残したままにする
+			this.logger.logDebug("Fetch failed, max retries reached", {
+				url,
+				retries,
+			});
+		}
 	}
 
 	/** クロール可否チェック */
