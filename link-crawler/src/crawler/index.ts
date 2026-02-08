@@ -11,6 +11,15 @@ import { CrawlLogger } from "./logger.js";
 import { PostProcessor } from "./post-processor.js";
 import { RobotsChecker } from "./robots.js";
 
+/** ページ解析結果 */
+interface ParsedPage {
+	metadata: PageMetadata;
+	links: string[];
+	title: string | null;
+	markdown: string;
+	hash: string;
+}
+
 /** クローラーエンジン */
 export class Crawler {
 	private fetcher!: Fetcher;
@@ -241,23 +250,35 @@ export class Crawler {
 
 	/** HTMLページの処理 */
 	private async processHtmlPage(url: string, html: string, depth: number): Promise<void> {
-		// JSDOM を1回だけ生成
+		// 1. JSDOM生成
 		const dom = new JSDOM(html, { url });
 
-		// メタデータ抽出（既にJSDOMを受け取る）
+		// 2. ページ解析
+		const parsed = this.parsePage(url, dom, depth);
+
+		// 3. 保存処理
+		this.processAndSavePage(url, parsed, depth);
+
+		// 4. 再帰クロール
+		await this.crawlLinks(parsed.links, depth);
+	}
+
+	/** ページ解析: メタデータ・リンク・コンテンツの抽出と変換 */
+	private parsePage(_url: string, dom: JSDOM, _depth: number): ParsedPage {
+		// メタデータ抽出
 		const metadata = extractMetadata(dom);
 		this.logger.logDebug("Metadata extracted", {
 			title: metadata.title,
 			description: metadata.description?.substring(0, 100),
 		});
 
-		// リンク抽出（DOM を先に参照）
+		// リンク抽出
 		// Issue #745: extractContent は内部でDOMをクローンするため順序依存は解消されたが、
 		// 論理的な順序として先にリンクを抽出する
 		const links = extractLinks(dom, this.visited, this.config);
 		this.logger.logDebug("Links extracted", { linkCount: links.length, links: links.slice(0, 5) });
 
-		// コンテンツ抽出（JSDOMを渡す）
+		// コンテンツ抽出
 		// Issue #745: 内部でDOMクローンを使用するため、元のDOMは変更されない
 		const { title, content } = extractContent(dom);
 		this.logger.logDebug("Content extracted", { title, contentLength: content?.length || 0 });
@@ -270,13 +291,23 @@ export class Crawler {
 		const hash = computeHash(markdown);
 		this.logger.logDebug("Content hash computed", { hash: `${hash.substring(0, 16)}...` });
 
-		// 差分チェックと保存
-		if (this.shouldSavePage(url, hash, depth)) {
-			this.savePage(url, markdown, depth, links, metadata, title, hash);
-		}
+		return { metadata, links, title, markdown, hash };
+	}
 
-		// 再帰クロール
-		await this.crawlLinks(links, depth);
+	/** ページ保存処理: 差分チェックと保存判定 */
+	private processAndSavePage(url: string, parsed: ParsedPage, depth: number): void {
+		// 差分チェックと保存
+		if (this.shouldSavePage(url, parsed.hash, depth)) {
+			this.savePage(
+				url,
+				parsed.markdown,
+				depth,
+				parsed.links,
+				parsed.metadata,
+				parsed.title,
+				parsed.hash,
+			);
+		}
 	}
 
 	/** 差分モードでの保存判定 */
