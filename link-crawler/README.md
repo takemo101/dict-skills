@@ -70,6 +70,7 @@ bun run src/crawl.ts https://nextjs.org/docs \
 | オプション | 説明 | デフォルト |
 |-----------|------|-----------|
 | `-d, --depth <num>` | 最大クロール深度 | `1` |
+| `--max-pages <num>` | 最大クロールページ数（0=無制限） | 無制限 |
 | `-o, --output <dir>` | 出力ディレクトリ | `./.context/<サイト名>/` |
 | `--diff` | 差分クロール（変更ページのみ） | `false` |
 | `--same-domain` | 同一ドメインのみ追跡 | `true` |

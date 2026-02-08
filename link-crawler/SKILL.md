@@ -45,12 +45,14 @@ bun run src/crawl.ts <url> [options]
 
 主要なオプション：
 - `-d, --depth <num>`: 最大クロール深度（デフォルト: 1、上限: 10）
+- `--max-pages <num>`: 最大クロールページ数（0 = 無制限）
 - `-o, --output <dir>`: 出力ディレクトリ
 - `--diff`: 差分クロール（変更ページのみ更新）
 - `--chunks`: チャンク分割出力を有効化
 - `--same-domain`: 同一ドメインのみクロール（デフォルト: true）
 - `--include <pattern>`: 含めるURLパターン（正規表現）
 - `--exclude <pattern>`: 除外するURLパターン（正規表現）
+- `--no-robots`: robots.txt を無視（非推奨、開発・テスト用）
 
 **完全なオプション一覧は [CLI仕様書](../docs/cli-spec.md) を参照してください。**
 
