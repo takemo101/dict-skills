@@ -139,7 +139,6 @@ export class IndexManager {
 			crawledAt: pageCrawledAt,
 		};
 		this.result.pages.push(page);
-		this.result.totalPages++;
 		return page;
 	}
 
@@ -176,7 +175,6 @@ export class IndexManager {
 			}
 
 			this.result.pages.push(page);
-			this.result.totalPages++;
 		}
 	}
 
@@ -190,6 +188,9 @@ export class IndexManager {
 			this.mergeExistingPages();
 		}
 
+		// totalPages を pages.length から算出
+		this.result.totalPages = this.result.pages.length;
+
 		const indexPath = join(this.outputDir, "index.json");
 		writeFileSync(indexPath, JSON.stringify(this.result, null, 2));
 		return indexPath;
@@ -199,6 +200,8 @@ export class IndexManager {
 	 * 結果を取得
 	 */
 	getResult(): CrawlResult {
+		// totalPages を pages.length と同期
+		this.result.totalPages = this.result.pages.length;
 		return this.result;
 	}
 
@@ -206,7 +209,7 @@ export class IndexManager {
 	 * 登録済みページ数を取得
 	 */
 	getTotalPages(): number {
-		return this.result.totalPages;
+		return this.result.pages.length;
 	}
 
 	/**
