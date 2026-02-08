@@ -3,9 +3,9 @@ export class CrawlError extends Error {
 	constructor(
 		message: string,
 		public readonly code: string,
-		cause?: Error,
+		cause?: unknown,
 	) {
-		super(message, cause ? { cause } : undefined);
+		super(message, cause !== undefined ? { cause } : undefined);
 		this.name = "CrawlError";
 	}
 
@@ -22,7 +22,7 @@ export class FetchError extends CrawlError {
 	constructor(
 		message: string,
 		public readonly url: string,
-		cause?: Error,
+		cause?: unknown,
 	) {
 		super(message, "FETCH_ERROR", cause);
 		this.name = "FetchError";

@@ -262,7 +262,7 @@ export class PlaywrightFetcher implements Fetcher {
 				throw error;
 			}
 			const message = error instanceof Error ? error.message : String(error);
-			throw new FetchError(message, url, error instanceof Error ? error : undefined);
+			throw new FetchError(message, url, error);
 		}
 	}
 
