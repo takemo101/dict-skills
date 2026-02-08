@@ -153,12 +153,12 @@ export class Crawler {
 			// メモリ解放
 			this.pageContents.clear();
 
-			// 1. 途中結果を保存
+			// 1. 途中結果を保存（diffモード時のみ）
 			if (this.config.diff) {
 				this.writer.setVisitedUrls(this.visited);
+				const indexPath = this.writer.saveIndex();
+				this.logger.logDebug("Saved partial index", { path: indexPath });
 			}
-			const indexPath = this.writer.saveIndex();
-			this.logger.logDebug("Saved partial index", { path: indexPath });
 
 			// 2. 失敗時: 一時ディレクトリを削除（既存出力は保持）
 			this.writer.cleanup();
