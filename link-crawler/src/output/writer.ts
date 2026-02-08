@@ -284,9 +284,16 @@ export class OutputWriter {
 			throw error; // 元のエラーを再スロー
 		}
 
-		// 成功時: バックアップ削除
+		// 成功時: バックアップ削除（失敗しても無視）
 		if (existsSync(backupDir)) {
-			rmSync(backupDir, { recursive: true, force: true });
+			try {
+				rmSync(backupDir, { recursive: true, force: true });
+			} catch (error) {
+				this.logger?.logDebug("Failed to remove backup (non-fatal)", {
+					backupDir,
+					error: error instanceof Error ? error.message : String(error),
+				});
+			}
 		}
 
 		this.logger?.logDebug("Output finalized successfully");
