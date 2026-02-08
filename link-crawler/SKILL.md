@@ -71,6 +71,29 @@ bun run src/crawl.ts https://nextjs.org/docs -d 2 -o /path/to/project/.context/n
 # → /path/to/project/.context/nextjs-docs/full.md が生成され、piエージェントのコンテキストとして利用可能
 ```
 
+## 再クロール・差分更新
+
+既にクロール済みのドキュメントを更新する場合は `--diff` を使う。
+
+```bash
+# 初回クロール
+bun run src/crawl.ts https://example.com/docs -d 2 -o <PROJECT_ROOT>/.context/example-docs
+
+# 2回目以降: --diff で変更ページのみ再取得（full.md は全ページ分を再生成）
+bun run src/crawl.ts https://example.com/docs -d 2 -o <PROJECT_ROOT>/.context/example-docs --diff
+```
+
+**`--diff` の動作:**
+- `index.json` のハッシュと比較し、変更があったページのみ再取得
+- 変更がないページは `pages/*.md` をそのまま保持
+- **`full.md` は既存 + 新規の全ページから再結合される**（部分的にならない）
+
+**`--diff` なし（デフォルト）の動作:**
+- 全ページをゼロから再取得（一時ディレクトリで原子的に実行）
+- 中断すると出力は生成されない
+
+> 💡 前回のクロール結果を残しつつ更新したい場合は、必ず `--diff` を付けること。
+
 ## 出力ファイル
 
 クロール後、以下のファイルが生成されます：
