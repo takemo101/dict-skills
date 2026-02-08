@@ -23,7 +23,7 @@ cd link-crawler
 # クロール実行
 bun run dev https://docs.example.com -d 2
 
-# 出力確認（サイト名ディレクトリ配下に生成されます）
+# 出力は link-crawler/.context/example/ に生成されます
 cat .context/example/full.md
 ```
 
@@ -36,7 +36,7 @@ bun install
 # クロール実行
 bun run dev https://docs.example.com -d 2
 
-# 出力確認（サイト名ディレクトリ配下に生成されます）
+# 出力は link-crawler/.context/example/ に生成されます
 cat .context/example/full.md
 ```
 
