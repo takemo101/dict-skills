@@ -9,7 +9,7 @@
  */
 
 import { execSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
@@ -161,15 +161,12 @@ describe("crawl CLI integration", () => {
 			const outputDir = `${TEST_OUTPUT_DIR}/output-no-pages`;
 
 			try {
-				execSync(
-					`bun run src/crawl.ts "https://example.com" -d 0 -o "${outputDir}" --no-pages`,
-					{
-						encoding: "utf-8",
-						cwd: process.cwd(),
-						stdio: "pipe",
-						timeout: 30000,
-					},
-				);
+				execSync(`bun run src/crawl.ts "https://example.com" -d 0 -o "${outputDir}" --no-pages`, {
+					encoding: "utf-8",
+					cwd: process.cwd(),
+					stdio: "pipe",
+					timeout: 30000,
+				});
 
 				// index.json and full.md should be generated
 				expect(existsSync(join(outputDir, "index.json"))).toBe(true);
@@ -192,15 +189,12 @@ describe("crawl CLI integration", () => {
 			const outputDir = `${TEST_OUTPUT_DIR}/output-no-merge`;
 
 			try {
-				execSync(
-					`bun run src/crawl.ts "https://example.com" -d 0 -o "${outputDir}" --no-merge`,
-					{
-						encoding: "utf-8",
-						cwd: process.cwd(),
-						stdio: "pipe",
-						timeout: 30000,
-					},
-				);
+				execSync(`bun run src/crawl.ts "https://example.com" -d 0 -o "${outputDir}" --no-merge`, {
+					encoding: "utf-8",
+					cwd: process.cwd(),
+					stdio: "pipe",
+					timeout: 30000,
+				});
 
 				// index.json and pages/ should be generated
 				expect(existsSync(join(outputDir, "index.json"))).toBe(true);
