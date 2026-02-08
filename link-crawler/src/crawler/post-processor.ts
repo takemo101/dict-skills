@@ -28,7 +28,7 @@ export class PostProcessor {
 	 * @param pages クロール済みページ一覧
 	 * @param pageContents ページ内容のMap (--no-pages時に使用)
 	 */
-	async process(pages: CrawledPage[], pageContents?: Map<string, string>): Promise<void> {
+	process(pages: CrawledPage[], pageContents?: Map<string, string>): void {
 		if (pages.length === 0) {
 			this.logger.logPostProcessingSkipped();
 			return;
