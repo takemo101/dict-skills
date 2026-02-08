@@ -55,7 +55,10 @@ export class Crawler {
 		if (fetcher) {
 			this.fetcher = fetcher;
 		} else {
-			this.fetcherPromise = createPlaywrightFetcher(config);
+			this.fetcherPromise = createPlaywrightFetcher(
+				config,
+				(msg, data) => this.logger.logDebug(msg, data),
+			);
 		}
 	}
 
@@ -467,9 +470,11 @@ export class Crawler {
 }
 
 /** PlaywrightFetcherのファクトリ関数（動的インポート） */
-async function createPlaywrightFetcher(config: CrawlConfig): Promise<Fetcher> {
+async function createPlaywrightFetcher(
+	config: CrawlConfig,
+	logDebug?: (message: string, data?: unknown) => void,
+): Promise<Fetcher> {
 	// 動的インポートを使用してBun依存のモジュールを遅延ロード
 	const mod = await import("./fetcher.js");
-	const debug = process.env.DEBUG === "1";
-	return new mod.PlaywrightFetcher(config, undefined, undefined, debug);
+	return new mod.PlaywrightFetcher(config, undefined, undefined, logDebug);
 }

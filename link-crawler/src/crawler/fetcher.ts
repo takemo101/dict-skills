@@ -38,20 +38,18 @@ export class PlaywrightFetcher implements Fetcher {
 	private playwrightPath: string = "playwright-cli";
 	private runtime: RuntimeAdapter;
 	private pathConfig: PlaywrightPathConfig;
-	private debug: boolean;
 
 	constructor(
 		private config: CrawlConfig,
 		runtime?: RuntimeAdapter,
 		pathConfig?: PlaywrightPathConfig,
-		debug?: boolean,
+		private logDebug?: (message: string, data?: unknown) => void,
 	) {
 		this.runtime = runtime ?? createRuntimeAdapter();
 		this.pathConfig = pathConfig ?? {
 			nodePaths: PATHS.NODE_PATHS,
 			cliPaths: PATHS.PLAYWRIGHT_PATHS,
 		};
-		this.debug = debug ?? false;
 	}
 
 	/** Playwright CLIが利用可能かチェック */
@@ -262,9 +260,7 @@ export class PlaywrightFetcher implements Fetcher {
 					await this.runCli(["session-stop"]);
 				} catch (cleanupError) {
 					// クリーンアップエラーは無視（セッションが既に閉じている可能性）
-					if (this.debug) {
-						console.log(`[DEBUG] session-stop on timeout failed: ${cleanupError}`);
-					}
+					this.logDebug?.(`session-stop on timeout failed: ${cleanupError}`);
 				}
 			}
 
@@ -279,9 +275,7 @@ export class PlaywrightFetcher implements Fetcher {
 	async close(): Promise<void> {
 		// Idempotency guard: prevent double close
 		if (this.isClosed) {
-			if (this.debug) {
-				console.log("[DEBUG] close() called but already closed (skipping)");
-			}
+			this.logDebug?.("close() called but already closed (skipping)");
 			return;
 		}
 		this.isClosed = true;
@@ -293,9 +287,7 @@ export class PlaywrightFetcher implements Fetcher {
 			await this.runCli(["session-stop"]);
 		} catch (error) {
 			// セッションが既に閉じている場合は無視（デバッグログのみ）
-			if (this.debug) {
-				console.log(`[DEBUG] session-stop failed (expected if already closed): ${error}`);
-			}
+			this.logDebug?.(`session-stop failed (expected if already closed): ${error}`);
 		}
 
 		// .playwright-cli ディレクトリをクリーンアップ（outputDir内）
@@ -307,9 +299,7 @@ export class PlaywrightFetcher implements Fetcher {
 				}
 			} catch (error) {
 				// クリーンアップ失敗は無視（デバッグログのみ）
-				if (this.debug) {
-					console.log(`[DEBUG] .playwright-cli cleanup failed: ${error}`);
-				}
+				this.logDebug?.(".playwright-cli cleanup failed", { error: String(error) });
 			}
 		}
 	}
