@@ -89,7 +89,7 @@ describe("PostProcessor", () => {
 
 	describe("process with empty pages", () => {
 		it("should skip processing when pages array is empty", async () => {
-			const processor = new PostProcessor(baseConfig, mockLogger);
+			const processor = new PostProcessor(baseConfig, baseConfig.outputDir, mockLogger);
 			await processor.process([]);
 
 			expect(mockLogger.logPostProcessingSkipped).toHaveBeenCalled();
@@ -97,14 +97,14 @@ describe("PostProcessor", () => {
 		});
 
 		it("should not call merger when no pages", async () => {
-			const processor = new PostProcessor(baseConfig, mockLogger);
+			const processor = new PostProcessor(baseConfig, baseConfig.outputDir, mockLogger);
 			await processor.process([]);
 
 			expect(mockLogger.logMergerStart).not.toHaveBeenCalled();
 		});
 
 		it("should not call chunker when no pages", async () => {
-			const processor = new PostProcessor(baseConfig, mockLogger);
+			const processor = new PostProcessor(baseConfig, baseConfig.outputDir, mockLogger);
 			await processor.process([]);
 
 			expect(mockLogger.logChunkerStart).not.toHaveBeenCalled();
@@ -114,7 +114,7 @@ describe("PostProcessor", () => {
 	describe("process with --no-merge flag", () => {
 		it("should skip merger when merge is false", async () => {
 			const config = { ...baseConfig, merge: false };
-			const processor = new PostProcessor(config, mockLogger);
+			const processor = new PostProcessor(config, config.outputDir, mockLogger);
 
 			const pages = [createPage("https://example.com/page1", "Page 1", "pages/page-001.md")];
 			const contents = new Map([["pages/page-001.md", "# Page 1\n\nContent"]]);
@@ -127,7 +127,7 @@ describe("PostProcessor", () => {
 
 		it("should still run chunker when merge is false but chunks is true", async () => {
 			const config = { ...baseConfig, merge: false, chunks: true };
-			const processor = new PostProcessor(config, mockLogger);
+			const processor = new PostProcessor(config, config.outputDir, mockLogger);
 
 			const pages = [
 				createPage("https://example.com/page1", "Page 1", "pages/page-001.md"),
@@ -146,7 +146,7 @@ describe("PostProcessor", () => {
 
 		it("should build full markdown from memory when merge is false", async () => {
 			const config = { ...baseConfig, merge: false, chunks: true };
-			const processor = new PostProcessor(config, mockLogger);
+			const processor = new PostProcessor(config, config.outputDir, mockLogger);
 
 			const pages = [createPage("https://example.com/page1", "Page 1", "pages/page-001.md")];
 			const contents = new Map([["pages/page-001.md", "# Page 1\n\nContent"]]);
@@ -159,7 +159,7 @@ describe("PostProcessor", () => {
 
 		it("should run chunker with pages from disk when merge is false, chunks is true, and pages is true", async () => {
 			const config = { ...baseConfig, merge: false, chunks: true, pages: true };
-			const processor = new PostProcessor(config, mockLogger);
+			const processor = new PostProcessor(config, config.outputDir, mockLogger);
 
 			// Create page files on disk
 			const pagesDir = join(testOutputDir, "pages");
@@ -179,7 +179,7 @@ describe("PostProcessor", () => {
 	describe("process with --no-chunks flag", () => {
 		it("should skip chunker when chunks is false", async () => {
 			const config = { ...baseConfig, chunks: false };
-			const processor = new PostProcessor(config, mockLogger);
+			const processor = new PostProcessor(config, config.outputDir, mockLogger);
 
 			// Create page files first
 			const pagesDir = join(testOutputDir, "pages");
@@ -196,7 +196,7 @@ describe("PostProcessor", () => {
 
 		it("should still run merger when chunks is false but merge is true", async () => {
 			const config = { ...baseConfig, chunks: false, merge: true };
-			const processor = new PostProcessor(config, mockLogger);
+			const processor = new PostProcessor(config, config.outputDir, mockLogger);
 
 			// Create page files first
 			const pagesDir = join(testOutputDir, "pages");
@@ -215,7 +215,7 @@ describe("PostProcessor", () => {
 	describe("process with both --no-merge and --no-chunks", () => {
 		it("should only log post processing when both flags are false", async () => {
 			const config = { ...baseConfig, merge: false, chunks: false };
-			const processor = new PostProcessor(config, mockLogger);
+			const processor = new PostProcessor(config, config.outputDir, mockLogger);
 
 			const pages = [createPage("https://example.com/page1", "Page 1", "pages/page-001.md")];
 			const contents = new Map([["pages/page-001.md", "# Page 1\n\nContent"]]);
@@ -231,7 +231,7 @@ describe("PostProcessor", () => {
 	describe("page content loading", () => {
 		it("should load page contents from disk when pages is true", async () => {
 			const config = { ...baseConfig, pages: true };
-			const processor = new PostProcessor(config, mockLogger);
+			const processor = new PostProcessor(config, config.outputDir, mockLogger);
 
 			// Create page files
 			const pagesDir = join(testOutputDir, "pages");
@@ -251,7 +251,7 @@ describe("PostProcessor", () => {
 
 		it("should use provided pageContents when pages is false", async () => {
 			const config = { ...baseConfig, pages: false, merge: true };
-			const processor = new PostProcessor(config, mockLogger);
+			const processor = new PostProcessor(config, config.outputDir, mockLogger);
 
 			const pages = [createPage("https://example.com/page1", "Page 1", "pages/page-001.md")];
 			const contents = new Map([["pages/page-001.md", "# Page 1\n\nContent from memory"]]);
@@ -267,7 +267,7 @@ describe("PostProcessor", () => {
 
 		it("should handle missing files gracefully", async () => {
 			const config = { ...baseConfig, pages: true };
-			const processor = new PostProcessor(config, mockLogger);
+			const processor = new PostProcessor(config, config.outputDir, mockLogger);
 
 			const pages = [createPage("https://example.com/page1", "Page 1", "pages/nonexistent.md")];
 
@@ -280,7 +280,7 @@ describe("PostProcessor", () => {
 		it("should handle when full.md read fails but chunker can still run with pages content", async () => {
 			// This test covers the catch block when reading full.md fails
 			const config = { ...baseConfig, merge: true, chunks: true, pages: true };
-			const processor = new PostProcessor(config, mockLogger);
+			const processor = new PostProcessor(config, config.outputDir, mockLogger);
 
 			// Create page files
 			const pagesDir = join(testOutputDir, "pages");
@@ -298,7 +298,7 @@ describe("PostProcessor", () => {
 
 		it("should handle empty pageContents map", async () => {
 			const config = { ...baseConfig, pages: false, merge: true };
-			const processor = new PostProcessor(config, mockLogger);
+			const processor = new PostProcessor(config, config.outputDir, mockLogger);
 
 			const pages = [createPage("https://example.com/page1", "Page 1", "pages/page-001.md")];
 			const emptyContents = new Map<string, string>();
@@ -313,7 +313,7 @@ describe("PostProcessor", () => {
 	describe("full integration", () => {
 		it("should create full.md and chunks when both merge and chunks are true", async () => {
 			const config = { ...baseConfig, merge: true, chunks: true };
-			const processor = new PostProcessor(config);
+			const processor = new PostProcessor(config, config.outputDir);
 
 			// Create page files
 			const pagesDir = join(testOutputDir, "pages");
@@ -352,7 +352,7 @@ This is the second page content.`;
 
 		it("should handle multiple pages correctly", async () => {
 			const config = { ...baseConfig, merge: true, chunks: false };
-			const processor = new PostProcessor(config);
+			const processor = new PostProcessor(config, config.outputDir);
 
 			// Create page files
 			const pagesDir = join(testOutputDir, "pages");
@@ -389,7 +389,7 @@ This is the second page content.`;
 	describe("buildFullMarkdown (via process)", () => {
 		it("should handle pages with null titles", async () => {
 			const config = { ...baseConfig, pages: false, merge: true, chunks: false };
-			const processor = new PostProcessor(config, mockLogger);
+			const processor = new PostProcessor(config, config.outputDir, mockLogger);
 
 			const pages = [
 				{ ...createPage("https://example.com/page1", "Page 1", "pages/page-001.md"), title: null },
@@ -403,7 +403,7 @@ This is the second page content.`;
 
 		it("should strip frontmatter from content", async () => {
 			const config = { ...baseConfig, pages: false, merge: true, chunks: false };
-			const processor = new PostProcessor(config, mockLogger);
+			const processor = new PostProcessor(config, config.outputDir, mockLogger);
 
 			const pages = [createPage("https://example.com/page1", "Page 1", "pages/page-001.md")];
 			const contents = new Map([
@@ -431,7 +431,7 @@ Content after frontmatter`,
 
 		it("should strip H1 title from content body", async () => {
 			const config = { ...baseConfig, pages: false, merge: true, chunks: false };
-			const processor = new PostProcessor(config, mockLogger);
+			const processor = new PostProcessor(config, config.outputDir, mockLogger);
 
 			const pages = [createPage("https://example.com/page1", "Page 1", "pages/page-001.md")];
 			const contents = new Map([["pages/page-001.md", "# Page 1\n\nContent body"]]);

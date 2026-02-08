@@ -37,16 +37,8 @@ export class OutputWriter {
 
 		// 非diffモード: 一時ディレクトリを使用して原子性を確保
 		if (!config.diff) {
-			// 既に .tmp-* で終わっている場合は、すでに一時ディレクトリ化されているので再度変換しない
-			if (!config.outputDir.match(/\.tmp-\d+-\d+$/)) {
-				this.tempOutputDir = `${config.outputDir}.tmp-${Date.now()}-${process.pid}`;
-				this.workingOutputDir = this.tempOutputDir;
-				// PostProcessorで使用されるため、config.outputDirを更新
-				config.outputDir = this.tempOutputDir;
-			} else {
-				// すでに一時ディレクトリ化されている（テストで複数回インスタンス化される場合）
-				this.workingOutputDir = config.outputDir;
-			}
+			this.tempOutputDir = `${config.outputDir}.tmp-${Date.now()}-${process.pid}`;
+			this.workingOutputDir = this.tempOutputDir;
 		} else {
 			this.workingOutputDir = config.outputDir;
 		}
@@ -192,6 +184,11 @@ export class OutputWriter {
 		return this.indexManager;
 	}
 
+	/** 作業ディレクトリを取得（PostProcessorなどで使用） */
+	getWorkingOutputDir(): string {
+		return this.workingOutputDir;
+	}
+
 	/** 訪問済みURLを設定（差分クロール時のマージ範囲制限用） */
 	setVisitedUrls(urls: Set<string>): void {
 		this.indexManager.setVisitedUrls(urls);
@@ -224,9 +221,6 @@ export class OutputWriter {
 		if (existsSync(backupDir)) {
 			rmSync(backupDir, { recursive: true, force: true });
 		}
-
-		// config.outputDirを元に戻す（次のインスタンス化で正しく動作するように）
-		this.config.outputDir = this.finalOutputDir;
 
 		this.logger?.logDebug("Output finalized successfully");
 	}
