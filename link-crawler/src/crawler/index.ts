@@ -158,19 +158,20 @@ export class Crawler {
 				this.writer.setVisitedUrls(this.visited);
 				const indexPath = this.writer.saveIndex();
 				this.logger.logDebug("Saved partial index", { path: indexPath });
-			}
 
-			// 2. 途中結果からfull.md/chunksを生成（ベストエフォート）
-			try {
-				const result = this.writer.getResult();
-				if (result.pages.length > 0) {
-					this.postProcessor.process(result.pages, this.pageContents);
-					this.logger.logDebug("Generated partial outputs during cleanup");
+				// 2. 途中結果からfull.md/chunksを生成（ベストエフォート、diffモード時のみ）
+				// 非diffモードでは一時ディレクトリごと削除されるため不要
+				try {
+					const result = this.writer.getResult();
+					if (result.pages.length > 0) {
+						this.postProcessor.process(result.pages, this.pageContents);
+						this.logger.logDebug("Generated partial outputs during cleanup");
+					}
+				} catch (error) {
+					this.logger.logDebug("Failed to generate partial outputs (non-fatal)", {
+						error: String(error),
+					});
 				}
-			} catch (error) {
-				this.logger.logDebug("Failed to generate partial outputs (non-fatal)", {
-					error: String(error),
-				});
 			}
 
 			// 3. メモリ解放
