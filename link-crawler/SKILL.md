@@ -54,20 +54,13 @@ bun run src/crawl.ts <url>
 bun run src/crawl.ts <url> -o <PROJECT_ROOT>/.context/<site-name> [options]
 ```
 
-### オプション一覧
+### 主要オプション
 
-主要なオプション：
-- `-d, --depth <num>`: 最大クロール深度（デフォルト: 1、上限: 10）
-- `--max-pages <num>`: 最大クロールページ数（0 = 無制限）
-- `-o, --output <dir>`: 出力ディレクトリ
+- `-d, --depth <num>`: 最大クロール深度（デフォルト: 1）
+- `-o, --output <dir>`: 出力ディレクトリ（**必須**: プロジェクトルート配下を指定）
 - `--diff`: 差分クロール（変更ページのみ更新）
-- `--chunks`: チャンク分割出力を有効化
-- `--same-domain`: 同一ドメインのみクロール（デフォルト: true）
-- `--include <pattern>`: 含めるURLパターン（正規表現）
-- `--exclude <pattern>`: 除外するURLパターン（正規表現）
-- `--no-robots`: robots.txt を無視（非推奨、開発・テスト用）
 
-**完全なオプション一覧は [CLI仕様書](https://github.com/takemo101/dict-skills/blob/main/docs/cli-spec.md) を参照してください。**
+> **📖 完全なオプション一覧**: [CLI仕様書](https://github.com/takemo101/dict-skills/blob/main/docs/cli-spec.md#3-オプション一覧) を参照
 
 ## piエージェントでの使用例
 
@@ -84,13 +77,11 @@ bun run src/crawl.ts https://nextjs.org/docs -d 2 -o /path/to/project/.context/n
 
 | ファイル | 用途 |
 |---------|------|
-| `full.md` | 全ページ結合（AIコンテキスト用） |
-| `chunks/*.md` | 見出しベース分割（`--chunks`有効時） |
+| `full.md` | 全ページ結合（**AIコンテキスト用**） |
 | `pages/*.md` | ページ単位 |
-| `specs/*.yaml` | API仕様ファイル（検出時のみ） |
 | `index.json` | メタデータ・ハッシュ |
 
-**詳細な仕様は [CLI仕様書](https://github.com/takemo101/dict-skills/blob/main/docs/cli-spec.md) を参照してください。**
+> **📖 詳細な出力構造**: [CLI仕様書](https://github.com/takemo101/dict-skills/blob/main/docs/cli-spec.md#5-出力構造) を参照
 
 ## 参考リンク
 
