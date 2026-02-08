@@ -428,18 +428,33 @@ Disallow: /path(test)*
 		it("should handle ReDoS-prone patterns efficiently", () => {
 			// 従来の正規表現実装では ReDoS になりやすいパターン
 			const checker = new RobotsChecker("User-agent: *\nDisallow: /a*b*c*d*e*f*g*h*i*j*");
-			
+
 			// ほぼマッチする長い文字列でも高速に処理される
-			const longPath = "/a" + "x".repeat(1000) + "b" + "x".repeat(1000) + "c" + 
-			                "x".repeat(1000) + "d" + "x".repeat(1000) + "e" +
-			                "x".repeat(1000) + "f" + "x".repeat(1000) + "g" +
-			                "x".repeat(1000) + "h" + "x".repeat(1000) + "i" +
-			                "x".repeat(1000) + "Z"; // 最後が j ではないのでマッチしない
-			
+			const longPath =
+				"/a" +
+				"x".repeat(1000) +
+				"b" +
+				"x".repeat(1000) +
+				"c" +
+				"x".repeat(1000) +
+				"d" +
+				"x".repeat(1000) +
+				"e" +
+				"x".repeat(1000) +
+				"f" +
+				"x".repeat(1000) +
+				"g" +
+				"x".repeat(1000) +
+				"h" +
+				"x".repeat(1000) +
+				"i" +
+				"x".repeat(1000) +
+				"Z"; // 最後が j ではないのでマッチしない
+
 			const start = Date.now();
 			const result = checker.isAllowed(`https://example.com${longPath}`);
 			const elapsed = Date.now() - start;
-			
+
 			// 手動マッチングなので高速（100ms以内）
 			expect(elapsed).toBeLessThan(100);
 			expect(result).toBe(true); // j がないのでマッチせず、許可される

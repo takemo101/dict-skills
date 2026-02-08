@@ -7,6 +7,7 @@ import { parseConfig } from "./config.js";
 import { EXIT_CODES } from "./constants.js";
 import { Crawler } from "./crawler/index.js";
 import { handleError } from "./error-handler.js";
+import { SignalHandler } from "./signal-handler.js";
 
 // package.jsonからバージョンを読み込む
 const __filename = fileURLToPath(import.meta.url);
@@ -48,39 +49,18 @@ if (!startUrl) {
 
 async function main(): Promise<void> {
 	let crawler: Crawler | undefined;
-	let cleanupInProgress = false;
 
 	// シグナルハンドラを設定
-	const handleShutdown = async (signal: string) => {
-		if (cleanupInProgress) {
-			// 2回目以降のシグナルは即座に終了
-			console.log("\n⚠️  Force exit");
-			process.exit(EXIT_CODES.GENERAL_ERROR);
-		}
+	const signalHandler = new SignalHandler({
+		onShutdown: async () => {
+			if (crawler) {
+				await crawler.cleanup();
+			}
+		},
+		exitCode: EXIT_CODES.GENERAL_ERROR,
+	});
 
-		cleanupInProgress = true;
-		console.log(`\n⚠️  Received ${signal}. Cleaning up...`);
-
-		if (crawler) {
-			await crawler.cleanup();
-		}
-
-		console.log("✓ Cleanup complete");
-		process.exit(EXIT_CODES.GENERAL_ERROR);
-	};
-
-	process.on("SIGINT", () =>
-		handleShutdown("SIGINT").catch((err) => {
-			console.error("Error during shutdown:", err);
-			process.exit(EXIT_CODES.GENERAL_ERROR);
-		}),
-	);
-	process.on("SIGTERM", () =>
-		handleShutdown("SIGTERM").catch((err) => {
-			console.error("Error during shutdown:", err);
-			process.exit(EXIT_CODES.GENERAL_ERROR);
-		}),
-	);
+	signalHandler.install();
 
 	try {
 		const config = parseConfig(options, startUrl, packageJson.version);

@@ -2,18 +2,20 @@
  * Crawl.ts Entrypoint Unit Tests
  *
  * Tests the CLI entrypoint code paths to improve coverage from 0% to 50%+.
- * Addresses Issue #779.
+ * Addresses Issue #779 and #857.
  *
  * Strategy:
  * - Test what we CAN test: version loading, imports, basic structure
  * - Focus on improving coverage rather than complex mocking scenarios
- * - Signal handlers are tested indirectly through integration tests
+ * - Signal handlers are tested in signal-handler.test.ts
+ * - Integration with SignalHandler is verified here
  */
 
 import { describe, expect, it } from "vitest";
 import { EXIT_CODES } from "../../src/constants.js";
 import { handleError } from "../../src/error-handler.js";
 import { ConfigError, DependencyError, FetchError } from "../../src/errors.js";
+import { SignalHandler } from "../../src/signal-handler.js";
 
 describe("crawl.ts entrypoint - code coverage", () => {
 	describe("dependencies and imports", () => {
@@ -27,6 +29,12 @@ describe("crawl.ts entrypoint - code coverage", () => {
 			// crawl.ts uses handleError from error-handler.js
 			expect(handleError).toBeDefined();
 			expect(typeof handleError).toBe("function");
+		});
+
+		it("should have access to SignalHandler class", () => {
+			// crawl.ts uses SignalHandler from signal-handler.js
+			expect(SignalHandler).toBeDefined();
+			expect(typeof SignalHandler).toBe("function");
 		});
 	});
 
@@ -105,6 +113,22 @@ describe("crawl.ts entrypoint - code coverage", () => {
 				const result = handleError(error);
 				expect(result.exitCode).toBe(expected);
 			}
+		});
+	});
+
+	describe("signal handler integration", () => {
+		it("should create SignalHandler with correct options", () => {
+			const handler = new SignalHandler({
+				onShutdown: async () => {},
+				exitCode: EXIT_CODES.GENERAL_ERROR,
+			});
+
+			expect(handler).toBeInstanceOf(SignalHandler);
+		});
+
+		it("should use GENERAL_ERROR exit code for signal shutdowns", () => {
+			// crawl.ts configures SignalHandler with EXIT_CODES.GENERAL_ERROR
+			expect(EXIT_CODES.GENERAL_ERROR).toBe(1);
 		});
 	});
 });
