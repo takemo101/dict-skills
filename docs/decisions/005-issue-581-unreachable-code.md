@@ -140,21 +140,24 @@ function extractFallbackContent(doc: Document): {
 
 ```typescript
 export function extractContent(dom: JSDOM): { title: string | null; content: string | null } {
-  // 1. コードブロックを保護 (置換してマップに保存)
-  const codeBlockMap = protectCodeBlocks(dom.window.document);
+  // 1. DOM を破壊しないようにクローンを使用 (Issue #745)
+  const clonedDoc = dom.window.document.cloneNode(true) as Document;
+
+  // 2. クローンに対してコードブロック保護を実行 (置換してマップに保存)
+  const codeBlockMap = protectCodeBlocks(clonedDoc);
   
-  // 2. Readability で抽出 (プレースホルダーのまま処理される)
-  const reader = new Readability(dom.window.document.cloneNode(true) as Document);
+  // 3. Readability で抽出 (プレースホルダーのまま処理される)
+  const reader = new Readability(clonedDoc);
   const article = reader.parse();
   
   if (article?.content) {
-    // 3. コードブロックを復元
+    // 4. コードブロックを復元
     const restoredContent = restoreCodeBlocks(article.content, codeBlockMap);
     return { title: article.title ?? null, content: restoredContent };
   }
   
-  // 4. フォールバック: Readability が失敗した場合
-  const fallback = extractFallbackContent(dom.window.document);
+  // 5. フォールバック: Readability が失敗した場合
+  const fallback = extractFallbackContent(clonedDoc);
   if (fallback.content) {
     // フォールバックでも復元
     fallback.content = restoreCodeBlocks(fallback.content, codeBlockMap);
