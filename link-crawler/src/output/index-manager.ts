@@ -200,6 +200,8 @@ export class IndexManager {
 	 * 結果を取得
 	 */
 	getResult(): CrawlResult {
+		// totalPages を pages.length と同期
+		this.result.totalPages = this.result.pages.length;
 		return this.result;
 	}
 
@@ -207,7 +209,7 @@ export class IndexManager {
 	 * 登録済みページ数を取得
 	 */
 	getTotalPages(): number {
-		return this.result.totalPages;
+		return this.result.pages.length;
 	}
 
 	/**
