@@ -80,18 +80,27 @@ export function parseConfig(
 		sameDomain: options.sameDomain !== false,
 		includePattern: parsePattern(options.include as string | undefined, "include"),
 		excludePattern: parsePattern(options.exclude as string | undefined, "exclude"),
-		delay: Math.max(
-			0,
-			Number.isNaN(Number(options.delay)) ? DEFAULTS.DELAY_MS : Number(options.delay),
+		delay: Math.min(
+			DEFAULTS.MAX_DELAY_MS,
+			Math.max(
+				0,
+				Number.isNaN(Number(options.delay)) ? DEFAULTS.DELAY_MS : Number(options.delay),
+			),
 		),
 		timeout:
-			Math.max(
-				1,
-				Number.isNaN(Number(options.timeout)) ? DEFAULTS.TIMEOUT_SEC : Number(options.timeout),
+			Math.min(
+				DEFAULTS.MAX_TIMEOUT_SEC,
+				Math.max(
+					1,
+					Number.isNaN(Number(options.timeout)) ? DEFAULTS.TIMEOUT_SEC : Number(options.timeout),
+				),
 			) * 1000,
-		spaWait: Math.max(
-			0,
-			Number.isNaN(Number(options.wait)) ? DEFAULTS.SPA_WAIT_MS : Number(options.wait),
+		spaWait: Math.min(
+			DEFAULTS.MAX_SPA_WAIT_MS,
+			Math.max(
+				0,
+				Number.isNaN(Number(options.wait)) ? DEFAULTS.SPA_WAIT_MS : Number(options.wait),
+			),
 		),
 		headed: Boolean(options.headed),
 		diff: Boolean(options.diff),

@@ -10,10 +10,16 @@ export const DEFAULTS = {
 	OUTPUT_DIR: "./.context",
 	/** リクエスト間の遅延(ms) */
 	DELAY_MS: 500,
+	/** リクエスト間の遅延の上限(ms) */
+	MAX_DELAY_MS: 60000,
 	/** デフォルトタイムアウト(秒) */
 	TIMEOUT_SEC: 30,
+	/** タイムアウト上限(秒) */
+	MAX_TIMEOUT_SEC: 300,
 	/** SPAページ待機時間(ms) */
 	SPA_WAIT_MS: 2000,
+	/** SPAページ待機時間の上限(ms) */
+	MAX_SPA_WAIT_MS: 30000,
 } as const;
 
 /** ファイル名・プレフィックス */
