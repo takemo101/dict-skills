@@ -30,7 +30,7 @@ export class OutputWriter {
 	private workingOutputDir: string;
 
 	constructor(
-		private config: CrawlConfig,
+		config: CrawlConfig,
 		private logger?: Logger,
 	) {
 		this.finalOutputDir = config.outputDir;
