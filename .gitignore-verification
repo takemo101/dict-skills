@@ -1,0 +1,31 @@
+# Verification: dist/ is properly ignored
+
+This file documents the verification performed for Issue #919.
+
+## Verification Steps
+
+1. Checked tracked files:
+   ```bash
+   git ls-files link-crawler/dist/
+   # Result: No output (no files tracked)
+   ```
+
+2. Built the project:
+   ```bash
+   cd link-crawler && bun run build
+   # Result: dist/crawl.js generated successfully
+   ```
+
+3. Verified git status:
+   ```bash
+   git status
+   # Result: dist/ directory not shown (properly ignored)
+   ```
+
+## Conclusion
+The .gitignore configuration is working correctly.
+- link-crawler/.gitignore contains: `dist/`
+- Root .gitignore contains: `dist/`
+- Build artifacts in dist/ are properly ignored by git
+
+Issue #919 requirements are satisfied.
