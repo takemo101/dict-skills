@@ -5,10 +5,14 @@
 !.pi/skills/delete-environment/**
 
 # === Development Artifacts ===
-.improve-logs/        # Pi agent improvement logs
-.worktrees/          # Git worktree directories
-test-output-*/       # Test output directories
-.playwright-cli/     # Playwright CLI cache
+# Pi agent improvement logs
+.improve-logs/
+# Git worktree directories
+.worktrees/
+# Test output directories
+test-output-*/
+# Playwright CLI cache
+.playwright-cli/
 
 # === Pi Issue Runner ===
 .pi-runner.yaml.local
