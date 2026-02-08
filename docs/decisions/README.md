@@ -13,6 +13,8 @@ NNN-問題名.md
 | # | タイトル | 状態 |
 |---|---------|------|
 | [001](001-playwright-cli-session.md) | playwright-cli セッション問題 | 有効 |
+| [002](002-issue-854-duplicate.md) | Issue #854 重複確認 | 解決済み |
+| [003](003-issue-946-duplicate.md) | Issue #946 重複確認 | 解決済み |
 
 ## 記録すべき内容
 
