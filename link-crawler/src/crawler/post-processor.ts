@@ -14,6 +14,7 @@ export class PostProcessor {
 
 	constructor(
 		private config: CrawlConfig,
+		private outputDir: string,
 		logger?: CrawlLogger,
 	) {
 		this.logger = logger ?? new CrawlLogger(config);
@@ -52,7 +53,7 @@ export class PostProcessor {
 		// Merger出力 (full.md書き込み)
 		if (this.config.merge && fullMdContent) {
 			this.logger.logMergerStart();
-			const outputPath = join(this.config.outputDir, "full.md");
+			const outputPath = join(this.outputDir, "full.md");
 			writeFileSync(outputPath, fullMdContent);
 			this.logger.logMergerComplete(outputPath);
 		}
@@ -61,7 +62,7 @@ export class PostProcessor {
 		if (this.config.chunks && fullMdContent) {
 			this.logger.logChunkerStart();
 			// Chunker を必要時のみ生成
-			const chunker = new Chunker(this.config.outputDir);
+			const chunker = new Chunker(this.outputDir);
 			const chunkFiles = chunker.chunkAndWrite(fullMdContent);
 			this.logger.logChunkerComplete(chunkFiles.length);
 		}
@@ -77,7 +78,7 @@ export class PostProcessor {
 
 		for (const page of pages) {
 			try {
-				const pagePath = join(this.config.outputDir, page.file);
+				const pagePath = join(this.outputDir, page.file);
 				const content = readFileSync(pagePath, "utf-8");
 				contents.set(page.file, content);
 			} catch (error) {

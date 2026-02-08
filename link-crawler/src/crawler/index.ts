@@ -48,7 +48,7 @@ export class Crawler {
 	) {
 		this.logger = new CrawlLogger(config);
 		this.writer = new OutputWriter(config, this.logger);
-		this.postProcessor = new PostProcessor(config, this.logger);
+		this.postProcessor = new PostProcessor(config, this.writer.getWorkingOutputDir(), this.logger);
 		this.runtime = createRuntimeAdapter();
 		if (fetcher) {
 			this.fetcher = fetcher;
