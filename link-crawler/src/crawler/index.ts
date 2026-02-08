@@ -166,29 +166,37 @@ export class Crawler {
 		this.failedUrls.clear();
 	}
 
-	/** クリーンアップ: ステップ1 - 途中結果のindex.json保存 (diffモードのみ) */
+	/** クリーンアップ: ステップ1 - 途中結果のindex.json保存 */
 	private savePartialIndex(): void {
-		if (this.config.diff) {
-			this.writer.setVisitedUrls(this.visited);
-			const indexPath = this.writer.saveIndex();
-			this.logger.logDebug("Saved partial index", { path: indexPath });
-		}
+		this.writer.setVisitedUrls(this.visited);
+		const indexPath = this.writer.saveIndex();
+		this.logger.logDebug("Saved partial index", { path: indexPath });
 	}
 
-	/** クリーンアップ: ステップ2 - 途中結果からfull.md/chunksを生成 (ベストエフォート、diffモードのみ) */
+	/** クリーンアップ: ステップ2 - 途中結果からfull.md/chunksを生成 (ベストエフォート) */
 	private generatePartialOutputs(): void {
-		if (this.config.diff) {
-			try {
-				const result = this.writer.getResult();
-				if (result.pages.length > 0) {
-					this.postProcessor.process(result.pages, this.pageContents);
-					this.logger.logDebug("Generated partial outputs during cleanup");
+		try {
+			const result = this.writer.getResult();
+			if (result.pages.length > 0) {
+				this.postProcessor.process(result.pages, this.pageContents);
+				this.logger.logDebug("Generated partial outputs during cleanup");
+
+				// 非diffモード: 一時ディレクトリを確定（ベストエフォート）
+				if (!this.config.diff) {
+					try {
+						this.writer.finalize();
+						this.logger.logDebug("Finalized partial results in non-diff mode");
+					} catch (error) {
+						this.logger.logDebug("Failed to finalize partial results (non-fatal)", {
+							error: String(error),
+						});
+					}
 				}
-			} catch (error) {
-				this.logger.logDebug("Failed to generate partial outputs (non-fatal)", {
-					error: String(error),
-				});
 			}
+		} catch (error) {
+			this.logger.logDebug("Failed to generate partial outputs (non-fatal)", {
+				error: String(error),
+			});
 		}
 	}
 
