@@ -26,6 +26,8 @@ export class Crawler {
 	private fetcherPromise?: Promise<Fetcher>;
 	/** 最大ページ数到達ログの重複防止 */
 	private maxPagesReachedLogged = false;
+	/** クリーンアップ進行中フラグ（重複実行防止） */
+	private isCleaningUp = false;
 
 	constructor(
 		private config: CrawlConfig,
@@ -116,6 +118,13 @@ export class Crawler {
 
 	/** グレースフルシャットダウン（シグナルハンドラから呼ばれる） */
 	async cleanup(): Promise<void> {
+		// Idempotency guard: prevent double cleanup
+		if (this.isCleaningUp) {
+			this.logger.logDebug("cleanup() called but already in progress (skipping)");
+			return;
+		}
+		this.isCleaningUp = true;
+
 		this.logger.logDebug("Cleanup initiated");
 
 		try {
