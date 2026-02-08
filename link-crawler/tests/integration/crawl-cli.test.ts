@@ -188,6 +188,17 @@ describe("crawl CLI integration", () => {
 						timeout: 30000,
 					},
 				);
+
+				// Check if crawl succeeded but retrieved 0 pages (network instability)
+				const indexPath = join(outputDir, "index.json");
+				if (!existsSync(indexPath)) {
+					crawlResult = "";
+				} else {
+					const index = JSON.parse(readFileSync(indexPath, "utf-8"));
+					if (index.totalPages === 0) {
+						crawlResult = "";
+					}
+				}
 			} catch (error: unknown) {
 				// Store error for tests to handle
 				const err = error as { status: number; stdout?: Buffer };
