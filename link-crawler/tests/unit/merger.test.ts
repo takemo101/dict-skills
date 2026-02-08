@@ -1,6 +1,6 @@
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Merger } from "../../src/output/merger.js";
 import type { CrawledPage } from "../../src/types.js";
 
@@ -275,6 +275,86 @@ Content after frontmatter`,
 			// Should have 9 separators for 10 pages
 			const separatorMatches = content.match(/---/g);
 			expect(separatorMatches).toHaveLength(9);
+		});
+	});
+
+	describe("logging missing content", () => {
+		it("should log debug message when content is missing from Map", () => {
+			const mockLogger = {
+				logDebug: vi.fn(),
+				logIndexFormatError: vi.fn(),
+				logIndexLoadError: vi.fn(),
+			};
+
+			const merger = new Merger(mockLogger);
+			const pages = [createPage("https://example.com/page1", "Page 1", "pages/page-001.md")];
+			const pageContents = new Map<string, string>(); // Empty map
+
+			const result = merger.buildFullContent(pages, pageContents);
+
+			expect(mockLogger.logDebug).toHaveBeenCalledWith(
+				"Missing content for page",
+				expect.objectContaining({
+					file: "pages/page-001.md",
+					url: "https://example.com/page1",
+				}),
+			);
+			expect(result).toContain("# Page 1");
+		});
+
+		it("should not log when content exists but is empty string", () => {
+			const mockLogger = {
+				logDebug: vi.fn(),
+				logIndexFormatError: vi.fn(),
+				logIndexLoadError: vi.fn(),
+			};
+
+			const merger = new Merger(mockLogger);
+			const pages = [createPage("https://example.com/page1", "Page 1", "pages/page-001.md")];
+			const pageContents = new Map([["pages/page-001.md", ""]]); // Empty string but key exists
+
+			const result = merger.buildFullContent(pages, pageContents);
+
+			expect(mockLogger.logDebug).not.toHaveBeenCalled();
+			expect(result).toContain("# Page 1");
+		});
+
+		it("should work without logger (backward compatibility)", () => {
+			const merger = new Merger(); // No logger
+			const pages = [createPage("https://example.com/page1", "Page 1", "pages/page-001.md")];
+			const pageContents = new Map<string, string>();
+
+			const result = merger.buildFullContent(pages, pageContents);
+
+			// Should not throw error
+			expect(result).toContain("# Page 1");
+		});
+
+		it("should log for multiple missing pages", () => {
+			const mockLogger = {
+				logDebug: vi.fn(),
+				logIndexFormatError: vi.fn(),
+				logIndexLoadError: vi.fn(),
+			};
+
+			const merger = new Merger(mockLogger);
+			const pages = [
+				createPage("https://example.com/page1", "Page 1", "pages/page-001.md"),
+				createPage("https://example.com/page2", "Page 2", "pages/page-002.md"),
+			];
+			const pageContents = new Map<string, string>(); // Empty map
+
+			merger.buildFullContent(pages, pageContents);
+
+			expect(mockLogger.logDebug).toHaveBeenCalledTimes(2);
+			expect(mockLogger.logDebug).toHaveBeenCalledWith(
+				"Missing content for page",
+				expect.objectContaining({ file: "pages/page-001.md" }),
+			);
+			expect(mockLogger.logDebug).toHaveBeenCalledWith(
+				"Missing content for page",
+				expect.objectContaining({ file: "pages/page-002.md" }),
+			);
 		});
 	});
 });

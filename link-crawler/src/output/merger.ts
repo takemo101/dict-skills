@@ -1,10 +1,15 @@
-import type { CrawledPage } from "../types.js";
+import type { CrawledPage, Logger } from "../types.js";
 
 /**
  * ページ結合クラス
  * 全ページを結合してfull.mdを生成
  */
 export class Merger {
+	private logger?: Logger;
+
+	constructor(logger?: Logger) {
+		this.logger = logger;
+	}
 	/**
 	 * Markdownから先頭のH1タイトルを除去
 	 * frontmatterがある場合は考慮する
@@ -48,8 +53,14 @@ export class Merger {
 			const header = `# ${title}`;
 			const urlLine = `> Source: ${page.url}`;
 
-			const rawContent = pageContents.get(page.file) || "";
-			const content = this.stripTitle(rawContent);
+			const rawContent = pageContents.get(page.file);
+			if (rawContent === undefined) {
+				this.logger?.logDebug("Missing content for page", {
+					file: page.file,
+					url: page.url,
+				});
+			}
+			const content = this.stripTitle(rawContent ?? "");
 
 			sections.push(`${header}\n\n${urlLine}\n\n${content}`);
 		}
