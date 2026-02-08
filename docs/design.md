@@ -85,7 +85,7 @@ link-crawler/
 │   ├── error-handler.ts        # エラーハンドリング
 │   │
 │   ├── crawler/
-│   │   ├── index.ts            # CrawlerEngine
+│   │   ├── index.ts            # Crawler
 │   │   ├── fetcher.ts          # PlaywrightFetcher
 │   │   ├── logger.ts           # ログ出力
 │   │   ├── robots.ts           # robots.txt パーサー
@@ -126,7 +126,7 @@ link-crawler/
 | `Constants` | 定数定義（デフォルト値、ファイル名、パターン、終了コード） | - | 定数オブジェクト |
 | `Errors` | エラークラス定義（CrawlError, FetchError, ConfigError等） | Error情報 | Typed Error |
 | `ErrorHandler` | エラー種別判定、メッセージ生成、終了コード決定 | Error | ErrorHandlerResult |
-| `CrawlerEngine` | クロール制御、再帰管理 | URL, Config | CrawledPages |
+| `Crawler` | クロール制御、再帰管理 | URL, Config | CrawledPages |
 | `PlaywrightFetcher` | ページ取得 | URL | HTML |
 | `RobotsChecker` | robots.txt のパースとURL許可判定 | robots.txt, URL | boolean |
 | `CrawlLogger` | クロールログ出力（開始、進捗、完了、エラー等） | Config, Events | コンソール出力 |
@@ -584,7 +584,7 @@ configパラメータの役割：
 
 ```typescript
 // IndexManagerから既存ハッシュを読み込み
-const existingHashes = indexManager.getHashMap();
+const existingHashes = indexManager.getExistingHashes();
 const hasher = new Hasher(existingHashes);
 
 // クロール中
