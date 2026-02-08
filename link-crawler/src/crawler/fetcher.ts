@@ -1,4 +1,4 @@
-import { existsSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync } from "node:fs";
 import { isAbsolute, join, normalize, resolve, sep } from "node:path";
 import { PATHS, PATTERNS } from "../constants.js";
 import { DependencyError, FetchError, TimeoutError } from "../errors.js";
@@ -69,11 +69,21 @@ export class PlaywrightFetcher implements Fetcher {
 		return false;
 	}
 
-	/** CLIコマンドを実行 */
+	/** playwright-cliの作業ディレクトリ（outputDir を使用） */
+	private get cliWorkDir(): string {
+		return resolve(this.config.outputDir);
+	}
+
+	/** CLIコマンドを実行（cwdをoutputDirに設定） */
 	private async runCli(
 		args: string[],
 	): Promise<{ success: boolean; stdout: string; stderr: string }> {
-		return this.runtime.spawn(this.nodePath, [this.playwrightPath, ...args]);
+		// outputDirが存在しない場合は作成（playwright-cliが書き込めるように）
+		const workDir = this.cliWorkDir;
+		if (!existsSync(workDir)) {
+			mkdirSync(workDir, { recursive: true });
+		}
+		return this.runtime.spawn(this.nodePath, [this.playwrightPath, ...args], workDir);
 	}
 
 	/**
@@ -175,13 +185,13 @@ export class PlaywrightFetcher implements Fetcher {
 				// 相対パスから絶対パスを構築
 				const logPath = normalize(logMatch[1]);
 
-				// パストラバーサル防止: cwdの外を参照していないことを確認
-				const cwd = this.runtime.cwd();
+				// パストラバーサル防止: outputDirの外を参照していないことを確認
+				const baseDir = this.cliWorkDir;
 
-				// 絶対パスの場合は直接使用、相対パスの場合はcwdと結合
-				const fullPath = isAbsolute(logPath) ? logPath : join(cwd, logPath);
+				// 絶対パスの場合は直接使用、相対パスの場合はoutputDirと結合
+				const fullPath = isAbsolute(logPath) ? logPath : join(baseDir, logPath);
 				const resolvedPath = resolve(fullPath);
-				const resolvedCwd = resolve(cwd);
+				const resolvedCwd = resolve(baseDir);
 
 				// 解決済みパスがcwd配下にあることを確認
 				if (!resolvedPath.startsWith(resolvedCwd + sep) && resolvedPath !== resolvedCwd) {
@@ -288,10 +298,10 @@ export class PlaywrightFetcher implements Fetcher {
 			}
 		}
 
-		// .playwright-cli ディレクトリをクリーンアップ
+		// .playwright-cli ディレクトリをクリーンアップ（outputDir内）
 		if (!this.config.keepSession) {
 			try {
-				const cliDir = join(this.runtime.cwd(), ".playwright-cli");
+				const cliDir = join(this.cliWorkDir, ".playwright-cli");
 				if (existsSync(cliDir)) {
 					rmSync(cliDir, { recursive: true, force: true });
 				}

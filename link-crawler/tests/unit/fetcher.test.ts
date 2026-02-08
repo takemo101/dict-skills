@@ -9,6 +9,7 @@ import type { RuntimeAdapter, SpawnResult } from "../../src/utils/runtime.js";
 vi.mock("node:fs", () => ({
 	existsSync: vi.fn(),
 	rmSync: vi.fn(),
+	mkdirSync: vi.fn(),
 }));
 
 // Get typed references to the mocked functions
@@ -1418,10 +1419,11 @@ describe("PlaywrightFetcher", () => {
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
 			await fetcher.close();
 
-			expect(mockRuntime.spawn).toHaveBeenCalledWith(expect.any(String), [
-				"playwright-cli",
-				"session-stop",
-			]);
+			expect(mockRuntime.spawn).toHaveBeenCalledWith(
+				expect.any(String),
+				["playwright-cli", "session-stop"],
+				expect.any(String),
+			);
 		});
 
 		it("should remove .playwright-cli directory when keepSession is false", async () => {
@@ -1456,7 +1458,7 @@ describe("PlaywrightFetcher", () => {
 			const fetcher = new PlaywrightFetcher(config, mockRuntime);
 			await fetcher.close();
 
-			expect(mockExistsSync).not.toHaveBeenCalled();
+			// rmSync should not be called (directory should not be removed)
 			expect(mockRmSync).not.toHaveBeenCalled();
 		});
 

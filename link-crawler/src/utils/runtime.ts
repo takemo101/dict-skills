@@ -10,8 +10,9 @@ export interface SpawnResult {
 export interface RuntimeAdapter {
 	/**
 	 * コマンドを実行して結果を返す
+	 * @param cwd 作業ディレクトリ（省略時はprocess.cwd()）
 	 */
-	spawn(command: string, args: string[]): Promise<SpawnResult>;
+	spawn(command: string, args: string[], cwd?: string): Promise<SpawnResult>;
 
 	/**
 	 * 指定時間スリープする
@@ -40,11 +41,12 @@ export interface BunAPI {
 export class BunRuntimeAdapter implements RuntimeAdapter {
 	constructor(private bunApi: BunAPI = globalThis.Bun) {}
 
-	async spawn(command: string, args: string[]): Promise<SpawnResult> {
+	async spawn(command: string, args: string[], cwd?: string): Promise<SpawnResult> {
 		try {
 			const proc = this.bunApi.spawn([command, ...args], {
 				stdout: "pipe",
 				stderr: "pipe",
+				...(cwd ? { cwd } : {}),
 			});
 			const stdout = await new Response(proc.stdout).text();
 			const stderr = await new Response(proc.stderr).text();
@@ -76,11 +78,12 @@ export class BunRuntimeAdapter implements RuntimeAdapter {
 
 /** 汎用ランタイムアダプター（Node.js互換） */
 export class NodeRuntimeAdapter implements RuntimeAdapter {
-	async spawn(command: string, args: string[]): Promise<SpawnResult> {
+	async spawn(command: string, args: string[], cwd?: string): Promise<SpawnResult> {
 		const { spawn } = await import("node:child_process");
 		return new Promise((resolve) => {
 			const proc = spawn(command, args, {
 				stdio: ["ignore", "pipe", "pipe"],
+				...(cwd ? { cwd } : {}),
 			});
 			let stdout = "";
 			let stderr = "";

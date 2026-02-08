@@ -33,12 +33,25 @@ bun install
 - インストール: `npm install -g @playwright/cli`
 - または、`install.sh` を実行すると自動的にインストールされます
 
-## 基本的な使い方
+## ⚠️ 出力先の制約（重要）
 
-スキルディレクトリ内で実行：
+`-o` オプションで**必ずプロジェクトルート（piを起動したディレクトリ）配下**に出力すること。
+スキルディレクトリ内に `.context/` を作成してはならない。
 
 ```bash
-bun run src/crawl.ts <url> [options]
+# ✅ 正しい: プロジェクトルートの .context/ に出力
+bun run src/crawl.ts <url> -o <PROJECT_ROOT>/.context/<site-name>
+
+# ❌ 間違い: -o を省略するとスキルディレクトリ内に作成される
+bun run src/crawl.ts <url>
+```
+
+## 基本的な使い方
+
+スキルディレクトリ内で実行（`-o` で出力先を必ず指定）：
+
+```bash
+bun run src/crawl.ts <url> -o <PROJECT_ROOT>/.context/<site-name> [options]
 ```
 
 ### オプション一覧
@@ -59,10 +72,10 @@ bun run src/crawl.ts <url> [options]
 ## piエージェントでの使用例
 
 ```bash
-# Next.jsドキュメントをクロール
-bun run src/crawl.ts https://nextjs.org/docs -d 2
+# Next.jsドキュメントをクロール（PROJECT_ROOT = piの起動ディレクトリ）
+bun run src/crawl.ts https://nextjs.org/docs -d 2 -o /path/to/project/.context/nextjs-docs
 
-# → .context/nextjs-docs/full.md が生成され、piエージェントのコンテキストとして利用可能
+# → /path/to/project/.context/nextjs-docs/full.md が生成され、piエージェントのコンテキストとして利用可能
 ```
 
 ## 出力ファイル
