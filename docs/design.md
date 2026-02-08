@@ -267,6 +267,26 @@ interface CrawlConfig {
   version: string;
 }
 
+/** フェッチ結果 */
+interface FetchResult {
+  html: string;
+  finalUrl: string;
+  contentType: string;
+}
+
+/** Fetcher インターフェース */
+interface Fetcher {
+  fetch(url: string): Promise<FetchResult | null>;
+  close?(): Promise<void>;
+}
+
+/** ロガーインターフェース（output モジュールが依存） */
+interface Logger {
+  logIndexFormatError(path: string): void;
+  logIndexLoadError(error: string): void;
+  logDebug(message: string, data?: unknown): void;
+}
+
 /** ページメタデータ */
 interface PageMetadata {
   title: string | null;
