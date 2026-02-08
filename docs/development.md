@@ -244,41 +244,21 @@ try {
 
 ### 5.2 Vitest設定
 
-<!-- Verified 2026-02-08: Configuration matches link-crawler/vitest.config.ts (Issue #809) -->
+設定の詳細は [`link-crawler/vitest.config.ts`](../link-crawler/vitest.config.ts) を参照してください。
 
-```typescript
-// vitest.config.ts
-import { defineConfig } from "vitest/config";
+**主要な設定ポイント**:
 
-export default defineConfig({
-	test: {
-		globals: true,
-		include: ["tests/**/*.test.ts"],
-		globalSetup: "./tests/global-setup.ts",
-		globalTeardown: "./tests/global-teardown.ts",
-		// Enable file-level parallelism for faster test execution
-		// forks pool provides complete isolation between test files
-		fileParallelism: true,
-		// forksプールを使用して各テストファイルを完全に分離
-		// (threadsではなくforksを使用することで、module mocksが他のファイルに影響しない)
-		pool: "forks",
-		// Vitest 4: poolOptions moved to top-level
-		singleFork: false,
-		// テスト間でモックをクリアして分離を確保
-		clearMocks: true,
-		mockReset: true,
-		restoreMocks: true,
-		// 各テストファイルを完全に分離
-		isolate: true,
-		coverage: {
-			provider: "v8",
-			reporter: ["text", "html", "json-summary"],
-			include: ["src/**/*.ts"],
-			exclude: ["src/crawl.ts", "src/types.ts", "src/types/**"],
-		},
-	},
-});
-```
+| 設定項目 | 値 | 目的 |
+|---------|-----|------|
+| `pool` | `"forks"` | テストファイル間の完全分離（module mocks が他ファイルに影響しない） |
+| `fileParallelism` | `true` | 並列実行による高速化 |
+| `clearMocks/mockReset/restoreMocks` | `true` | テスト間でモックを自動クリア |
+| `isolate` | `true` | 各テストファイルの完全分離 |
+
+**カバレッジ設定**:
+- Provider: `v8`
+- Reporter: `text`, `html`, `json-summary`
+- 除外: `src/crawl.ts`, `src/types.ts`, `src/types/**`
 
 ### 5.3 ユニットテスト例
 
