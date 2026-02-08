@@ -48,6 +48,8 @@ bun run link-crawler/src/crawl.ts https://nextjs.org/docs -d 2
 | [SKILL.md](link-crawler/SKILL.md) | **pi users** | Concise usage as a pi skill |
 | [CLI Specification](docs/cli-spec.md) | **CLI users** | Complete option list, examples, output format specifications |
 | [Design Document](docs/design.md) | **Developers** | Architecture, data structures, technical specifications |
+| [Development Guide](docs/development.md) | **Developers** | Setup, testing, coding standards |
+| [Maintenance Guide](docs/maintenance.md) | **Maintainers** | Regular maintenance and cleanup procedures |
 
 ### Contributing
 
@@ -111,6 +113,8 @@ bun run link-crawler/src/crawl.ts https://nextjs.org/docs -d 2
 | [SKILL.md](link-crawler/SKILL.md) | **piユーザー** | piスキルとしての簡潔な使い方 |
 | [CLI仕様書](docs/cli-spec.md) | **CLIユーザー** | 完全なオプション一覧・詳細な使用例・出力形式の仕様 |
 | [設計書](docs/design.md) | **開発者** | アーキテクチャ・データ構造・技術仕様 |
+| [開発ガイド](docs/development.md) | **開発者** | 開発環境セットアップ・テスト・コーディング規約 |
+| [メンテナンスガイド](docs/maintenance.md) | **運用者** | 定期メンテナンス・クリーンアップ手順 |
 
 ### 情報の所在
 
