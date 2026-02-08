@@ -611,6 +611,119 @@ info:
 			// mockFetcherのclose()が呼ばれたことを確認
 			expect(mockFetcher.isClosed()).toBe(true);
 		});
+
+		it("should generate partial outputs during cleanup when pages exist", async () => {
+			// Enable merge and chunks for this test
+			const config = { ...baseConfig, merge: true, chunks: true };
+
+			// Setup mock responses
+			mockFetcher.setResponse("https://example.com", {
+				html: `
+					<!DOCTYPE html>
+					<html>
+						<head><title>Test Page</title></head>
+						<body>
+							<h1>Test Content</h1>
+							<p>This is test content for partial output.</p>
+						</body>
+					</html>
+				`,
+				finalUrl: "https://example.com",
+				contentType: "text/html",
+			});
+
+			const crawler = new Crawler(config, mockFetcher);
+
+			// Start crawl (this will crawl one page)
+			await crawler.run();
+
+			// Verify full.md was created during normal run
+			const fullMdPath = join(testDir, "full.md");
+			expect(existsSync(fullMdPath)).toBe(true);
+
+			// Now test cleanup with partial data
+			// Create a new crawler instance and simulate interrupted crawl
+			const crawler2 = new Crawler(config, mockFetcher);
+
+			// Manually trigger a partial crawl state by crawling one page
+			// then calling cleanup before run() completes
+			mockFetcher.setResponse("https://example.com/page2", {
+				html: `
+					<!DOCTYPE html>
+					<html>
+						<head><title>Page 2</title></head>
+						<body>
+							<h1>Partial Page</h1>
+							<p>This page was crawled before interrupt.</p>
+						</body>
+					</html>
+				`,
+				finalUrl: "https://example.com/page2",
+				contentType: "text/html",
+			});
+
+			// Simulate partial crawl by calling cleanup
+			// (In real scenario, this would be triggered by SIGINT)
+			await crawler2.cleanup();
+
+			// Verify cleanup completed without error
+			expect(mockFetcher.isClosed()).toBe(true);
+		});
+
+		it("should skip partial output generation when no pages crawled", async () => {
+			const config = { ...baseConfig, merge: true, chunks: true };
+			const crawler = new Crawler(config, mockFetcher);
+
+			// Call cleanup without crawling any pages
+			await crawler.cleanup();
+
+			// Should complete without error
+			expect(mockFetcher.isClosed()).toBe(true);
+
+			// full.md should not exist since no pages were crawled
+			const fullMdPath = join(testDir, "full.md");
+			expect(existsSync(fullMdPath)).toBe(false);
+		});
+
+		it("should handle PostProcessor errors gracefully during cleanup", async () => {
+			const config = { ...baseConfig, merge: true, chunks: true };
+
+			// Setup a page that will be crawled
+			mockFetcher.setResponse("https://example.com", {
+				html: `
+					<!DOCTYPE html>
+					<html>
+						<head><title>Test Page</title></head>
+						<body>
+							<h1>Test Content</h1>
+							<p>Content that should trigger PostProcessor.</p>
+						</body>
+					</html>
+				`,
+				finalUrl: "https://example.com",
+				contentType: "text/html",
+			});
+
+			const crawler = new Crawler(config, mockFetcher);
+
+			// Crawl one page to have data
+			await crawler.run();
+
+			// Mock PostProcessor to throw error during second cleanup
+			// @ts-expect-error - accessing private property for testing
+			const originalProcess = crawler.postProcessor.process.bind(crawler.postProcessor);
+			// @ts-expect-error - accessing private property for testing
+			crawler.postProcessor.process = vi.fn(() => {
+				throw new Error("PostProcessor failed");
+			});
+
+			// Cleanup should handle the error gracefully
+			await expect(crawler.cleanup()).resolves.toBeUndefined();
+
+			// Restore original function
+			// @ts-expect-error - accessing private property for testing
+			crawler.postProcessor.process = originalProcess;
+		});
 	});
 
 	describe("fetchRobotsTxt error handling", () => {

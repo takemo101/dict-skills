@@ -150,9 +150,6 @@ export class Crawler {
 			// 0. リトライ情報のクリア
 			this.failedUrls.clear();
 
-			// メモリ解放
-			this.pageContents.clear();
-
 			// 1. 途中結果を保存
 			if (this.config.diff) {
 				this.writer.setVisitedUrls(this.visited);
@@ -160,7 +157,23 @@ export class Crawler {
 			const indexPath = this.writer.saveIndex();
 			this.logger.logDebug("Saved partial index", { path: indexPath });
 
-			// 2. Fetcher をクローズ（初期化中の場合も待機）
+			// 2. 途中結果からfull.md/chunksを生成（ベストエフォート）
+			try {
+				const result = this.writer.getResult();
+				if (result.pages.length > 0) {
+					this.postProcessor.process(result.pages, this.pageContents);
+					this.logger.logDebug("Generated partial outputs during cleanup");
+				}
+			} catch (error) {
+				this.logger.logDebug("Failed to generate partial outputs (non-fatal)", {
+					error: String(error),
+				});
+			}
+
+			// 3. メモリ解放
+			this.pageContents.clear();
+
+			// 4. Fetcher をクローズ（初期化中の場合も待機）
 			if (this.fetcherPromise) {
 				try {
 					const fetcher = await this.fetcherPromise;
