@@ -190,7 +190,7 @@ describe("Crawler - Error Handling", () => {
 		it("エラーページはスキップされ、他のページは正常にクロールされる", async () => {
 			// 1ページ目: 成功
 			const successResult: FetchResult = {
-				html: '<html><head><title>Page 1</title></head><body><a href="https://example.com/page2">Link</a></body></html>',
+				html: "<html><head><title>Page 1</title></head><body><a href='https://example.com/page2'>Link</a></body></html>",
 				finalUrl: "https://example.com",
 				contentType: "text/html",
 			};
@@ -238,14 +238,14 @@ describe("Crawler - Error Handling", () => {
 
 			// ページ3: 成功（page2へのリンク）
 			const page3Result: FetchResult = {
-				html: '<html><head><title>Page 3</title></head><body><a href="https://example.com/page2">Link to Page 2</a></body></html>',
+				html: "<html><head><title>Page 3</title></head><body><a href='https://example.com/page2'>Link to Page 2</a></body></html>",
 				finalUrl: "https://example.com/page3",
 				contentType: "text/html",
 			};
 
 			// ページ1に page3 へのリンクを追加
 			const page1WithPage3: FetchResult = {
-				html: '<html><head><title>Page 1</title></head><body><a href="https://example.com/page2">Page 2</a><a href="https://example.com/page3">Page 3</a></body></html>',
+				html: "<html><head><title>Page 1</title></head><body><a href='https://example.com/page2'>Page 2</a><a href='https://example.com/page3'>Page 3</a></body></html>",
 				finalUrl: "https://example.com",
 				contentType: "text/html",
 			};
@@ -275,19 +275,19 @@ describe("Crawler - Error Handling", () => {
 			// 複数ページから page2 へリンク、3回失敗させる
 			// MAX_RETRIES = 2 の場合、初回 + リトライ2回 = 合計3回までフェッチされる
 			const page1Result: FetchResult = {
-				html: '<html><head><title>Page 1</title></head><body><a href="https://example.com/page2">Page 2</a><a href="https://example.com/page3">Page 3</a><a href="https://example.com/page4">Page 4</a></body></html>',
+				html: "<html><head><title>Page 1</title></head><body><a href='https://example.com/page2'>Page 2</a><a href='https://example.com/page3'>Page 3</a><a href='https://example.com/page4'>Page 4</a></body></html>",
 				finalUrl: "https://example.com",
 				contentType: "text/html",
 			};
 
 			const page3Result: FetchResult = {
-				html: '<html><head><title>Page 3</title></head><body><a href="https://example.com/page2">Page 2</a></body></html>',
+				html: "<html><head><title>Page 3</title></head><body><a href='https://example.com/page2'>Page 2</a></body></html>",
 				finalUrl: "https://example.com/page3",
 				contentType: "text/html",
 			};
 
 			const page4Result: FetchResult = {
-				html: '<html><head><title>Page 4</title></head><body><a href="https://example.com/page2">Page 2</a></body></html>',
+				html: "<html><head><title>Page 4</title></head><body><a href='https://example.com/page2'>Page 2</a></body></html>",
 				finalUrl: "https://example.com/page4",
 				contentType: "text/html",
 			};
@@ -322,13 +322,13 @@ describe("Crawler - Error Handling", () => {
 		it("fetch()がnullを返す場合（404等）もリトライ上限が適用される", async () => {
 			// 404エラーもリトライ対象とする
 			const page1Result: FetchResult = {
-				html: '<html><head><title>Page 1</title></head><body><a href="https://example.com/page2">Page 2</a><a href="https://example.com/page3">Page 3</a></body></html>',
+				html: "<html><head><title>Page 1</title></head><body><a href='https://example.com/page2'>Page 2</a><a href='https://example.com/page3'>Page 3</a></body></html>",
 				finalUrl: "https://example.com",
 				contentType: "text/html",
 			};
 
 			const page3Result: FetchResult = {
-				html: '<html><head><title>Page 3</title></head><body><a href="https://example.com/page2">Page 2</a></body></html>',
+				html: "<html><head><title>Page 3</title></head><body><a href='https://example.com/page2'>Page 2</a></body></html>",
 				finalUrl: "https://example.com/page3",
 				contentType: "text/html",
 			};
@@ -357,7 +357,7 @@ describe("Crawler - Error Handling", () => {
 		it("フェッチ成功後、リトライカウントがクリアされる", async () => {
 			// page2: 1回失敗 → 2回目成功 → 3回目はvisitedによりスキップ
 			const page1Result: FetchResult = {
-				html: '<html><head><title>Page 1</title></head><body><a href="https://example.com/page2">Page 2</a><a href="https://example.com/page3">Page 3</a><a href="https://example.com/page4">Page 4</a></body></html>',
+				html: "<html><head><title>Page 1</title></head><body><a href='https://example.com/page2'>Page 2</a><a href='https://example.com/page3'>Page 3</a><a href='https://example.com/page4'>Page 4</a></body></html>",
 				finalUrl: "https://example.com",
 				contentType: "text/html",
 			};
@@ -369,13 +369,13 @@ describe("Crawler - Error Handling", () => {
 			};
 
 			const page3Result: FetchResult = {
-				html: '<html><head><title>Page 3</title></head><body><a href="https://example.com/page2">Page 2</a></body></html>',
+				html: "<html><head><title>Page 3</title></head><body><a href='https://example.com/page2'>Page 2</a></body></html>",
 				finalUrl: "https://example.com/page3",
 				contentType: "text/html",
 			};
 
 			const page4Result: FetchResult = {
-				html: '<html><head><title>Page 4</title></head><body><a href="https://example.com/page2">Page 2</a></body></html>',
+				html: "<html><head><title>Page 4</title></head><body><a href='https://example.com/page2'>Page 2</a></body></html>",
 				finalUrl: "https://example.com/page4",
 				contentType: "text/html",
 			};
