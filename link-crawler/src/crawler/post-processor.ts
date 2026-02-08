@@ -11,16 +11,12 @@ import { CrawlLogger } from "./logger.js";
  */
 export class PostProcessor {
 	private logger: CrawlLogger;
-	private merger: Merger;
-	private chunker: Chunker;
 
 	constructor(
 		private config: CrawlConfig,
 		logger?: CrawlLogger,
 	) {
 		this.logger = logger ?? new CrawlLogger(config);
-		this.merger = new Merger(this.logger);
-		this.chunker = new Chunker(config.outputDir);
 	}
 
 	/**
@@ -45,7 +41,13 @@ export class PostProcessor {
 		// - merge: full.md出力のため
 		// - chunks: チャンク分割のため
 		const needsFullContent = this.config.merge || this.config.chunks;
-		const fullMdContent = needsFullContent ? this.merger.buildFullContent(pages, contents) : "";
+		let fullMdContent = "";
+
+		if (needsFullContent) {
+			// Merger を必要時のみ生成
+			const merger = new Merger(this.logger);
+			fullMdContent = merger.buildFullContent(pages, contents);
+		}
 
 		// Merger出力 (full.md書き込み)
 		if (this.config.merge && fullMdContent) {
@@ -58,7 +60,9 @@ export class PostProcessor {
 		// Chunker出力
 		if (this.config.chunks && fullMdContent) {
 			this.logger.logChunkerStart();
-			const chunkFiles = this.chunker.chunkAndWrite(fullMdContent);
+			// Chunker を必要時のみ生成
+			const chunker = new Chunker(this.config.outputDir);
+			const chunkFiles = chunker.chunkAndWrite(fullMdContent);
 			this.logger.logChunkerComplete(chunkFiles.length);
 		}
 	}
