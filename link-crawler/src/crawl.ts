@@ -62,16 +62,9 @@ async function main(): Promise<void> {
 
 	signalHandler.install();
 
-	try {
-		const config = parseConfig(options, startUrl, packageJson.version);
-		crawler = new Crawler(config);
-		await crawler.run();
-		process.exit(EXIT_CODES.SUCCESS);
-	} catch (error) {
-		const { message, exitCode } = handleError(error);
-		console.error(message);
-		process.exit(exitCode);
-	}
+	const config = parseConfig(options, startUrl, packageJson.version);
+	crawler = new Crawler(config);
+	await crawler.run();
 }
 
 main().catch((error) => {
