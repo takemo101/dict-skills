@@ -54,7 +54,7 @@ bun run src/crawl.ts <url> [options]
 - `--exclude <pattern>`: 除外するURLパターン（正規表現）
 - `--no-robots`: robots.txt を無視（非推奨、開発・テスト用）
 
-**完全なオプション一覧は [CLI仕様書](https://github.com/takemo101/dict-skills/blob/main/docs/cli-spec.md) を参照してください。**
+**完全なオプション一覧は [CLI仕様書](../docs/cli-spec.md) を参照してください。**
 
 ## piエージェントでの使用例
 
@@ -77,11 +77,11 @@ bun run src/crawl.ts https://nextjs.org/docs -d 2
 | `specs/*.yaml` | API仕様ファイル（検出時のみ） |
 | `index.json` | メタデータ・ハッシュ |
 
-**詳細な仕様は [CLI仕様書](https://github.com/takemo101/dict-skills/blob/main/docs/cli-spec.md) を参照してください。**
+**詳細な仕様は [CLI仕様書](../docs/cli-spec.md) を参照してください。**
 
 ## 参考リンク
 
 | ドキュメント | 内容 |
 |-------------|------|
-| [CLI仕様書](https://github.com/takemo101/dict-skills/blob/main/docs/cli-spec.md) | 完全なオプション一覧・使用例・出力形式の詳細 |
-| [設計書](https://github.com/takemo101/dict-skills/blob/main/docs/design.md) | アーキテクチャ・データ構造・技術仕様 |
+| [CLI仕様書](../docs/cli-spec.md) | 完全なオプション一覧・使用例・出力形式の詳細 |
+| [設計書](../docs/design.md) | アーキテクチャ・データ構造・技術仕様 |
