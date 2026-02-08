@@ -510,29 +510,36 @@ git push origin main --tags
 
 ### 10.2 npm publish 時の注意事項
 
-⚠️ **ドキュメントリンクの問題**
+✅ **ドキュメントリンクの現状**
 
-`link-crawler/SKILL.md` および `link-crawler/README.md` は、相対パス (`../docs/`) を使用してルートディレクトリの docs/ を参照しています。
+`link-crawler/SKILL.md` および `link-crawler/README.md` は、GitHub 絶対URL を使用してルートディレクトリの docs/ を参照しています。
 
 | リンク | GitHub | npm package |
 |--------|--------|-------------|
-| `[CLI仕様書](../docs/cli-spec.md)` | ✅ 動作 | ❌ 破損 |
-| `[設計書](../docs/design.md)` | ✅ 動作 | ❌ 破損 |
+| `[CLI仕様書](https://github.com/takemo101/dict-skills/blob/main/docs/cli-spec.md)` | ✅ 動作 | ✅ 動作 |
+| `[設計書](https://github.com/takemo101/dict-skills/blob/main/docs/design.md)` | ✅ 動作 | ✅ 動作 |
 
-#### publish 前の対応が必要
+#### publish 前の対応（完了済み）
 
-npm publish を行う場合、以下のいずれかの対応を実施してください：
+✅ **現状**: `SKILL.md` および `README.md` は既に **Option A（GitHub絶対URL）** を採用しているため、npm publish 時の追加対応は不要です。
 
-**Option A: GitHub URLへの変更**
+**採用済みの方式**:
 ```markdown
-<!-- Before -->
-[CLI仕様書](../docs/cli-spec.md)
-
-<!-- After -->
 [CLI仕様書](https://github.com/takemo101/dict-skills/blob/main/docs/cli-spec.md)
+[設計書](https://github.com/takemo101/dict-skills/blob/main/docs/design.md)
 ```
 
-**Option B: docs/ のコピー**
+**メリット**:
+- ✅ GitHub / npm package の両方でリンクが機能
+- ✅ パッケージサイズが増えない
+- ✅ ドキュメントの重複管理が不要
+- ✅ GitHub上のドキュメントが常に最新
+
+#### （参考）過去に検討された代替案
+
+<details>
+<summary>Option B: docs/ のコピー</summary>
+
 ```bash
 # link-crawler/ 内に docs/ をコピー
 cp -r docs link-crawler/docs
@@ -541,7 +548,12 @@ cp -r docs link-crawler/docs
 ../docs/ → ./docs/
 ```
 
-**Option C: package.json での files 制御**
+デメリット: ドキュメントの重複管理が必要、パッケージサイズ増加
+</details>
+
+<details>
+<summary>Option C: package.json での files 制御</summary>
+
 ```json
 {
   "files": [
@@ -553,12 +565,8 @@ cp -r docs link-crawler/docs
 }
 ```
 
-#### 推奨: Option A（GitHub URL）
-
-理由：
-- パッケージサイズが増えない
-- ドキュメントの重複管理が不要
-- GitHub上のドキュメントが常に最新
+デメリット: npm publish で親ディレクトリのファイルを含めることは非推奨
+</details>
 
 ### 10.3 publish手順（将来用）
 
