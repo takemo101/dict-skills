@@ -58,6 +58,9 @@ export class SignalHandler {
 	 * Install signal handlers for SIGINT and SIGTERM
 	 */
 	install(): void {
+		// Remove existing handlers before installing new ones to prevent listener leaks
+		this.uninstall();
+
 		this.sigintHandler = () => {
 			this.handleShutdown("SIGINT").catch((err) => {
 				this.consoleOutput.error("Error during shutdown:", err);
