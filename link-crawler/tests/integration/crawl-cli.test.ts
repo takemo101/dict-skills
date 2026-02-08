@@ -251,7 +251,7 @@ describe("crawl CLI integration", () => {
 
 			const fullContent = readFileSync(join(outputDir, "full.md"), "utf-8");
 			expect(fullContent).toContain("# ");
-			expect(fullContent).toContain("url: https://example.com");
+			expect(fullContent).toContain("> Source: https://example.com");
 		});
 
 		it("should have valid pages directory content", () => {
