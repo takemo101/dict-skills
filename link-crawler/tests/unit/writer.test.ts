@@ -45,9 +45,8 @@ describe("OutputWriter", () => {
 		rmSync(testOutputDir, { recursive: true, force: true });
 	});
 
-	it("should save page with hash and crawledAt", async () => {
-		const writer = new OutputWriter(defaultConfig);
-		await writer.init();
+	it("should save page with hash and crawledAt", () => {
+		const writer = new OutputWriter({ ...defaultConfig });
 		const markdown = "# Test Content\n\nThis is test content.";
 
 		const pageFile = writer.savePage(
@@ -69,11 +68,9 @@ describe("OutputWriter", () => {
 		expect(new Date(result.pages[0].crawledAt).getTime()).not.toBeNaN();
 	});
 
-	it("should compute consistent hash for same content", async () => {
-		const writer1 = new OutputWriter(defaultConfig);
-		await writer1.init();
-		const writer2 = new OutputWriter(defaultConfig);
-		await writer2.init();
+	it("should compute consistent hash for same content", () => {
+		const writer1 = new OutputWriter({ ...defaultConfig });
+		const writer2 = new OutputWriter({ ...defaultConfig });
 		const markdown = "# Same Content";
 
 		writer1.savePage("https://example.com/p1", markdown, 1, [], defaultMetadata, null);
@@ -85,7 +82,7 @@ describe("OutputWriter", () => {
 		expect(hash1).toBe(hash2);
 	});
 
-	it("should read existing index.json", async () => {
+	it("should read existing index.json", () => {
 		// Create initial index.json
 		mkdirSync(join(testOutputDir, "pages"), { recursive: true });
 		mkdirSync(join(testOutputDir, "specs"), { recursive: true });
@@ -112,9 +109,8 @@ describe("OutputWriter", () => {
 
 		writeFileSync(join(testOutputDir, "index.json"), JSON.stringify(existingResult, null, 2));
 
-		// Create new writer that should read existing index
-		const writer = new OutputWriter(defaultConfig);
-		await writer.init();
+		// Create new writer in diff mode that should read existing index
+		const writer = new OutputWriter({ ...defaultConfig, diff: true });
 
 		const existingHash = writer.getExistingHash("https://example.com/existing");
 		expect(existingHash).toBe("abc123");
@@ -123,11 +119,11 @@ describe("OutputWriter", () => {
 		expect(nonExistingHash).toBeUndefined();
 	});
 
-	it("should save index.json with hash and crawledAt fields", async () => {
-		const writer = new OutputWriter(defaultConfig);
-		await writer.init();
+	it("should save index.json with hash and crawledAt fields", () => {
+		const writer = new OutputWriter({ ...defaultConfig });
 		writer.savePage("https://example.com", "# Content", 0, [], defaultMetadata, "Title");
 		writer.saveIndex();
+		writer.finalize();
 
 		const indexContent = readFileSync(join(testOutputDir, "index.json"), "utf-8");
 		const result = JSON.parse(indexContent) as CrawlResult;
@@ -136,12 +132,12 @@ describe("OutputWriter", () => {
 		expect(result.pages[0].crawledAt).toBeDefined();
 	});
 
-	it("should add blank line after frontmatter closing ---", async () => {
-		const writer = new OutputWriter(defaultConfig);
-		await writer.init();
+	it("should add blank line after frontmatter closing ---", () => {
+		const writer = new OutputWriter({ ...defaultConfig });
 		const markdown = "## Introduction\n\nThis is content.";
 
 		writer.savePage("https://example.com/page1", markdown, 1, [], defaultMetadata, "Test Page");
+		writer.finalize();
 
 		const pagePath = join(testOutputDir, "pages/page-001-test-page.md");
 		const content = readFileSync(pagePath, "utf-8");
@@ -151,9 +147,8 @@ describe("OutputWriter", () => {
 		expect(content).toMatch(/---\n\n## Introduction/);
 	});
 
-	it("should include hash in frontmatter", async () => {
-		const writer = new OutputWriter(defaultConfig);
-		await writer.init();
+	it("should include hash in frontmatter", () => {
+		const writer = new OutputWriter({ ...defaultConfig });
 		const markdown = "# Test Content\n\nThis is test content.";
 
 		const pageFile = writer.savePage(
@@ -164,6 +159,7 @@ describe("OutputWriter", () => {
 			defaultMetadata,
 			"Test Page",
 		);
+		writer.finalize();
 
 		const pagePath = join(testOutputDir, pageFile);
 		const content = readFileSync(pagePath, "utf-8");
@@ -180,9 +176,8 @@ describe("OutputWriter", () => {
 	});
 
 	describe("filename with title", () => {
-		it("should include slugified title in filename", async () => {
-			const writer = new OutputWriter(defaultConfig);
-			await writer.init();
+		it("should include slugified title in filename", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
 			const pageFile = writer.savePage(
 				"https://example.com",
 				"# Content",
@@ -194,9 +189,8 @@ describe("OutputWriter", () => {
 			expect(pageFile).toBe("pages/page-001-getting-started-guide.md");
 		});
 
-		it("should use sequential numbers only when title is null", async () => {
-			const writer = new OutputWriter(defaultConfig);
-			await writer.init();
+		it("should use sequential numbers only when title is null", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
 			const pageFile = writer.savePage(
 				"https://example.com",
 				"# Content",
@@ -208,9 +202,8 @@ describe("OutputWriter", () => {
 			expect(pageFile).toBe("pages/page-001.md");
 		});
 
-		it("should use sequential numbers only when title is empty", async () => {
-			const writer = new OutputWriter(defaultConfig);
-			await writer.init();
+		it("should use sequential numbers only when title is empty", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
 			const pageFile = writer.savePage(
 				"https://example.com",
 				"# Content",
@@ -222,9 +215,8 @@ describe("OutputWriter", () => {
 			expect(pageFile).toBe("pages/page-001.md");
 		});
 
-		it("should use sequential numbers only when title is whitespace only", async () => {
-			const writer = new OutputWriter(defaultConfig);
-			await writer.init();
+		it("should use sequential numbers only when title is whitespace only", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
 			const pageFile = writer.savePage(
 				"https://example.com",
 				"# Content",
@@ -236,9 +228,8 @@ describe("OutputWriter", () => {
 			expect(pageFile).toBe("pages/page-001.md");
 		});
 
-		it("should fallback to title parameter when metadata.title is null", async () => {
-			const writer = new OutputWriter(defaultConfig);
-			await writer.init();
+		it("should fallback to title parameter when metadata.title is null", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
 			const pageFile = writer.savePage(
 				"https://example.com",
 				"# Content",
@@ -250,9 +241,8 @@ describe("OutputWriter", () => {
 			expect(pageFile).toBe("pages/page-001-fallback-title.md");
 		});
 
-		it("should convert title to lowercase", async () => {
-			const writer = new OutputWriter(defaultConfig);
-			await writer.init();
+		it("should convert title to lowercase", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
 			const pageFile = writer.savePage(
 				"https://example.com",
 				"# Content",
@@ -264,9 +254,8 @@ describe("OutputWriter", () => {
 			expect(pageFile).toBe("pages/page-001-uppercase-title.md");
 		});
 
-		it("should remove special characters from title", async () => {
-			const writer = new OutputWriter(defaultConfig);
-			await writer.init();
+		it("should remove special characters from title", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
 			const pageFile = writer.savePage(
 				"https://example.com",
 				"# Content",
@@ -278,9 +267,8 @@ describe("OutputWriter", () => {
 			expect(pageFile).toBe("pages/page-001-title-with-special-chars.md");
 		});
 
-		it("should replace underscores with hyphens", async () => {
-			const writer = new OutputWriter(defaultConfig);
-			await writer.init();
+		it("should replace underscores with hyphens", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
 			const pageFile = writer.savePage(
 				"https://example.com",
 				"# Content",
@@ -292,9 +280,8 @@ describe("OutputWriter", () => {
 			expect(pageFile).toBe("pages/page-001-snake-case-title.md");
 		});
 
-		it("should collapse multiple hyphens into one", async () => {
-			const writer = new OutputWriter(defaultConfig);
-			await writer.init();
+		it("should collapse multiple hyphens into one", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
 			const pageFile = writer.savePage(
 				"https://example.com",
 				"# Content",
@@ -306,9 +293,8 @@ describe("OutputWriter", () => {
 			expect(pageFile).toBe("pages/page-001-title-with-hyphens.md");
 		});
 
-		it("should trim leading and trailing hyphens", async () => {
-			const writer = new OutputWriter(defaultConfig);
-			await writer.init();
+		it("should trim leading and trailing hyphens", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
 			const pageFile = writer.savePage(
 				"https://example.com",
 				"# Content",
@@ -320,9 +306,8 @@ describe("OutputWriter", () => {
 			expect(pageFile).toBe("pages/page-001-leading-and-trailing-hyphens.md");
 		});
 
-		it("should truncate long titles to 50 characters", async () => {
-			const writer = new OutputWriter(defaultConfig);
-			await writer.init();
+		it("should truncate long titles to 50 characters", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
 			const longTitle = "This is a very long title that exceeds the fifty character limit";
 			const pageFile = writer.savePage(
 				"https://example.com",
@@ -337,9 +322,8 @@ describe("OutputWriter", () => {
 			expect(pageFile).toMatch(/^pages\/page-\d{3}-[a-z0-9-]+\.md$/);
 		});
 
-		it("should handle titles with multiple spaces", async () => {
-			const writer = new OutputWriter(defaultConfig);
-			await writer.init();
+		it("should handle titles with multiple spaces", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
 			const pageFile = writer.savePage(
 				"https://example.com",
 				"# Content",
@@ -351,9 +335,8 @@ describe("OutputWriter", () => {
 			expect(pageFile).toBe("pages/page-001-title-with-multiple-spaces.md");
 		});
 
-		it("should handle Japanese titles", async () => {
-			const writer = new OutputWriter(defaultConfig);
-			await writer.init();
+		it("should handle Japanese titles", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
 			const pageFile = writer.savePage(
 				"https://example.com",
 				"# Content",
@@ -366,9 +349,8 @@ describe("OutputWriter", () => {
 			expect(pageFile).toBe("pages/page-001.md");
 		});
 
-		it("should handle mixed alphanumeric and Japanese", async () => {
-			const writer = new OutputWriter(defaultConfig);
-			await writer.init();
+		it("should handle mixed alphanumeric and Japanese", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
 			const pageFile = writer.savePage(
 				"https://example.com",
 				"# Content",
@@ -381,9 +363,8 @@ describe("OutputWriter", () => {
 			expect(pageFile).toBe("pages/page-001-english123.md");
 		});
 
-		it("should handle Chinese titles (simplified)", async () => {
-			const writer = new OutputWriter(defaultConfig);
-			await writer.init();
+		it("should handle Chinese titles (simplified)", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
 			const pageFile = writer.savePage(
 				"https://example.com",
 				"# Content",
@@ -396,9 +377,8 @@ describe("OutputWriter", () => {
 			expect(pageFile).toBe("pages/page-001.md");
 		});
 
-		it("should handle Chinese titles (traditional)", async () => {
-			const writer = new OutputWriter(defaultConfig);
-			await writer.init();
+		it("should handle Chinese titles (traditional)", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
 			const pageFile = writer.savePage(
 				"https://example.com",
 				"# Content",
@@ -411,9 +391,8 @@ describe("OutputWriter", () => {
 			expect(pageFile).toBe("pages/page-001.md");
 		});
 
-		it("should handle Korean titles", async () => {
-			const writer = new OutputWriter(defaultConfig);
-			await writer.init();
+		it("should handle Korean titles", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
 			const pageFile = writer.savePage(
 				"https://example.com",
 				"# Content",
@@ -426,9 +405,8 @@ describe("OutputWriter", () => {
 			expect(pageFile).toBe("pages/page-001.md");
 		});
 
-		it("should remove emoji from titles", async () => {
-			const writer = new OutputWriter(defaultConfig);
-			await writer.init();
+		it("should remove emoji from titles", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
 			const pageFile = writer.savePage(
 				"https://example.com",
 				"# Content",
@@ -441,9 +419,8 @@ describe("OutputWriter", () => {
 			expect(pageFile).toBe("pages/page-001-getting-started-guide.md");
 		});
 
-		it("should truncate long non-ASCII titles without breaking characters", async () => {
-			const writer = new OutputWriter(defaultConfig);
-			await writer.init();
+		it("should truncate long non-ASCII titles without breaking characters", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
 			// 60 characters: each Japanese character is one character
 			const longTitle =
 				"これは非常に長いタイトルで最大文字数の制限を超えていますので切り詰められる必要があります";
@@ -459,9 +436,8 @@ describe("OutputWriter", () => {
 			expect(pageFile).toBe("pages/page-001.md");
 		});
 
-		it("should handle Arabic titles", async () => {
-			const writer = new OutputWriter(defaultConfig);
-			await writer.init();
+		it("should handle Arabic titles", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
 			const pageFile = writer.savePage(
 				"https://example.com",
 				"# Content",
@@ -474,9 +450,8 @@ describe("OutputWriter", () => {
 			expect(pageFile).toBe("pages/page-001.md");
 		});
 
-		it("should handle Cyrillic titles", async () => {
-			const writer = new OutputWriter(defaultConfig);
-			await writer.init();
+		it("should handle Cyrillic titles", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
 			const pageFile = writer.savePage(
 				"https://example.com",
 				"# Content",
@@ -489,9 +464,8 @@ describe("OutputWriter", () => {
 			expect(pageFile).toBe("pages/page-001.md");
 		});
 
-		it("should remove all non-ASCII characters from mixed title", async () => {
-			const writer = new OutputWriter(defaultConfig);
-			await writer.init();
+		it("should remove all non-ASCII characters from mixed title", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
 			const pageFile = writer.savePage(
 				"https://example.com",
 				"# Content",
@@ -504,9 +478,8 @@ describe("OutputWriter", () => {
 			expect(pageFile).toBe("pages/page-001-helloworld.md");
 		});
 
-		it("should fallback to sequential number when title becomes empty after slugify", async () => {
-			const writer = new OutputWriter(defaultConfig);
-			await writer.init();
+		it("should fallback to sequential number when title becomes empty after slugify", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
 			const pageFile = writer.savePage(
 				"https://example.com",
 				"# Content",
@@ -521,9 +494,8 @@ describe("OutputWriter", () => {
 	});
 
 	describe("YAML frontmatter escaping", () => {
-		it("should escape double quotes in keywords field", async () => {
-			const writer = new OutputWriter(defaultConfig);
-			await writer.init();
+		it("should escape double quotes in keywords field", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
 			const metadataWithQuotes: PageMetadata = {
 				...defaultMetadata,
 				keywords: 'test, "quoted keyword", another',
@@ -537,6 +509,7 @@ describe("OutputWriter", () => {
 				metadataWithQuotes,
 				"Test",
 			);
+			writer.finalize();
 
 			const pagePath = join(testOutputDir, pageFile);
 			const content = readFileSync(pagePath, "utf-8");
@@ -545,9 +518,8 @@ describe("OutputWriter", () => {
 			expect(content).toMatch(/keywords: "test, \\"quoted keyword\\", another"/);
 		});
 
-		it("should escape double quotes in title field", async () => {
-			const writer = new OutputWriter(defaultConfig);
-			await writer.init();
+		it("should escape double quotes in title field", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
 			const metadataWithQuotes: PageMetadata = {
 				...defaultMetadata,
 				title: 'Test "quoted" title',
@@ -561,6 +533,7 @@ describe("OutputWriter", () => {
 				metadataWithQuotes,
 				null,
 			);
+			writer.finalize();
 
 			const pagePath = join(testOutputDir, pageFile);
 			const content = readFileSync(pagePath, "utf-8");
@@ -568,9 +541,8 @@ describe("OutputWriter", () => {
 			expect(content).toMatch(/title: "Test \\"quoted\\" title"/);
 		});
 
-		it("should escape double quotes in description field", async () => {
-			const writer = new OutputWriter(defaultConfig);
-			await writer.init();
+		it("should escape double quotes in description field", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
 			const metadataWithQuotes: PageMetadata = {
 				...defaultMetadata,
 				description: 'Description with "quotes"',
@@ -584,6 +556,7 @@ describe("OutputWriter", () => {
 				metadataWithQuotes,
 				"Test",
 			);
+			writer.finalize();
 
 			const pagePath = join(testOutputDir, pageFile);
 			const content = readFileSync(pagePath, "utf-8");
@@ -591,9 +564,8 @@ describe("OutputWriter", () => {
 			expect(content).toMatch(/description: "Description with \\"quotes\\""/);
 		});
 
-		it("should handle keywords without quotes", async () => {
-			const writer = new OutputWriter(defaultConfig);
-			await writer.init();
+		it("should handle keywords without quotes", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
 			const metadataWithoutQuotes: PageMetadata = {
 				...defaultMetadata,
 				keywords: "test, keyword, another",
@@ -607,6 +579,7 @@ describe("OutputWriter", () => {
 				metadataWithoutQuotes,
 				"Test",
 			);
+			writer.finalize();
 
 			const pagePath = join(testOutputDir, pageFile);
 			const content = readFileSync(pagePath, "utf-8");
@@ -615,9 +588,8 @@ describe("OutputWriter", () => {
 			expect(content).toMatch(/keywords: "test, keyword, another"/);
 		});
 
-		it("should escape newline characters in title", async () => {
-			const writer = new OutputWriter(defaultConfig);
-			await writer.init();
+		it("should escape newline characters in title", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
 			const metadataWithNewline: PageMetadata = {
 				...defaultMetadata,
 				title: "Title with\nnewline",
@@ -631,7 +603,7 @@ describe("OutputWriter", () => {
 				metadataWithNewline,
 				null,
 			);
-
+			writer.finalize();
 			const pagePath = join(testOutputDir, pageFile);
 			const content = readFileSync(pagePath, "utf-8");
 
@@ -639,9 +611,8 @@ describe("OutputWriter", () => {
 			expect(content).toMatch(/title: "Title with\\nnewline"/);
 		});
 
-		it("should escape carriage return and newline in description", async () => {
-			const writer = new OutputWriter(defaultConfig);
-			await writer.init();
+		it("should escape carriage return and newline in description", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
 			const metadataWithCRLF: PageMetadata = {
 				...defaultMetadata,
 				description: "Description with\r\nCRLF line ending",
@@ -655,7 +626,7 @@ describe("OutputWriter", () => {
 				metadataWithCRLF,
 				"Test",
 			);
-
+			writer.finalize();
 			const pagePath = join(testOutputDir, pageFile);
 			const content = readFileSync(pagePath, "utf-8");
 
@@ -663,9 +634,8 @@ describe("OutputWriter", () => {
 			expect(content).toMatch(/description: "Description with\\r\\nCRLF line ending"/);
 		});
 
-		it("should escape backslash in keywords", async () => {
-			const writer = new OutputWriter(defaultConfig);
-			await writer.init();
+		it("should escape backslash in keywords", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
 			const metadataWithBackslash: PageMetadata = {
 				...defaultMetadata,
 				keywords: "path\\to\\file, test",
@@ -679,7 +649,7 @@ describe("OutputWriter", () => {
 				metadataWithBackslash,
 				"Test",
 			);
-
+			writer.finalize();
 			const pagePath = join(testOutputDir, pageFile);
 			const content = readFileSync(pagePath, "utf-8");
 
@@ -687,9 +657,8 @@ describe("OutputWriter", () => {
 			expect(content).toMatch(/keywords: "path\\\\to\\\\file, test"/);
 		});
 
-		it("should escape tab character in description", async () => {
-			const writer = new OutputWriter(defaultConfig);
-			await writer.init();
+		it("should escape tab character in description", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
 			const metadataWithTab: PageMetadata = {
 				...defaultMetadata,
 				description: "Description with\ttab character",
@@ -703,7 +672,7 @@ describe("OutputWriter", () => {
 				metadataWithTab,
 				"Test",
 			);
-
+			writer.finalize();
 			const pagePath = join(testOutputDir, pageFile);
 			const content = readFileSync(pagePath, "utf-8");
 
@@ -711,9 +680,8 @@ describe("OutputWriter", () => {
 			expect(content).toMatch(/description: "Description with\\ttab character"/);
 		});
 
-		it("should escape multiple special characters in title", async () => {
-			const writer = new OutputWriter(defaultConfig);
-			await writer.init();
+		it("should escape multiple special characters in title", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
 			const metadataWithMultiple: PageMetadata = {
 				...defaultMetadata,
 				title: 'Title with "quotes"\nand newline',
@@ -727,7 +695,7 @@ describe("OutputWriter", () => {
 				metadataWithMultiple,
 				null,
 			);
-
+			writer.finalize();
 			const pagePath = join(testOutputDir, pageFile);
 			const content = readFileSync(pagePath, "utf-8");
 
@@ -735,9 +703,8 @@ describe("OutputWriter", () => {
 			expect(content).toMatch(/title: "Title with \\"quotes\\"\\nand newline"/);
 		});
 
-		it("should escape backslash and quotes in description", async () => {
-			const writer = new OutputWriter(defaultConfig);
-			await writer.init();
+		it("should escape backslash and quotes in description", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
 			const metadataWithBackslashAndQuotes: PageMetadata = {
 				...defaultMetadata,
 				description: 'Path is "C:\\Program Files\\App"',
@@ -751,7 +718,7 @@ describe("OutputWriter", () => {
 				metadataWithBackslashAndQuotes,
 				"Test",
 			);
-
+			writer.finalize();
 			const pagePath = join(testOutputDir, pageFile);
 			const content = readFileSync(pagePath, "utf-8");
 
@@ -759,9 +726,8 @@ describe("OutputWriter", () => {
 			expect(content).toMatch(/description: "Path is \\"C:\\\\Program Files\\\\App\\""/);
 		});
 
-		it("should handle empty strings without errors", async () => {
-			const writer = new OutputWriter(defaultConfig);
-			await writer.init();
+		it("should handle empty strings without errors", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
 			const metadataEmpty: PageMetadata = {
 				...defaultMetadata,
 				title: "",
@@ -777,7 +743,7 @@ describe("OutputWriter", () => {
 				metadataEmpty,
 				null,
 			);
-
+			writer.finalize();
 			const pagePath = join(testOutputDir, pageFile);
 			const content = readFileSync(pagePath, "utf-8");
 
@@ -789,9 +755,8 @@ describe("OutputWriter", () => {
 			expect(content).not.toMatch(/keywords:/);
 		});
 
-		it("should handle strings with only special characters", async () => {
-			const writer = new OutputWriter(defaultConfig);
-			await writer.init();
+		it("should handle strings with only special characters", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
 			const metadataOnlySpecial: PageMetadata = {
 				...defaultMetadata,
 				title: "\n\r\t",
@@ -806,7 +771,7 @@ describe("OutputWriter", () => {
 				metadataOnlySpecial,
 				null,
 			);
-
+			writer.finalize();
 			const pagePath = join(testOutputDir, pageFile);
 			const content = readFileSync(pagePath, "utf-8");
 
@@ -817,10 +782,9 @@ describe("OutputWriter", () => {
 	});
 
 	describe("diff mode", () => {
-		it("should preserve existing files in pages/ directory in diff mode", async () => {
+		it("should preserve existing files in pages/ directory in diff mode", () => {
 			// 1. 初回クロール（非 diff モード）
 			const writer1 = new OutputWriter({ ...defaultConfig, diff: false });
-			await writer1.init();
 			const pageFile1 = writer1.savePage(
 				"https://example.com/page1",
 				"# Page 1 Content",
@@ -830,6 +794,7 @@ describe("OutputWriter", () => {
 				null,
 			);
 			writer1.saveIndex();
+			writer1.finalize();
 
 			const pagePath1 = join(testOutputDir, pageFile1);
 
@@ -838,7 +803,6 @@ describe("OutputWriter", () => {
 
 			// 2. 差分クロール（diff モード）
 			const writer2 = new OutputWriter({ ...defaultConfig, diff: true });
-			await writer2.init();
 
 			// 既存ファイルがまだ存在することを確認
 			expect(readFileSync(pagePath1, "utf-8")).toContain("# Page 1 Content");
@@ -865,20 +829,19 @@ describe("OutputWriter", () => {
 			expect(pageFile2).toBe("pages/page-001-page-2.md"); // writer2 の pageCount は 0 から開始
 		});
 
-		it("should preserve existing files in specs/ directory in diff mode", async () => {
+		it("should preserve existing files in specs/ directory in diff mode", () => {
 			// 1. 初回クロール（非 diff モード）
 			const writer1 = new OutputWriter({ ...defaultConfig, diff: false });
-			await writer1.init();
 			const spec1Content = '{"openapi": "3.0.0"}';
 			writer1.handleSpec("https://api.example.com/openapi.json", spec1Content);
 			writer1.saveIndex();
+			writer1.finalize();
 
 			const specPath = join(testOutputDir, "specs/openapi.json");
 			expect(readFileSync(specPath, "utf-8")).toBe(spec1Content);
 
 			// 2. 差分クロール（diff モード）
 			const writer2 = new OutputWriter({ ...defaultConfig, diff: true });
-			await writer2.init();
 
 			// 既存ファイルがまだ存在することを確認
 			expect(readFileSync(specPath, "utf-8")).toBe(spec1Content);
@@ -893,10 +856,9 @@ describe("OutputWriter", () => {
 			expect(readFileSync(join(testOutputDir, "specs/swagger.json"), "utf-8")).toBe(spec2Content);
 		});
 
-		it("should delete and recreate directories in non-diff mode", async () => {
+		it("should replace output on successful finalize in non-diff mode", () => {
 			// 1. 初回クロール
 			const writer1 = new OutputWriter({ ...defaultConfig, diff: false });
-			await writer1.init();
 			writer1.savePage(
 				"https://example.com/page1",
 				"# Old Content",
@@ -906,16 +868,73 @@ describe("OutputWriter", () => {
 				null,
 			);
 			writer1.saveIndex();
+			writer1.finalize();
 
 			const pagePath = join(testOutputDir, "pages/page-001-page-1.md");
 			expect(readFileSync(pagePath, "utf-8")).toContain("# Old Content");
 
 			// 2. 2回目のクロール（非 diff モード）
 			const writer2 = new OutputWriter({ ...defaultConfig, diff: false });
-			await writer2.init();
 
-			// ディレクトリが削除されたため、ファイルが存在しないことを確認
+			// 古いファイルはまだ存在する（finalizeされていないため）
+			expect(readFileSync(pagePath, "utf-8")).toContain("# Old Content");
+
+			// 新しい内容でページを保存
+			writer2.savePage(
+				"https://example.com/page2",
+				"# New Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "Page 2" },
+				null,
+			);
+			writer2.saveIndex();
+			writer2.finalize();
+
+			// finalizeされた後、新しいファイルのみが存在する
+			const newPagePath = join(testOutputDir, "pages/page-001-page-2.md");
+			expect(readFileSync(newPagePath, "utf-8")).toContain("# New Content");
+
+			// 古いファイルは削除されている
 			expect(() => readFileSync(pagePath, "utf-8")).toThrow();
+		});
+
+		it("should preserve existing output when crawl fails (cleanup called)", () => {
+			// 1. 初回クロール（成功）
+			const writer1 = new OutputWriter({ ...defaultConfig, diff: false });
+			writer1.savePage(
+				"https://example.com/page1",
+				"# Original Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "Page 1" },
+				null,
+			);
+			writer1.saveIndex();
+			writer1.finalize();
+
+			const pagePath = join(testOutputDir, "pages/page-001-page-1.md");
+			expect(readFileSync(pagePath, "utf-8")).toContain("# Original Content");
+
+			// 2. 2回目のクロール（失敗をシミュレート）
+			const writer2 = new OutputWriter({ ...defaultConfig, diff: false });
+			writer2.savePage(
+				"https://example.com/page2",
+				"# Failed Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "Page 2" },
+				null,
+			);
+			writer2.saveIndex();
+			writer2.cleanup(); // 失敗時のクリーンアップ
+
+			// 既存ファイルが保持されていることを確認
+			expect(readFileSync(pagePath, "utf-8")).toContain("# Original Content");
+
+			// 新しいファイルは最終ディレクトリに存在しない
+			const newPagePath = join(testOutputDir, "pages/page-001-page-2.md");
+			expect(() => readFileSync(newPagePath, "utf-8")).toThrow();
 		});
 	});
 });

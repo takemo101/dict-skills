@@ -48,10 +48,6 @@ describe("Crawler - Error Handling", () => {
 		// logFetchErrorをスパイ
 		vi.spyOn(mockLogger, "logFetchError");
 		vi.spyOn(mockLogger, "logDebug");
-
-		// OutputWriterを初期化（crawl()を直接呼ぶため、run()の初期化を手動で行う）
-		// @ts-expect-error - private property access for testing
-		await crawler.writer.init();
 	});
 
 	afterEach(() => {
