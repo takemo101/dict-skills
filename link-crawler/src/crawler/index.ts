@@ -41,6 +41,8 @@ export class Crawler {
 	private failedUrls = new Map<string, number>(); // URL → retry count
 	/** リトライ上限 */
 	private static readonly MAX_RETRIES = 2;
+	/** クロール試行数カウンタ (maxPages制限用、リトライによる visited 削除の影響を受けない) */
+	private attemptedCount = 0;
 
 	constructor(
 		private config: CrawlConfig,
@@ -147,7 +149,8 @@ export class Crawler {
 		this.logger.logDebug("Cleanup initiated");
 
 		try {
-			// 0. リトライ情報のクリア
+			// 0. カウンタとリトライ情報のクリア
+			this.attemptedCount = 0;
 			this.failedUrls.clear();
 
 			// 1. 途中結果を保存（diffモード時のみ）
@@ -203,6 +206,7 @@ export class Crawler {
 
 		// 2. 訪問済みマーク
 		this.visited.add(url); // URL単位で訪問済みを管理（深度は無関係）
+		this.attemptedCount++; // maxPages制限用カウンタをインクリメント
 		this.logger.logCrawlStart(url, depth);
 
 		// 3. フェッチ
@@ -250,8 +254,8 @@ export class Crawler {
 
 	/** クロール可否チェック */
 	private shouldCrawlUrl(url: string, depth: number): boolean {
-		// maxPages制限チェック
-		if (this.config.maxPages !== null && this.visited.size >= this.config.maxPages) {
+		// maxPages制限チェック (attemptedCount を使用することでリトライによる visited 削除の影響を回避)
+		if (this.config.maxPages !== null && this.attemptedCount >= this.config.maxPages) {
 			if (!this.maxPagesReachedLogged) {
 				this.logger.logMaxPagesReached(this.config.maxPages);
 				this.maxPagesReachedLogged = true;
