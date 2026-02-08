@@ -1,6 +1,6 @@
-import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { OutputWriter } from "../../src/output/writer.js";
 import type { CrawlConfig, CrawlResult, PageMetadata } from "../../src/types.js";
 
@@ -940,6 +940,101 @@ describe("OutputWriter", () => {
 			// 新しいファイルは最終ディレクトリに存在しない
 			const newPagePath = join(testOutputDir, "pages/page-001-page-2.md");
 			expect(() => readFileSync(newPagePath, "utf-8")).toThrow();
+		});
+	});
+
+	describe("finalize() error recovery", () => {
+		it("should create and remove backup during successful finalize", () => {
+			// 1. 既存の出力ディレクトリを作成
+			const writer1 = new OutputWriter({ ...defaultConfig, diff: false });
+			writer1.savePage(
+				"https://example.com/original",
+				"# Original Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "Original" },
+				null,
+			);
+			writer1.saveIndex();
+			writer1.finalize();
+
+			const originalPagePath = join(testOutputDir, "pages/page-001-original.md");
+			expect(readFileSync(originalPagePath, "utf-8")).toContain("# Original Content");
+
+			// 2. 新しいクロールで上書き
+			const writer2 = new OutputWriter({ ...defaultConfig, diff: false });
+			writer2.savePage(
+				"https://example.com/new",
+				"# New Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "New" },
+				null,
+			);
+			writer2.saveIndex();
+			
+			// finalize() 成功
+			writer2.finalize();
+
+			// 新しいコンテンツが存在することを確認
+			const newPagePath = join(testOutputDir, "pages/page-001-new.md");
+			expect(readFileSync(newPagePath, "utf-8")).toContain("# New Content");
+
+			// バックアップディレクトリが削除されていることを確認
+			const backupDir = `${testOutputDir}.bak`;
+			expect(existsSync(backupDir)).toBe(false);
+
+			// 古いファイルは存在しない
+			expect(existsSync(originalPagePath)).toBe(false);
+		});
+
+		it("should not create backup when no existing output", () => {
+			// 初回クロール（既存ディレクトリなし）
+			const writer = new OutputWriter({ ...defaultConfig, diff: false });
+			writer.savePage(
+				"https://example.com/first",
+				"# First Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "First" },
+				null,
+			);
+			writer.saveIndex();
+			writer.finalize();
+
+			// 出力ディレクトリが作成されたことを確認
+			const firstPagePath = join(testOutputDir, "pages/page-001-first.md");
+			expect(readFileSync(firstPagePath, "utf-8")).toContain("# First Content");
+
+			// バックアップディレクトリは作成されていない
+			const backupDir = `${testOutputDir}.bak`;
+			expect(existsSync(backupDir)).toBe(false);
+		});
+
+		it("should not affect diff mode (no temp directory)", () => {
+			// diff モードでは一時ディレクトリを使用しない
+			const writer = new OutputWriter({ ...defaultConfig, diff: true });
+			
+			writer.savePage(
+				"https://example.com/page",
+				"# Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "Page" },
+				null,
+			);
+			writer.saveIndex();
+
+			// finalize() を実行（何もしない）
+			writer.finalize();
+
+			// ページファイルが存在することを確認
+			const pagePath = join(testOutputDir, "pages/page-001-page.md");
+			expect(readFileSync(pagePath, "utf-8")).toContain("# Content");
+
+			// バックアップディレクトリは作成されていない
+			const backupDir = `${testOutputDir}.bak`;
+			expect(existsSync(backupDir)).toBe(false);
 		});
 	});
 });
