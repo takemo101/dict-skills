@@ -429,4 +429,37 @@ describe("htmlToMarkdown - syntax highlighter support", () => {
 		expect(result).toContain("```");
 		expect(result).toContain("inline code without pre");
 	});
+
+	it("should convert Torchlight code block and strip line numbers", () => {
+		const html = `
+			<pre><code data-theme="dracula" data-lang="php" class="torchlight">
+				<div class="line"><span class="line-number">1</span><span>test('sum', function () {</span></div>
+				<div class="line"><span class="line-number">2</span><span>    $result = sum(1, 2);</span></div>
+				<div class="line"><span class="line-number">3</span><span>    expect($result)->toBe(3);</span></div>
+				<div class="line"><span class="line-number">4</span><span>});</span></div>
+			</code></pre>
+		`;
+		const result = htmlToMarkdown(html);
+
+		expect(result).toContain("```php");
+		expect(result).toContain("test('sum', function () {");
+		expect(result).toContain("expect($result)->toBe(3);");
+		expect(result).not.toMatch(/^1test/m);
+		expect(result).not.toMatch(/^2\s/m);
+		expect(result).not.toMatch(/^3\s/m);
+		expect(result).not.toMatch(/^4\}/m);
+	});
+
+	it("should handle Torchlight code block with data-lang attribute for language detection", () => {
+		const html = `
+			<pre><code data-lang="javascript" class="torchlight">
+				<div class="line"><span class="line-number">1</span><span>console.log("hello");</span></div>
+			</code></pre>
+		`;
+		const result = htmlToMarkdown(html);
+
+		expect(result).toContain("```javascript");
+		expect(result).toContain('console.log("hello");');
+		expect(result).not.toContain("1console");
+	});
 });

@@ -18,8 +18,10 @@ const CODE_BLOCK_PRIORITY_SELECTORS = [
 	".hljs",
 	".prism-code",
 	".shiki",
+	".torchlight",
 	".highlight",
 	"[data-language]",
+	"[data-lang]",
 	"pre",
 	"code",
 ] as const;

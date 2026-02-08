@@ -9,8 +9,8 @@ const LANGUAGE_CLASS_PATTERNS = [
 
 /** 要素から言語を検出 */
 function detectLanguage(el: Element): string | null {
-	// data-language 属性をチェック（最優先）
-	const dataLanguage = el.getAttribute("data-language");
+	// data-language / data-lang 属性をチェック（最優先）
+	const dataLanguage = el.getAttribute("data-language") || el.getAttribute("data-lang");
 	if (dataLanguage) return dataLanguage;
 
 	// 子要素の pre タグの data-language 属性をチェック
@@ -85,6 +85,27 @@ export function htmlToMarkdown(html: string): string {
 		},
 	});
 
+	// Torchlight 対応（pre > code.torchlight 構造、行番号を除去）
+	// Note: Turndown内部DOMではquerySelectorのクラスセレクタが正しく動作しないため、
+	// getAttribute('class')で明示的にチェックする
+	turndown.addRule("torchlight", {
+		filter: (node) => {
+			if (node.nodeName !== "PRE") return false;
+			const code = node.querySelector("code");
+			if (!code) return false;
+			const cls = code.getAttribute("class") || "";
+			return cls.includes("torchlight");
+		},
+		replacement: (_content, node) => {
+			const codeEl = (node as Element).querySelector("code");
+			if (!codeEl) return _content;
+			const language = detectLanguage(codeEl as Element);
+			const codeContent = extractCodeContent(node as Element);
+			const lang = language || "";
+			return `\n\n\`\`\`${lang}\n${codeContent}\n\`\`\`\n\n`;
+		},
+	});
+
 	// figure[data-rehype-pretty-code-figure] 対応
 	turndown.addRule("prettyCodeFigure", {
 		filter: (node) => {
@@ -92,9 +113,7 @@ export function htmlToMarkdown(html: string): string {
 		},
 		replacement: (_content, node) => {
 			const language = detectLanguage(node as Element);
-			// pre > code 内のテキストを取得
-			const pre = (node as Element).querySelector("pre");
-			const codeContent = pre?.textContent || "";
+			const codeContent = extractCodeContent(node as Element);
 			const lang = language || "";
 			return `\n\n\`\`\`${lang}\n${codeContent}\n\`\`\`\n\n`;
 		},
@@ -110,20 +129,58 @@ export function htmlToMarkdown(html: string): string {
 		.trim();
 }
 
-/** コード要素から実際のコード内容を抽出 */
+/**
+ * コード要素の innerHTML から行番号要素を除去する正規表現パターン
+ *
+ * Torchlight: <span class="line-number">1</span>
+ * highlight.js: <td class="hljs-ln-numbers">...</td>
+ * Generic: <span class="linenumber">1</span>, <span data-line-number="1">1</span>
+ */
+const LINE_NUMBER_HTML_PATTERNS = [
+	/<span[^>]*\bclass\s*=\s*["'][^"']*\bline-number\b[^"']*["'][^>]*>.*?<\/span>/gi,
+	/<span[^>]*\bclass\s*=\s*["'][^"']*\blinenumber\b[^"']*["'][^>]*>.*?<\/span>/gi,
+	/<span[^>]*\bdata-line-number\s*=\s*["'][^"']*["'][^>]*>.*?<\/span>/gi,
+	/<td[^>]*\bclass\s*=\s*["'][^"']*\bhljs-ln-numbers\b[^"']*["'][^>]*>.*?<\/td>/gi,
+];
+
+/** innerHTML から行番号要素を除去した textContent を取得 */
+function getTextWithoutLineNumbers(el: Element): string {
+	let html = el.innerHTML;
+	// 行番号要素を除去
+	for (const pattern of LINE_NUMBER_HTML_PATTERNS) {
+		html = html.replace(pattern, "");
+	}
+	// 行区切り要素（div.line など）の閉じタグを改行に変換
+	html = html.replace(/<\/div>/gi, "\n");
+	// 残りのタグを除去して textContent 相当を取得
+	return html
+		.replace(/<[^>]+>/g, "")
+		.replace(/&amp;/g, "&")
+		.replace(/&lt;/g, "<")
+		.replace(/&gt;/g, ">")
+		.replace(/&quot;/g, '"')
+		.replace(/&#39;/g, "'")
+		.replace(/&nbsp;/g, " ")
+		.replace(/\n{2,}/g, "\n") // 連続改行を1つに
+		.trim();
+}
+
+/** コード要素から実際のコード内容を抽出（行番号を除去） */
 function extractCodeContent(el: Element): string {
 	// pre > code 構造を優先
 	const pre = el.querySelector("pre");
-	if (pre) {
-		return pre.textContent?.trim() || "";
+	const target = pre || el.querySelector("code") || el;
+
+	// 行番号を含むハイライターかどうかを判定
+	const html = target.innerHTML || "";
+	const hasLineNumbers = LINE_NUMBER_HTML_PATTERNS.some((pattern) => {
+		pattern.lastIndex = 0; // reset regex state
+		return pattern.test(html);
+	});
+
+	if (hasLineNumbers) {
+		return getTextWithoutLineNumbers(target);
 	}
 
-	// code タグを検索
-	const code = el.querySelector("code");
-	if (code) {
-		return code.textContent?.trim() || "";
-	}
-
-	// 直接のテキストコンテンツ
-	return el.textContent?.trim() || "";
+	return target.textContent?.trim() || "";
 }
