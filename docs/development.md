@@ -259,7 +259,7 @@ try {
 **カバレッジ設定**:
 - Provider: `v8`
 - Reporter: `text`, `html`, `json-summary`
-- 除外: `src/types.ts`, `src/types/**`
+- 除外: `src/crawl.ts`, `src/types.ts`, `src/types/**`
 
 ### 5.3 ユニットテスト例
 
