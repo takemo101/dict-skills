@@ -214,10 +214,31 @@ export class OutputWriter {
 			renameSync(this.finalOutputDir, backupDir);
 		}
 
-		// 一時→最終にリネーム
-		renameSync(this.tempOutputDir, this.finalOutputDir);
+		// 一時→最終にリネーム（失敗時はバックアップを復元）
+		try {
+			renameSync(this.tempOutputDir, this.finalOutputDir);
+		} catch (error) {
+			// リネーム失敗時: バックアップを復元
+			this.logger?.logDebug("Failed to rename temp directory, restoring backup", {
+				error: error instanceof Error ? error.message : String(error),
+			});
 
-		// バックアップ削除
+			if (existsSync(backupDir)) {
+				try {
+					renameSync(backupDir, this.finalOutputDir);
+					this.logger?.logDebug("Restored backup after finalize failure");
+				} catch (restoreError) {
+					this.logger?.logDebug("Failed to restore backup", {
+						backupDir,
+						error: restoreError instanceof Error ? restoreError.message : String(restoreError),
+					});
+				}
+			}
+
+			throw error; // 元のエラーを再スロー
+		}
+
+		// 成功時: バックアップ削除
 		if (existsSync(backupDir)) {
 			rmSync(backupDir, { recursive: true, force: true });
 		}
