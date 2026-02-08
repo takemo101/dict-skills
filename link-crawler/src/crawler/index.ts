@@ -89,6 +89,9 @@ export class Crawler {
 		// Fetcherの初期化
 		await this.initFetcher();
 
+		// OutputWriter の初期化（ディレクトリ作成・クリーンアップ）
+		await this.writer.init();
+
 		this.logger.logStart();
 
 		// robots.txt の取得
