@@ -9,3 +9,6 @@ coverage/
 test-output*/
 .test-output*/
 .test-*/
+
+# Playwright CLI cache
+.playwright-cli/
