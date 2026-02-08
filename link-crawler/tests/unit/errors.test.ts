@@ -42,7 +42,9 @@ describe("CrawlError", () => {
 	it("should format toString with string cause", () => {
 		const error = new CrawlError("Test message", "TEST_CODE", "connection reset");
 
-		expect(error.toString()).toBe("CrawlError[TEST_CODE]: Test message\nCaused by: connection reset");
+		expect(error.toString()).toBe(
+			"CrawlError[TEST_CODE]: Test message\nCaused by: connection reset",
+		);
 	});
 
 	it("should format toString with object cause", () => {
