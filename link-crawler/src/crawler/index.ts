@@ -211,7 +211,11 @@ export class Crawler {
 				// 初期化失敗は無視
 			}
 		} else {
-			await this.fetcher?.close?.();
+			try {
+				await this.fetcher?.close?.();
+			} catch {
+				// クローズ失敗は無視（ベストエフォート）
+			}
 		}
 		this.logger.logDebug("Closed fetcher");
 	}

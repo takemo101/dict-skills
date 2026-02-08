@@ -556,6 +556,52 @@ info:
 			// Test passes if no exception is thrown
 			expect(true).toBe(true);
 		});
+
+		it("should handle fetcher.close() error in non-fetcherPromise path", async () => {
+			class ErrorFetcher implements Fetcher {
+				async fetch(url: string): Promise<FetchResult | null> {
+					return {
+						html: "<html><head><title>Test</title></head><body><p>Content</p></body></html>",
+						finalUrl: url,
+						contentType: "text/html",
+					};
+				}
+
+				async close(): Promise<void> {
+					throw new Error("Close failed in non-promise path");
+				}
+			}
+
+			const errorFetcher = new ErrorFetcher();
+			const crawler = new Crawler(baseConfig, errorFetcher);
+
+			// Fetcher is already set (no fetcherPromise path)
+			// cleanup() should complete without throwing even when close() fails
+			await expect(crawler.cleanup()).resolves.toBeUndefined();
+		});
+
+		it("should complete cleanup even when fetcher.close() throws synchronously", async () => {
+			class SyncErrorFetcher implements Fetcher {
+				async fetch(url: string): Promise<FetchResult | null> {
+					return {
+						html: "<html><head><title>Test</title></head><body><p>Content</p></body></html>",
+						finalUrl: url,
+						contentType: "text/html",
+					};
+				}
+
+				close(): Promise<void> {
+					// Throw synchronously before returning a Promise
+					throw new Error("Synchronous close error");
+				}
+			}
+
+			const errorFetcher = new SyncErrorFetcher();
+			const crawler = new Crawler(baseConfig, errorFetcher);
+
+			// Should handle synchronous errors too
+			await expect(crawler.cleanup()).resolves.toBeUndefined();
+		});
 	});
 
 	describe("cleanup method", () => {
