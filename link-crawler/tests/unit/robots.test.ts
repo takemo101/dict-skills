@@ -424,6 +424,50 @@ Disallow: /path(test)*
 			expect(checker.isAllowed("https://example.com/site/admin/docs/file.pdf")).toBe(false);
 			expect(checker.isAllowed("https://example.com/site/admin/docs/file.txt")).toBe(true);
 		});
+
+		it("should handle ReDoS-prone patterns efficiently", () => {
+			// 従来の正規表現実装では ReDoS になりやすいパターン
+			const checker = new RobotsChecker("User-agent: *\nDisallow: /a*b*c*d*e*f*g*h*i*j*");
+			
+			// ほぼマッチする長い文字列でも高速に処理される
+			const longPath = "/a" + "x".repeat(1000) + "b" + "x".repeat(1000) + "c" + 
+			                "x".repeat(1000) + "d" + "x".repeat(1000) + "e" +
+			                "x".repeat(1000) + "f" + "x".repeat(1000) + "g" +
+			                "x".repeat(1000) + "h" + "x".repeat(1000) + "i" +
+			                "x".repeat(1000) + "Z"; // 最後が j ではないのでマッチしない
+			
+			const start = Date.now();
+			const result = checker.isAllowed(`https://example.com${longPath}`);
+			const elapsed = Date.now() - start;
+			
+			// 手動マッチングなので高速（100ms以内）
+			expect(elapsed).toBeLessThan(100);
+			expect(result).toBe(true); // j がないのでマッチせず、許可される
+		});
+
+		it("should handle consecutive wildcards correctly", () => {
+			// /path**/test means: /path, then anything, then /test
+			const checker = new RobotsChecker("User-agent: *\nDisallow: /path**/test");
+			expect(checker.isAllowed("https://example.com/path/test")).toBe(false);
+			expect(checker.isAllowed("https://example.com/path123/test")).toBe(false);
+			expect(checker.isAllowed("https://example.com/path/to/test")).toBe(false);
+			expect(checker.isAllowed("https://example.com/pathtest")).toBe(true); // doesn't have /test
+			expect(checker.isAllowed("https://example.com/other")).toBe(true);
+		});
+
+		it("should handle wildcard-only patterns", () => {
+			const checker = new RobotsChecker("User-agent: *\nDisallow: *");
+			expect(checker.isAllowed("https://example.com/anything")).toBe(false);
+			expect(checker.isAllowed("https://example.com/")).toBe(false);
+		});
+
+		it("should handle patterns with only wildcards and $", () => {
+			const checker = new RobotsChecker("User-agent: *\nDisallow: *test$");
+			expect(checker.isAllowed("https://example.com/test")).toBe(false);
+			expect(checker.isAllowed("https://example.com/mytest")).toBe(false);
+			expect(checker.isAllowed("https://example.com/test/")).toBe(true);
+			expect(checker.isAllowed("https://example.com/testing")).toBe(true);
+		});
 	});
 
 	describe("HTML-wrapped robots.txt (playwright-cli compatibility)", () => {
