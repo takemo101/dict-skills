@@ -149,53 +149,71 @@ export class Crawler {
 		this.logger.logDebug("Cleanup initiated");
 
 		try {
-			// 0. カウンタとリトライ情報のクリア
-			this.attemptedCount = 0;
-			this.failedUrls.clear();
-
-			// 1. 途中結果を保存（diffモード時のみ）
-			if (this.config.diff) {
-				this.writer.setVisitedUrls(this.visited);
-				const indexPath = this.writer.saveIndex();
-				this.logger.logDebug("Saved partial index", { path: indexPath });
-
-				// 2. 途中結果からfull.md/chunksを生成（ベストエフォート、diffモード時のみ）
-				// 非diffモードでは一時ディレクトリごと削除されるため不要
-				try {
-					const result = this.writer.getResult();
-					if (result.pages.length > 0) {
-						this.postProcessor.process(result.pages, this.pageContents);
-						this.logger.logDebug("Generated partial outputs during cleanup");
-					}
-				} catch (error) {
-					this.logger.logDebug("Failed to generate partial outputs (non-fatal)", {
-						error: String(error),
-					});
-				}
-			}
-
-			// 3. メモリ解放
-			this.pageContents.clear();
-
-			// 4. 失敗時: 一時ディレクトリを削除（既存出力は保持）
-			this.writer.cleanup();
-
-			// 5. Fetcher をクローズ（初期化中の場合も待機）
-			if (this.fetcherPromise) {
-				try {
-					const fetcher = await this.fetcherPromise;
-					await fetcher.close?.();
-				} catch {
-					// 初期化失敗は無視
-				}
-			} else {
-				await this.fetcher?.close?.();
-			}
-			this.logger.logDebug("Closed fetcher");
+			this.clearInternalState();
+			this.savePartialIndex();
+			this.generatePartialOutputs();
+			this.releaseMemory();
+			await this.cleanupResources();
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
 			this.logger.logDebug("Cleanup error (non-fatal)", { error: message });
 		}
+	}
+
+	/** クリーンアップ: ステップ0 - 内部状態のクリア */
+	private clearInternalState(): void {
+		this.attemptedCount = 0;
+		this.failedUrls.clear();
+	}
+
+	/** クリーンアップ: ステップ1 - 途中結果のindex.json保存 (diffモードのみ) */
+	private savePartialIndex(): void {
+		if (this.config.diff) {
+			this.writer.setVisitedUrls(this.visited);
+			const indexPath = this.writer.saveIndex();
+			this.logger.logDebug("Saved partial index", { path: indexPath });
+		}
+	}
+
+	/** クリーンアップ: ステップ2 - 途中結果からfull.md/chunksを生成 (ベストエフォート、diffモードのみ) */
+	private generatePartialOutputs(): void {
+		if (this.config.diff) {
+			try {
+				const result = this.writer.getResult();
+				if (result.pages.length > 0) {
+					this.postProcessor.process(result.pages, this.pageContents);
+					this.logger.logDebug("Generated partial outputs during cleanup");
+				}
+			} catch (error) {
+				this.logger.logDebug("Failed to generate partial outputs (non-fatal)", {
+					error: String(error),
+				});
+			}
+		}
+	}
+
+	/** クリーンアップ: ステップ3 - メモリ解放 */
+	private releaseMemory(): void {
+		this.pageContents.clear();
+	}
+
+	/** クリーンアップ: ステップ4-5 - 一時ディレクトリ削除とFetcherクローズ */
+	private async cleanupResources(): Promise<void> {
+		// 一時ディレクトリ削除
+		this.writer.cleanup();
+
+		// Fetcher をクローズ（初期化中の場合も待機）
+		if (this.fetcherPromise) {
+			try {
+				const fetcher = await this.fetcherPromise;
+				await fetcher.close?.();
+			} catch {
+				// 初期化失敗は無視
+			}
+		} else {
+			await this.fetcher?.close?.();
+		}
+		this.logger.logDebug("Closed fetcher");
 	}
 
 	/** 再帰クロール */
