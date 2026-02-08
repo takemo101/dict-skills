@@ -10,7 +10,6 @@
 |------|------|------|
 | デフォルトセッション使用 | playwright-cli 0.0.63+ の仕様変更 | [001](docs/decisions/001-playwright-cli-session.md) |
 | 並列クロール不可 | 上記の制約による | [001](docs/decisions/001-playwright-cli-session.md) |
-| sessionId短縮形式 | Unixソケットパス長制限 | [001](docs/decisions/001-playwright-cli-session.md) |
 
 <!-- エージェントが重要な知見を発見した際、上の表に1行追加し、docs/decisions/ に詳細を記録する -->
 
