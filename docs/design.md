@@ -27,17 +27,19 @@
 
 ## 2. 技術スタック
 
-| カテゴリ | 技術 | バージョン | 選定理由 |
-|----------|------|-----------|----------|
-| Runtime | Bun | 1.0+ | 高速起動、TypeScriptネイティブ |
-| Language | TypeScript | 5.8.x | 型安全性 |
-| Linter/Formatter | Biome | 2.x | 高速、設定シンプル |
-| Test Framework | Vitest | 4.x | 高速、ESM対応、Bun互換 |
-| CLI Parser | Commander | 13.x | 軽量、標準的 |
-| Browser | playwright-cli | latest | SPA完全対応、セッション管理 |
-| DOM Parser | JSDOM | 28.x | Node.js標準的なDOM実装 |
-| Content Extractor | @mozilla/readability | 0.6.x | Firefox由来、高品質 |
-| Markdown Converter | Turndown | 7.x | GFM対応、カスタマイズ可能 |
+| カテゴリ | 技術 | 選定理由 |
+|----------|------|----------|
+| Runtime | Bun | 高速起動、TypeScriptネイティブ |
+| Language | TypeScript | 型安全性 |
+| Linter/Formatter | Biome | 高速、設定シンプル |
+| Test Framework | Vitest | 高速、ESM対応、Bun互換 |
+| CLI Parser | Commander | 軽量、標準的 |
+| Browser | playwright-cli | SPA完全対応、セッション管理 |
+| DOM Parser | JSDOM | Node.js標準的なDOM実装 |
+| Content Extractor | @mozilla/readability | Firefox由来、高品質 |
+| Markdown Converter | Turndown | GFM対応、カスタマイズ可能 |
+
+**Note**: 各ライブラリの実際のバージョンは `link-crawler/package.json` を参照してください。
 
 ---
 
