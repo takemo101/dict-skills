@@ -1,4 +1,11 @@
-# Issue #581 & #644: extractor.ts ブランチカバレッジ改善 - 完了報告
+# Decision Record 005: extractor.ts ブランチカバレッジ改善
+
+**Status**: ✅ Resolved  
+**Date**: 2026-02-07  
+**Related Issues**: #581, #644, #650  
+**Decision**: extractor.ts のリファクタリングによりブランチカバレッジを61.76%→95.83%に改善
+
+---
 
 ## Summary
 

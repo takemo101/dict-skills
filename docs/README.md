@@ -107,6 +107,64 @@ ln -s /path/to/link-crawler ~/.pi/agent/skills/link-crawler
 | 終了コード | [CLI仕様書 - セクション6](./cli-spec.md#6-終了コード) |
 | 環境変数 | [CLI仕様書 - セクション7](./cli-spec.md#7-環境変数) |
 
+## 📁 ディレクトリ構造
+
+`docs/` ディレクトリの構成と各サブディレクトリの役割：
+
+### decisions/ - 意思決定記録（ADR: Architecture Decision Records）
+
+過去の重要な技術的決定の記録。解決済み問題の歴史的コンテキストを保持します。
+
+- **命名規則**: `{番号}-{タイトル}.md` (例: `001-playwright-cli-session.md`)
+- **用途**: 
+  - 技術選択の理由と背景
+  - 解決済み問題の詳細な記録
+  - 将来の類似問題への参考資料
+- **追加時**: 重要な技術的決定や制約が発生した際に追加
+- **参照**: AGENTS.md から簡潔にリンク
+
+### verification/ - 検証レポート
+
+完了済みIssueの検証記録。「既に解決済み」であることを証明するドキュメント。
+
+- **命名規則**: `issue-{番号}-{概要}-verification.md`
+- **用途**:
+  - 報告された問題が既に解決済みであることの証明
+  - 将来の類似問題発生時の参照資料
+  - 品質保証活動の記録
+- **注意**: これらは歴史的記録であり、現在のアクションは不要
+- **詳細**: [verification/README.md](./verification/README.md) を参照
+
+### plans/ - 実装計画
+
+Issue実装時の計画書。自動生成され、PRマージ後に削除されます。
+
+- **命名規則**: `issue-{番号}-plan.md`
+- **用途**: pi-issue-runner ワークフローによる自動実装時の計画書作成
+- **ライフサイクル**: Issue対応中のみ存在、PRマージ後に自動削除
+- **注意**: Git追跡対象外（plans/.gitignore で除外）
+
+### その他の主要ファイル
+
+| ファイル | 説明 |
+|---------|------|
+| cli-spec.md | CLIオプションの完全な仕様（SSOT） |
+| design.md | アーキテクチャと設計の詳細 |
+| development.md | 開発ワークフロー・テスト方針 |
+| maintenance.md | メンテナンス・リリースプロセス |
+
+### ドキュメント追加のガイドライン
+
+新しいドキュメントを追加する際の判断基準：
+
+| 内容 | 追加先 |
+|------|--------|
+| 技術的な決定・制約 | `decisions/` + AGENTS.md に要約 |
+| 問題の検証結果 | `verification/` |
+| 実装計画（自動生成） | `plans/` |
+| ユーザー向け情報 | `README.md`, `cli-spec.md` など既存ファイルに統合 |
+| 開発者向け情報 | `design.md`, `development.md` など既存ファイルに統合 |
+
 ## 🔗 関連リンク
 
 - [GitHubリポジトリ](https://github.com/takemo101/dict-skills)
