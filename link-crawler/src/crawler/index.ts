@@ -131,6 +131,10 @@ export class Crawler {
 		// メモリ解放
 		this.pageContents.clear();
 
+			// 4. 失敗時: 一時ディレクトリを削除（既存出力は保持）
+			this.writer.cleanup();
+
+
 		// 完了ログ
 		this.logger.logComplete(result.totalPages, result.specs.length, indexPath);
 	}
@@ -173,7 +177,10 @@ export class Crawler {
 			// 3. メモリ解放
 			this.pageContents.clear();
 
-			// 4. Fetcher をクローズ（初期化中の場合も待機）
+			// 4. 失敗時: 一時ディレクトリを削除（既存出力は保持）
+			this.writer.cleanup();
+
+			// 5. Fetcher をクローズ（初期化中の場合も待機）
 			if (this.fetcherPromise) {
 				try {
 					const fetcher = await this.fetcherPromise;
