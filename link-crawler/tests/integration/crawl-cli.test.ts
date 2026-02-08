@@ -132,7 +132,11 @@ describe("crawl CLI integration", () => {
 		});
 
 		it("should reject invalid URL schemes", () => {
-			const invalidSchemes = ["mailto:test@example.com", "javascript:alert(1)", "data:text/plain,test"];
+			const invalidSchemes = [
+				"mailto:test@example.com",
+				"javascript:alert(1)",
+				"data:text/plain,test",
+			];
 
 			for (const url of invalidSchemes) {
 				try {
