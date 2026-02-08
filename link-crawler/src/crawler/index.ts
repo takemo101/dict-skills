@@ -119,7 +119,7 @@ export class Crawler {
 		const result = this.writer.getResult();
 
 		// 後処理: MergerとChunkerの実行
-		await this.postProcessor.process(result.pages, this.pageContents);
+		this.postProcessor.process(result.pages, this.pageContents);
 
 		// 完了ログ
 		this.logger.logComplete(result.totalPages, result.specs.length, indexPath);
