@@ -49,6 +49,8 @@ export class OutputWriter {
 	async init(): Promise<void> {
 		const pagesDir = join(this.config.outputDir, FILENAME.PAGES_DIR);
 		const specsDir = join(this.config.outputDir, FILENAME.SPECS_DIR);
+		const chunksDir = join(this.config.outputDir, FILENAME.CHUNKS_DIR);
+		const fullMdPath = join(this.config.outputDir, FILENAME.FULL_MD);
 
 		// 非 diff モード時のみディレクトリをクリーンアップ
 		if (!this.config.diff && existsSync(pagesDir)) {
@@ -56,6 +58,12 @@ export class OutputWriter {
 		}
 		if (!this.config.diff && existsSync(specsDir)) {
 			rmSync(specsDir, { recursive: true, force: true });
+		}
+		if (!this.config.diff && existsSync(chunksDir)) {
+			rmSync(chunksDir, { recursive: true, force: true });
+		}
+		if (!this.config.diff && existsSync(fullMdPath)) {
+			rmSync(fullMdPath, { force: true });
 		}
 
 		// ディレクトリを作成

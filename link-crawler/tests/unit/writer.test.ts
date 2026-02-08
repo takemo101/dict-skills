@@ -917,5 +917,54 @@ describe("OutputWriter", () => {
 			// ディレクトリが削除されたため、ファイルが存在しないことを確認
 			expect(() => readFileSync(pagePath, "utf-8")).toThrow();
 		});
+
+		it("should cleanup chunks/ directory and full.md in non-diff mode", async () => {
+			// 1. 初回実行: chunks/ と full.md を作成
+			const chunksDir = join(testOutputDir, "chunks");
+			const fullMdPath = join(testOutputDir, "full.md");
+
+			mkdirSync(chunksDir, { recursive: true });
+			writeFileSync(join(chunksDir, "chunk-001.md"), "# Chunk 1");
+			writeFileSync(join(chunksDir, "chunk-002.md"), "# Chunk 2");
+			writeFileSync(fullMdPath, "# Full Content");
+
+			// ファイルが作成されたことを確認
+			expect(readFileSync(join(chunksDir, "chunk-001.md"), "utf-8")).toBe("# Chunk 1");
+			expect(readFileSync(join(chunksDir, "chunk-002.md"), "utf-8")).toBe("# Chunk 2");
+			expect(readFileSync(fullMdPath, "utf-8")).toBe("# Full Content");
+
+			// 2. 非 diff モードで再初期化
+			const writer = new OutputWriter({ ...defaultConfig, diff: false });
+			await writer.init();
+
+			// chunks/ ディレクトリと full.md が削除されたことを確認
+			expect(() => readFileSync(join(chunksDir, "chunk-001.md"), "utf-8")).toThrow();
+			expect(() => readFileSync(fullMdPath, "utf-8")).toThrow();
+		});
+
+		it("should preserve chunks/ directory and full.md in diff mode", async () => {
+			// 1. 初回実行: chunks/ と full.md を作成
+			const chunksDir = join(testOutputDir, "chunks");
+			const fullMdPath = join(testOutputDir, "full.md");
+
+			mkdirSync(chunksDir, { recursive: true });
+			writeFileSync(join(chunksDir, "chunk-001.md"), "# Chunk 1");
+			writeFileSync(join(chunksDir, "chunk-002.md"), "# Chunk 2");
+			writeFileSync(fullMdPath, "# Full Content");
+
+			// ファイルが作成されたことを確認
+			expect(readFileSync(join(chunksDir, "chunk-001.md"), "utf-8")).toBe("# Chunk 1");
+			expect(readFileSync(join(chunksDir, "chunk-002.md"), "utf-8")).toBe("# Chunk 2");
+			expect(readFileSync(fullMdPath, "utf-8")).toBe("# Full Content");
+
+			// 2. diff モードで再初期化
+			const writer = new OutputWriter({ ...defaultConfig, diff: true });
+			await writer.init();
+
+			// chunks/ ディレクトリと full.md が保持されていることを確認
+			expect(readFileSync(join(chunksDir, "chunk-001.md"), "utf-8")).toBe("# Chunk 1");
+			expect(readFileSync(join(chunksDir, "chunk-002.md"), "utf-8")).toBe("# Chunk 2");
+			expect(readFileSync(fullMdPath, "utf-8")).toBe("# Full Content");
+		});
 	});
 });
