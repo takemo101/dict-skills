@@ -38,6 +38,26 @@ describe("CrawlError", () => {
 
 		expect(error.toString()).toBe("CrawlError[TEST_CODE]: Test message\nCaused by: Caused by this");
 	});
+
+	it("should format toString with string cause", () => {
+		const error = new CrawlError("Test message", "TEST_CODE", "connection reset");
+
+		expect(error.toString()).toBe("CrawlError[TEST_CODE]: Test message\nCaused by: connection reset");
+	});
+
+	it("should format toString with object cause", () => {
+		const cause = { code: "ECONNRESET", errno: -54 };
+		const error = new CrawlError("Test message", "TEST_CODE", cause);
+
+		expect(error.toString()).toContain("CrawlError[TEST_CODE]: Test message\nCaused by:");
+		expect(error.toString()).toContain("ECONNRESET");
+	});
+
+	it("should format toString with number cause", () => {
+		const error = new CrawlError("Test message", "TEST_CODE", 404);
+
+		expect(error.toString()).toBe("CrawlError[TEST_CODE]: Test message\nCaused by: 404");
+	});
 });
 
 describe("FetchError", () => {
