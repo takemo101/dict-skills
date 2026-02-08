@@ -742,6 +742,96 @@ describe("IndexManager", () => {
 
 			expect(savedPath).toBe(join(testDir, "index.json"));
 		});
+
+		it("should be idempotent when called multiple times in diff mode", async () => {
+			// 既存のindex.jsonを作成
+			const indexData = {
+				crawledAt: "2025-01-01T00:00:00.000Z",
+				baseUrl: "https://example.com",
+				config: { maxDepth: 2, sameDomain: true },
+				totalPages: 2,
+				pages: [
+					{
+						url: "https://example.com/page1",
+						title: "Page 1",
+						file: "pages/page-001.md",
+						depth: 0,
+						links: [],
+						metadata: {
+							title: "Page 1",
+							description: null,
+							keywords: null,
+							author: null,
+							ogTitle: null,
+							ogType: null,
+						},
+						hash: "hash1",
+						crawledAt: "2025-01-01T00:00:00.000Z",
+					},
+					{
+						url: "https://example.com/page2",
+						title: "Page 2",
+						file: "pages/page-002.md",
+						depth: 1,
+						links: [],
+						metadata: {
+							title: "Page 2",
+							description: null,
+							keywords: null,
+							author: null,
+							ogTitle: null,
+							ogType: null,
+						},
+						hash: "hash2",
+						crawledAt: "2025-01-01T00:00:00.000Z",
+					},
+				],
+				specs: [],
+			};
+			writeFileSync(join(testDir, "index.json"), JSON.stringify(indexData));
+
+			const manager = new IndexManager(testDir, "https://example.com", {
+				maxDepth: 2,
+				sameDomain: true,
+				diff: true,
+			});
+			const metadata: PageMetadata = {
+				title: "Test",
+				description: null,
+				keywords: null,
+				author: null,
+				ogTitle: null,
+				ogType: null,
+			};
+
+			// page1のみ更新（page2は変更なし）
+			const visited = new Set(["https://example.com/page1", "https://example.com/page2"]);
+			manager.setVisitedUrls(visited);
+
+			manager.registerPage(
+				"https://example.com/page1",
+				"pages/page-001.md",
+				0,
+				[],
+				metadata,
+				"Page 1 Updated",
+				"hash1-new",
+			);
+
+			// saveIndex を複数回呼び出す
+			manager.saveIndex();
+			manager.saveIndex();
+
+			const result = manager.getResult();
+
+			// page1とpage2の2ページのみ（重複なし）
+			expect(result.totalPages).toBe(2);
+			expect(result.pages).toHaveLength(2);
+
+			// ページのURLを確認
+			const urls = result.pages.map((p) => p.url).sort();
+			expect(urls).toEqual(["https://example.com/page1", "https://example.com/page2"]);
+		});
 	});
 
 	describe("getResult", () => {
