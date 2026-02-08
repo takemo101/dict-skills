@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { FILENAME, SPEC_PATTERNS } from "../constants.js";
 import { computeHash } from "../diff/index.js";
@@ -25,13 +25,34 @@ function slugify(text: string | null | undefined, maxLength = 50): string {
 /** ファイル書き込みクラス */
 export class OutputWriter {
 	private indexManager: IndexManager;
+	private tempOutputDir: string | null = null;
+	private finalOutputDir: string;
+	private workingOutputDir: string;
 
 	constructor(
 		private config: CrawlConfig,
 		private logger?: Logger,
 	) {
+		this.finalOutputDir = config.outputDir;
+
+		// 非diffモード: 一時ディレクトリを使用して原子性を確保
+		if (!config.diff) {
+			// 既に .tmp-* で終わっている場合は、すでに一時ディレクトリ化されているので再度変換しない
+			if (!config.outputDir.match(/\.tmp-\d+-\d+$/)) {
+				this.tempOutputDir = `${config.outputDir}.tmp-${Date.now()}-${process.pid}`;
+				this.workingOutputDir = this.tempOutputDir;
+				// PostProcessorで使用されるため、config.outputDirを更新
+				config.outputDir = this.tempOutputDir;
+			} else {
+				// すでに一時ディレクトリ化されている（テストで複数回インスタンス化される場合）
+				this.workingOutputDir = config.outputDir;
+			}
+		} else {
+			this.workingOutputDir = config.outputDir;
+		}
+
 		this.indexManager = new IndexManager(
-			config.outputDir,
+			this.workingOutputDir,
 			config.startUrl,
 			{
 				maxDepth: config.maxDepth,
@@ -41,16 +62,9 @@ export class OutputWriter {
 			this.logger,
 		);
 
-		// ディレクトリをクリーンアップしてから作成（diff モードでは既存ファイルを保持）
-		const pagesDir = join(config.outputDir, FILENAME.PAGES_DIR);
-		const specsDir = join(config.outputDir, FILENAME.SPECS_DIR);
-
-		if (!config.diff && existsSync(pagesDir)) {
-			rmSync(pagesDir, { recursive: true, force: true });
-		}
-		if (!config.diff && existsSync(specsDir)) {
-			rmSync(specsDir, { recursive: true, force: true });
-		}
+		// ディレクトリを作成（diffモードでは既存ファイルを保持、非diffモードは一時ディレクトリなので新規作成）
+		const pagesDir = join(this.workingOutputDir, FILENAME.PAGES_DIR);
+		const specsDir = join(this.workingOutputDir, FILENAME.SPECS_DIR);
 
 		mkdirSync(pagesDir, { recursive: true });
 		mkdirSync(specsDir, { recursive: true });
@@ -66,7 +80,7 @@ export class OutputWriter {
 		for (const [type, pattern] of Object.entries(SPEC_PATTERNS)) {
 			if (pattern.test(url)) {
 				const filename = url.split("/").pop() || "spec";
-				const specPath = join(this.config.outputDir, FILENAME.SPECS_DIR, filename);
+				const specPath = join(this.workingOutputDir, FILENAME.SPECS_DIR, filename);
 				mkdirSync(dirname(specPath), { recursive: true });
 				writeFileSync(specPath, content);
 
@@ -117,7 +131,7 @@ export class OutputWriter {
 		hash?: string,
 	): string {
 		const pageFile = this.buildPageFilename(metadata, title);
-		const pagePath = join(this.config.outputDir, pageFile);
+		const pagePath = join(this.workingOutputDir, pageFile);
 		const computedHash = hash ?? computeHash(markdown);
 
 		const frontmatter = this.buildFrontmatter(url, metadata, title, depth, computedHash);
@@ -181,5 +195,49 @@ export class OutputWriter {
 	/** 訪問済みURLを設定（差分クロール時のマージ範囲制限用） */
 	setVisitedUrls(urls: Set<string>): void {
 		this.indexManager.setVisitedUrls(urls);
+	}
+
+	/** クロール成功時: 一時ディレクトリを最終ディレクトリにリネーム */
+	finalize(): void {
+		if (!this.tempOutputDir) {
+			return; // diffモード時は何もしない
+		}
+
+		this.logger?.logDebug("Finalizing output", {
+			from: this.tempOutputDir,
+			to: this.finalOutputDir,
+		});
+
+		// バックアップ作成（既存ディレクトリがある場合）
+		const backupDir = `${this.finalOutputDir}.bak`;
+		if (existsSync(this.finalOutputDir)) {
+			if (existsSync(backupDir)) {
+				rmSync(backupDir, { recursive: true, force: true });
+			}
+			renameSync(this.finalOutputDir, backupDir);
+		}
+
+		// 一時→最終にリネーム
+		renameSync(this.tempOutputDir, this.finalOutputDir);
+
+		// バックアップ削除
+		if (existsSync(backupDir)) {
+			rmSync(backupDir, { recursive: true, force: true });
+		}
+
+		// config.outputDirを元に戻す（次のインスタンス化で正しく動作するように）
+		this.config.outputDir = this.finalOutputDir;
+
+		this.logger?.logDebug("Output finalized successfully");
+	}
+
+	/** クロール失敗時: 一時ディレクトリを削除 */
+	cleanup(): void {
+		if (this.tempOutputDir && existsSync(this.tempOutputDir)) {
+			rmSync(this.tempOutputDir, { recursive: true, force: true });
+			this.logger?.logDebug("Temporary output cleaned up", {
+				path: this.tempOutputDir,
+			});
+		}
 	}
 }

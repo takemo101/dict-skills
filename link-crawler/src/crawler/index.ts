@@ -121,6 +121,9 @@ export class Crawler {
 		// 後処理: MergerとChunkerの実行
 		await this.postProcessor.process(result.pages, this.pageContents);
 
+		// クロール成功時: 一時ディレクトリを確定
+		this.writer.finalize();
+
 		// 完了ログ
 		this.logger.logComplete(result.totalPages, result.specs.length, indexPath);
 	}
@@ -144,7 +147,10 @@ export class Crawler {
 			const indexPath = this.writer.saveIndex();
 			this.logger.logDebug("Saved partial index", { path: indexPath });
 
-			// 2. Fetcher をクローズ（初期化中の場合も待機）
+			// 2. 失敗時: 一時ディレクトリを削除（既存出力は保持）
+			this.writer.cleanup();
+
+			// 3. Fetcher をクローズ（初期化中の場合も待機）
 			if (this.fetcherPromise) {
 				try {
 					const fetcher = await this.fetcherPromise;
