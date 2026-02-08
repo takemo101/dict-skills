@@ -17,29 +17,6 @@ NC='\033[0m' # No Color
 PASSED=0
 FAILED=0
 
-# Function to check and report
-check() {
-    local description="$1"
-    local command="$2"
-    local expected="$3"
-    
-    echo "Checking: $description"
-    
-    if eval "$command" > /dev/null 2>&1; then
-        if [ "$expected" = "empty" ]; then
-            echo -e "${GREEN}✓ PASS${NC}: No tracked files found"
-            ((PASSED++))
-        else
-            echo -e "${GREEN}✓ PASS${NC}: Files are properly ignored"
-            ((PASSED++))
-        fi
-    else
-        echo -e "${RED}✗ FAIL${NC}: $description"
-        ((FAILED++))
-    fi
-    echo ""
-}
-
 # Check 1: .improve-logs/ not tracked
 echo "1. Checking .improve-logs/ tracking status..."
 RESULT=$(git ls-files .improve-logs/ 2>/dev/null || true)
