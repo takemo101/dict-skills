@@ -162,7 +162,8 @@ export class Crawler {
 
 	/** クリーンアップ: ステップ0 - 内部状態のクリア */
 	private clearInternalState(): void {
-		this.attemptedCount = 0;
+		// Note: attemptedCount は maxPages 制限の判定に使用されるため、
+		// cleanup 時にリセットしない（cleanup後の意図しない処理継続を防ぐ）
 		this.failedUrls.clear();
 	}
 
