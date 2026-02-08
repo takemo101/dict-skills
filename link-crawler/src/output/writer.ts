@@ -220,19 +220,11 @@ export class OutputWriter {
 		this.indexManager.setVisitedUrls(urls);
 	}
 
-	/** クロール成功時: 一時ディレクトリを最終ディレクトリにリネーム */
-	finalize(): void {
-		if (!this.tempOutputDir) {
-			return; // diffモード時は何もしない
-		}
-
-		this.logger?.logDebug("Finalizing output", {
-			from: this.tempOutputDir,
-			to: this.finalOutputDir,
-		});
-
-		const backupDir = `${this.finalOutputDir}.bak`;
-
+	/**
+	 * 前回のfinalize中断からのリカバリ
+	 * .bak が存在し、最終ディレクトリが存在しない場合に復元する
+	 */
+	private recoverFromIncompleteFinalization(backupDir: string): void {
 		// Recovery logic: 前回のfinalizeが中断された場合の復旧
 		// (.bakが存在するが最終ディレクトリが存在しない = Step 1完了後、Step 2実行前にクラッシュ)
 		if (existsSync(backupDir) && !existsSync(this.finalOutputDir)) {
@@ -251,16 +243,30 @@ export class OutputWriter {
 				// リカバリに失敗しても通常のfinalizeを続行
 			}
 		}
+	}
 
-		// バックアップ作成（既存ディレクトリがある場合）
+	/**
+	 * 既存の最終ディレクトリを .bak にバックアップ
+	 * 既存ディレクトリがある場合のみ実行
+	 */
+	private backupExistingOutput(backupDir: string): void {
 		if (existsSync(this.finalOutputDir)) {
 			if (existsSync(backupDir)) {
 				rmSync(backupDir, { recursive: true, force: true });
 			}
 			renameSync(this.finalOutputDir, backupDir);
 		}
+	}
 
-		// 一時→最終にリネーム（失敗時はバックアップを復元）
+	/**
+	 * 一時ディレクトリを最終ディレクトリにリネーム
+	 * 失敗時はバックアップを復元してエラーをスロー
+	 */
+	private promoteTemp(backupDir: string): void {
+		if (!this.tempOutputDir) {
+			return;
+		}
+
 		try {
 			renameSync(this.tempOutputDir, this.finalOutputDir);
 		} catch (error) {
@@ -283,8 +289,13 @@ export class OutputWriter {
 
 			throw error; // 元のエラーを再スロー
 		}
+	}
 
-		// 成功時: バックアップ削除（失敗しても無視）
+	/**
+	 * 成功時にバックアップディレクトリを削除
+	 * 削除失敗は無視（non-fatal）
+	 */
+	private removeBackup(backupDir: string): void {
 		if (existsSync(backupDir)) {
 			try {
 				rmSync(backupDir, { recursive: true, force: true });
@@ -295,6 +306,25 @@ export class OutputWriter {
 				});
 			}
 		}
+	}
+
+	/** クロール成功時: 一時ディレクトリを最終ディレクトリにリネーム */
+	finalize(): void {
+		if (!this.tempOutputDir) {
+			return; // diffモード時は何もしない
+		}
+
+		this.logger?.logDebug("Finalizing output", {
+			from: this.tempOutputDir,
+			to: this.finalOutputDir,
+		});
+
+		const backupDir = `${this.finalOutputDir}.bak`;
+
+		this.recoverFromIncompleteFinalization(backupDir);
+		this.backupExistingOutput(backupDir);
+		this.promoteTemp(backupDir);
+		this.removeBackup(backupDir);
 
 		this.logger?.logDebug("Output finalized successfully");
 	}
