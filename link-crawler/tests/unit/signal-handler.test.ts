@@ -5,7 +5,7 @@
  * Addresses Issue #857 - testing signal handlers that were previously untested.
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SignalHandler } from "../../src/signal-handler.js";
 
 describe("SignalHandler", () => {
@@ -85,9 +85,9 @@ describe("SignalHandler", () => {
 		});
 
 		it("should force exit on second signal without calling cleanup again", async () => {
-			const cleanupFn = vi.fn().mockImplementation(
-				() => new Promise((resolve) => setTimeout(resolve, 50)),
-			);
+			const cleanupFn = vi
+				.fn()
+				.mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 50)));
 			const handler = new SignalHandler({
 				onShutdown: cleanupFn,
 				console: mockConsole,
@@ -146,7 +146,7 @@ describe("SignalHandler", () => {
 			expect(handler.isCleanupInProgress()).toBe(false);
 
 			const shutdownPromise = handler.handleShutdown("SIGINT");
-			
+
 			// Should be true during cleanup
 			expect(handler.isCleanupInProgress()).toBe(true);
 
@@ -267,9 +267,9 @@ describe("SignalHandler", () => {
 		});
 
 		it("should return true after shutdown starts", async () => {
-			const cleanupFn = vi.fn().mockImplementation(
-				() => new Promise((resolve) => setTimeout(resolve, 100)),
-			);
+			const cleanupFn = vi
+				.fn()
+				.mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 100)));
 			const handler = new SignalHandler({
 				onShutdown: cleanupFn,
 				console: mockConsole,
@@ -285,9 +285,9 @@ describe("SignalHandler", () => {
 
 	describe("edge cases", () => {
 		it("should handle rapid successive signals", async () => {
-			const cleanupFn = vi.fn().mockImplementation(
-				() => new Promise((resolve) => setTimeout(resolve, 50)),
-			);
+			const cleanupFn = vi
+				.fn()
+				.mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 50)));
 			const handler = new SignalHandler({
 				onShutdown: cleanupFn,
 				console: mockConsole,

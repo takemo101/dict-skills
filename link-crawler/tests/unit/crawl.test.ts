@@ -14,8 +14,8 @@
 import { describe, expect, it } from "vitest";
 import { EXIT_CODES } from "../../src/constants.js";
 import { handleError } from "../../src/error-handler.js";
-import { SignalHandler } from "../../src/signal-handler.js";
 import { ConfigError, DependencyError, FetchError } from "../../src/errors.js";
+import { SignalHandler } from "../../src/signal-handler.js";
 
 describe("crawl.ts entrypoint - code coverage", () => {
 	describe("dependencies and imports", () => {
