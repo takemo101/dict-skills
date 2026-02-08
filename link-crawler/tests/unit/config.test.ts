@@ -682,3 +682,68 @@ describe("parseConfig - respectRobots validation", () => {
 		expect(config.respectRobots).toBe(true);
 	});
 });
+
+describe("parseConfig - upper bound validation", () => {
+	it("should cap delay at MAX_DELAY_MS (60000ms)", () => {
+		const config = parseConfig({ delay: 999999 }, "https://example.com", "test-version");
+		expect(config.delay).toBe(60000);
+	});
+
+	it("should cap timeout at MAX_TIMEOUT_SEC (300 seconds = 300000ms)", () => {
+		const config = parseConfig({ timeout: 999999 }, "https://example.com", "test-version");
+		expect(config.timeout).toBe(300000);
+	});
+
+	it("should cap spaWait at MAX_SPA_WAIT_MS (30000ms)", () => {
+		const config = parseConfig({ wait: 999999 }, "https://example.com", "test-version");
+		expect(config.spaWait).toBe(30000);
+	});
+
+	it("should allow values below upper bounds", () => {
+		const config = parseConfig(
+			{
+				delay: 1000,
+				timeout: 60,
+				wait: 5000,
+			},
+			"https://example.com",
+			"test-version",
+		);
+
+		expect(config.delay).toBe(1000);
+		expect(config.timeout).toBe(60000);
+		expect(config.spaWait).toBe(5000);
+	});
+
+	it("should handle exact upper bound values", () => {
+		const config = parseConfig(
+			{
+				delay: 60000,
+				timeout: 300,
+				wait: 30000,
+			},
+			"https://example.com",
+			"test-version",
+		);
+
+		expect(config.delay).toBe(60000);
+		expect(config.timeout).toBe(300000);
+		expect(config.spaWait).toBe(30000);
+	});
+
+	it("should cap string values that exceed upper bounds", () => {
+		const config = parseConfig(
+			{
+				delay: "999999",
+				timeout: "999999",
+				wait: "999999",
+			},
+			"https://example.com",
+			"test-version",
+		);
+
+		expect(config.delay).toBe(60000);
+		expect(config.timeout).toBe(300000);
+		expect(config.spaWait).toBe(30000);
+	});
+});
