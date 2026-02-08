@@ -93,9 +93,6 @@ export class Crawler {
 		// Fetcherの初期化
 		await this.initFetcher();
 
-		// OutputWriter の初期化（ディレクトリ作成・クリーンアップ）
-		await this.writer.init();
-
 		this.logger.logStart();
 
 		// robots.txt の取得
@@ -131,9 +128,8 @@ export class Crawler {
 		// メモリ解放
 		this.pageContents.clear();
 
-			// 4. 失敗時: 一時ディレクトリを削除（既存出力は保持）
-			this.writer.cleanup();
-
+		// クロール成功時: 一時ディレクトリを確定
+		this.writer.finalize();
 
 		// 完了ログ
 		this.logger.logComplete(result.totalPages, result.specs.length, indexPath);
