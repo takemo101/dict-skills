@@ -1153,7 +1153,7 @@ describe("PlaywrightFetcher", () => {
 							stderr: "",
 							exitCode: 0,
 						} as SpawnResult);
-					}, 1000);
+					}, 150); // Reduced from 1000ms to 150ms (just above timeout)
 				});
 			});
 
@@ -1285,7 +1285,7 @@ describe("PlaywrightFetcher", () => {
 										stderr: "",
 										exitCode: 0,
 									} as SpawnResult),
-								1000,
+								100, // Reduced from 1000ms to 100ms (2x timeout)
 							),
 						),
 				);
@@ -1322,7 +1322,7 @@ describe("PlaywrightFetcher", () => {
 								stderr: "",
 								exitCode: 0,
 							} as SpawnResult);
-						}, 1000);
+						}, 150); // Reduced from 1000ms to 150ms
 					});
 				}
 
@@ -1378,7 +1378,7 @@ describe("PlaywrightFetcher", () => {
 								stderr: "",
 								exitCode: 0,
 							} as SpawnResult);
-						}, 1000);
+						}, 150); // Reduced from 1000ms to 150ms
 					});
 				}
 
