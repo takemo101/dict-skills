@@ -217,9 +217,10 @@ return { title: article.title ?? null, content: restoredContent };
 
 ### ドキュメント更新
 
-このドキュメント (`docs/findings/issue-581-unreachable-code.md`) は:
+このドキュメント (`docs/decisions/005-issue-581-unreachable-code.md`) は:
 - Issue #644 で現在の実装に合わせて全面更新
 - Issue #581 の歴史的記録も保持
+- Issue #997 で decisions/ ディレクトリに移動（Decision Record化）
 - 将来のリファクタリングの参考資料として維持
 
 ### コードの安定性
