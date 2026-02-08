@@ -52,6 +52,19 @@ describe("crawl CLI integration", () => {
 		expect(result).toMatch(/\d+\.\d+\.\d+/);
 	});
 
+	// Issue #985: Enhanced version validation
+	describe("version information", () => {
+		it("should output exact version from package.json", () => {
+			const packageJson = JSON.parse(readFileSync("package.json", "utf-8"));
+			const result = execSync("bun run src/crawl.ts --version", {
+				encoding: "utf-8",
+				cwd: process.cwd(),
+			});
+
+			expect(result.trim()).toBe(packageJson.version);
+		});
+	});
+
 	it("should exit with error code when no URL is provided", () => {
 		try {
 			execSync("bun run src/crawl.ts", {
@@ -66,6 +79,76 @@ describe("crawl CLI integration", () => {
 			const err = error as { status: number };
 			expect(err.status).toBeGreaterThan(0);
 		}
+	});
+
+	// Issue #985: Exit code validation
+	describe("exit codes", () => {
+		it("should exit with INVALID_ARGUMENTS (2) when no URL provided", () => {
+			try {
+				execSync("bun run src/crawl.ts", {
+					encoding: "utf-8",
+					cwd: process.cwd(),
+					stdio: "pipe",
+				});
+				expect.fail("Should have thrown an error");
+			} catch (error: unknown) {
+				const err = error as { status: number };
+				// EXIT_CODES.INVALID_ARGUMENTS = 2
+				expect(err.status).toBe(2);
+			}
+		});
+	});
+
+	// Issue #985: URL scheme validation
+	describe("URL validation", () => {
+		it("should reject ftp:// URLs", () => {
+			try {
+				execSync('bun run src/crawl.ts "ftp://example.com" -d 0', {
+					encoding: "utf-8",
+					cwd: process.cwd(),
+					stdio: "pipe",
+				});
+				expect.fail("Should have thrown an error");
+			} catch (error: unknown) {
+				const err = error as { status: number };
+				// Should exit with error code (not success)
+				expect(err.status).not.toBe(0);
+			}
+		});
+
+		it("should reject file:// URLs", () => {
+			try {
+				execSync('bun run src/crawl.ts "file:///etc/passwd" -d 0', {
+					encoding: "utf-8",
+					cwd: process.cwd(),
+					stdio: "pipe",
+				});
+				expect.fail("Should have thrown an error");
+			} catch (error: unknown) {
+				const err = error as { status: number };
+				// Should exit with error code (not success)
+				expect(err.status).not.toBe(0);
+			}
+		});
+
+		it("should reject invalid URL schemes", () => {
+			const invalidSchemes = ["mailto:test@example.com", "javascript:alert(1)", "data:text/plain,test"];
+
+			for (const url of invalidSchemes) {
+				try {
+					execSync(`bun run src/crawl.ts "${url}" -d 0`, {
+						encoding: "utf-8",
+						cwd: process.cwd(),
+						stdio: "pipe",
+					});
+					expect.fail(`Should have rejected URL: ${url}`);
+				} catch (error: unknown) {
+					const err = error as { status: number };
+					// Should exit with error code (not success)
+					expect(err.status).not.toBe(0);
+				}
+			}
+		});
 	});
 
 	it("should accept valid http URL format", () => {
