@@ -464,9 +464,25 @@ H1見出し（`#`）を境界として分割:
 **RuntimeAdapterインターフェース：**
 ```typescript
 interface RuntimeAdapter {
-  spawn(command: string, args: string[]): Promise<SpawnResult>;
+  /**
+   * コマンドを実行して結果を返す
+   * @param cwd 作業ディレクトリ（省略時はprocess.cwd()）
+   */
+  spawn(command: string, args: string[], cwd?: string): Promise<SpawnResult>;
+  
+  /**
+   * 指定時間スリープする
+   */
   sleep(ms: number): Promise<void>;
+  
+  /**
+   * ファイルを読み込む
+   */
   readFile(path: string): Promise<string>;
+  
+  /**
+   * カレントワーキングディレクトリを取得する
+   */
   cwd(): string;
 }
 ```
