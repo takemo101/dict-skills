@@ -22,6 +22,26 @@ function slugify(text: string | null | undefined, maxLength = 50): string {
 		.replace(/-+$/, ""); // 切り詰め後の末尾ハイフンを除去
 }
 
+/** URLパスからslugを生成（フォールバック用） */
+function slugifyFromUrl(url: string, maxLength = 50): string {
+	try {
+		const urlObj = new URL(url);
+		const pathname = urlObj.pathname;
+
+		// パスの最後のセグメントを取得（空文字列は除外）
+		const segments = pathname.split("/").filter(Boolean);
+		const lastSegment = segments[segments.length - 1] || "";
+
+		// 拡張子を除去
+		const withoutExt = lastSegment.replace(/\.[^.]+$/, "");
+
+		// slugify処理
+		return slugify(withoutExt, maxLength);
+	} catch {
+		return "";
+	}
+}
+
 /** ファイル書き込みクラス */
 export class OutputWriter {
 	private indexManager: IndexManager;
@@ -90,10 +110,16 @@ export class OutputWriter {
 	}
 
 	/** ページファイル名を生成 (public: Crawler の --no-pages モードで使用) */
-	buildPageFilename(metadata: PageMetadata, title: string | null): string {
+	buildPageFilename(url: string, metadata: PageMetadata, title: string | null): string {
 		const pageNum = String(this.getNextPageNumber()).padStart(FILENAME.PAGE_PAD_LENGTH, "0");
 		const pageTitle = metadata.title || title;
-		const titleSlug = slugify(pageTitle);
+		let titleSlug = slugify(pageTitle);
+
+		// titleSlugが空の場合、URLパスからslugを生成
+		if (!titleSlug && url) {
+			titleSlug = slugifyFromUrl(url);
+		}
+
 		return titleSlug
 			? `${FILENAME.PAGES_DIR}/${FILENAME.PAGE_PREFIX}${pageNum}-${titleSlug}.md`
 			: `${FILENAME.PAGES_DIR}/${FILENAME.PAGE_PREFIX}${pageNum}.md`;
@@ -122,7 +148,7 @@ export class OutputWriter {
 		title: string | null,
 		hash?: string,
 	): string {
-		const pageFile = this.buildPageFilename(metadata, title);
+		const pageFile = this.buildPageFilename(url, metadata, title);
 		const pagePath = join(this.workingOutputDir, pageFile);
 		const computedHash = hash ?? computeHash(markdown);
 

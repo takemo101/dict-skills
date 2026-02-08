@@ -340,7 +340,21 @@ describe("OutputWriter", () => {
 			expect(pageFile).toBe("pages/page-001-title-with-multiple-spaces.md");
 		});
 
-		it("should handle Japanese titles", () => {
+		it("should handle Japanese titles with URL fallback", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
+			const pageFile = writer.savePage(
+				"https://example.com/getting-started",
+				"# Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "日本語タイトル" },
+				null,
+			);
+			// Non-ASCII characters are removed from title, falls back to URL path
+			expect(pageFile).toBe("pages/page-001-getting-started.md");
+		});
+
+		it("should handle Japanese titles without URL path", () => {
 			const writer = new OutputWriter({ ...defaultConfig });
 			const pageFile = writer.savePage(
 				"https://example.com",
@@ -350,7 +364,7 @@ describe("OutputWriter", () => {
 				{ ...defaultMetadata, title: "日本語タイトル" },
 				null,
 			);
-			// Non-ASCII characters are removed, resulting in sequential number only
+			// Non-ASCII characters are removed, URL has no path, resulting in sequential number only
 			expect(pageFile).toBe("pages/page-001.md");
 		});
 
@@ -368,46 +382,46 @@ describe("OutputWriter", () => {
 			expect(pageFile).toBe("pages/page-001-english123.md");
 		});
 
-		it("should handle Chinese titles (simplified)", () => {
+		it("should handle Chinese titles (simplified) with URL fallback", () => {
 			const writer = new OutputWriter({ ...defaultConfig });
 			const pageFile = writer.savePage(
-				"https://example.com",
+				"https://example.com/configuration-guide",
 				"# Content",
 				0,
 				[],
 				{ ...defaultMetadata, title: "配置指南" },
 				null,
 			);
-			// Non-ASCII characters are removed, resulting in sequential number only
-			expect(pageFile).toBe("pages/page-001.md");
+			// Non-ASCII characters are removed from title, falls back to URL path
+			expect(pageFile).toBe("pages/page-001-configuration-guide.md");
 		});
 
-		it("should handle Chinese titles (traditional)", () => {
+		it("should handle Chinese titles (traditional) with URL fallback", () => {
 			const writer = new OutputWriter({ ...defaultConfig });
 			const pageFile = writer.savePage(
-				"https://example.com",
+				"https://example.com/setup-guide",
 				"# Content",
 				0,
 				[],
 				{ ...defaultMetadata, title: "設定指南" },
 				null,
 			);
-			// Non-ASCII characters are removed, resulting in sequential number only
-			expect(pageFile).toBe("pages/page-001.md");
+			// Non-ASCII characters are removed from title, falls back to URL path
+			expect(pageFile).toBe("pages/page-001-setup-guide.md");
 		});
 
-		it("should handle Korean titles", () => {
+		it("should handle Korean titles with URL fallback", () => {
 			const writer = new OutputWriter({ ...defaultConfig });
 			const pageFile = writer.savePage(
-				"https://example.com",
+				"https://example.com/start-guide",
 				"# Content",
 				0,
 				[],
 				{ ...defaultMetadata, title: "시작하기 가이드" },
 				null,
 			);
-			// Non-ASCII characters are removed, resulting in sequential number only
-			expect(pageFile).toBe("pages/page-001.md");
+			// Non-ASCII characters are removed from title, falls back to URL path
+			expect(pageFile).toBe("pages/page-001-start-guide.md");
 		});
 
 		it("should remove emoji from titles", () => {
@@ -430,43 +444,43 @@ describe("OutputWriter", () => {
 			const longTitle =
 				"これは非常に長いタイトルで最大文字数の制限を超えていますので切り詰められる必要があります";
 			const pageFile = writer.savePage(
-				"https://example.com",
+				"https://example.com/long-article",
 				"# Content",
 				0,
 				[],
 				{ ...defaultMetadata, title: longTitle },
 				null,
 			);
-			// All non-ASCII characters are removed, resulting in sequential number only
-			expect(pageFile).toBe("pages/page-001.md");
+			// All non-ASCII characters are removed from title, falls back to URL path
+			expect(pageFile).toBe("pages/page-001-long-article.md");
 		});
 
-		it("should handle Arabic titles", () => {
+		it("should handle Arabic titles with URL fallback", () => {
 			const writer = new OutputWriter({ ...defaultConfig });
 			const pageFile = writer.savePage(
-				"https://example.com",
+				"https://example.com/getting-started",
 				"# Content",
 				0,
 				[],
 				{ ...defaultMetadata, title: "دليل البدء" },
 				null,
 			);
-			// Non-ASCII characters are removed, resulting in sequential number only
-			expect(pageFile).toBe("pages/page-001.md");
+			// Non-ASCII characters are removed from title, falls back to URL path
+			expect(pageFile).toBe("pages/page-001-getting-started.md");
 		});
 
-		it("should handle Cyrillic titles", () => {
+		it("should handle Cyrillic titles with URL fallback", () => {
 			const writer = new OutputWriter({ ...defaultConfig });
 			const pageFile = writer.savePage(
-				"https://example.com",
+				"https://example.com/start-guide",
 				"# Content",
 				0,
 				[],
 				{ ...defaultMetadata, title: "Руководство по началу работы" },
 				null,
 			);
-			// Non-ASCII characters are removed, resulting in sequential number only
-			expect(pageFile).toBe("pages/page-001.md");
+			// Non-ASCII characters are removed from title, falls back to URL path
+			expect(pageFile).toBe("pages/page-001-start-guide.md");
 		});
 
 		it("should remove all non-ASCII characters from mixed title", () => {
@@ -493,8 +507,171 @@ describe("OutputWriter", () => {
 				{ ...defaultMetadata, title: "日本語のみ" },
 				null,
 			);
-			// All characters are non-ASCII and removed, resulting in empty string
+			// All characters are non-ASCII and removed, URL has no path, resulting in sequential number only
 			expect(pageFile).toBe("pages/page-001.md");
+		});
+	});
+
+	describe("URL-based slug fallback", () => {
+		it("should generate slug from URL path when title is non-ASCII", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
+			const pageFile = writer.savePage(
+				"https://example.com/getting-started",
+				"# Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "はじめに" },
+				null,
+			);
+			expect(pageFile).toBe("pages/page-001-getting-started.md");
+		});
+
+		it("should handle URL with HTML extension", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
+			const pageFile = writer.savePage(
+				"https://example.com/docs/guide.html",
+				"# Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "ガイド" },
+				null,
+			);
+			expect(pageFile).toBe("pages/page-001-guide.md");
+		});
+
+		it("should handle URL with PHP extension", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
+			const pageFile = writer.savePage(
+				"https://example.com/pages/tutorial.php",
+				"# Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "チュートリアル" },
+				null,
+			);
+			expect(pageFile).toBe("pages/page-001-tutorial.md");
+		});
+
+		it("should use sequential number when both title and URL fail", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
+			const pageFile = writer.savePage(
+				"https://example.com/",
+				"# Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "日本語" },
+				null,
+			);
+			expect(pageFile).toBe("pages/page-001.md");
+		});
+
+		it("should handle deeply nested URL paths", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
+			const pageFile = writer.savePage(
+				"https://example.com/docs/api/reference/authentication",
+				"# Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "認証" },
+				null,
+			);
+			expect(pageFile).toBe("pages/page-001-authentication.md");
+		});
+
+		it("should handle URL with query parameters", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
+			const pageFile = writer.savePage(
+				"https://example.com/search?q=test",
+				"# Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "検索結果" },
+				null,
+			);
+			expect(pageFile).toBe("pages/page-001-search.md");
+		});
+
+		it("should handle URL with hash fragment", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
+			const pageFile = writer.savePage(
+				"https://example.com/docs/api#section",
+				"# Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "API ドキュメント" },
+				null,
+			);
+			expect(pageFile).toBe("pages/page-001-api.md");
+		});
+
+		it("should prefer title over URL when title has ASCII characters", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
+			const pageFile = writer.savePage(
+				"https://example.com/getting-started",
+				"# Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "Getting Started - はじめに" },
+				null,
+			);
+			// Title has ASCII characters, so it should be used (non-ASCII removed)
+			expect(pageFile).toBe("pages/page-001-getting-started.md");
+		});
+
+		it("should handle URL with special characters in path", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
+			const pageFile = writer.savePage(
+				"https://example.com/docs/api_reference-v2",
+				"# Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "リファレンス" },
+				null,
+			);
+			expect(pageFile).toBe("pages/page-001-api-reference-v2.md");
+		});
+
+		it("should handle URL path with trailing slash", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
+			const pageFile = writer.savePage(
+				"https://example.com/getting-started/",
+				"# Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "入門" },
+				null,
+			);
+			expect(pageFile).toBe("pages/page-001-getting-started.md");
+		});
+
+		it("should handle URL with index.html", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
+			const pageFile = writer.savePage(
+				"https://example.com/docs/index.html",
+				"# Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "ドキュメント" },
+				null,
+			);
+			// Falls back to "docs" (parent directory) as "index" is too generic
+			expect(pageFile).toBe("pages/page-001-index.md");
+		});
+
+		it("should truncate long URL path segments", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
+			const longPath = "this-is-a-very-long-url-path-segment-that-exceeds-the-maximum-length-limit";
+			const pageFile = writer.savePage(
+				`https://example.com/${longPath}`,
+				"# Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: "長いタイトル" },
+				null,
+			);
+			// Should truncate to 50 characters
+			expect(pageFile.length).toBeLessThanOrEqual("pages/page-001-".length + 50 + ".md".length);
+			expect(pageFile).toMatch(/^pages\/page-\d{3}-[a-z0-9-]+\.md$/);
 		});
 	});
 

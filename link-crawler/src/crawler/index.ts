@@ -411,7 +411,7 @@ export class Crawler {
 			this.logger.logPageSaved(pageFile, depth, links.length);
 		} else {
 			// メモリに保存 (Merger/Chunker用)
-			const pageFile = this.writer.buildPageFilename(metadata, title);
+			const pageFile = this.writer.buildPageFilename(url, metadata, title);
 			const frontmatter = this.writer.buildFrontmatter(url, metadata, title, depth, hash);
 			this.pageContents.set(pageFile, frontmatter + markdown);
 			// writerにもページ情報を追加（ファイルは書き込まない）
