@@ -150,12 +150,12 @@ export class Crawler {
 			// 0. リトライ情報のクリア
 			this.failedUrls.clear();
 
-			// 1. 途中結果を保存
+			// 1. 途中結果を保存（diffモード時のみ）
 			if (this.config.diff) {
 				this.writer.setVisitedUrls(this.visited);
+				const indexPath = this.writer.saveIndex();
+				this.logger.logDebug("Saved partial index", { path: indexPath });
 			}
-			const indexPath = this.writer.saveIndex();
-			this.logger.logDebug("Saved partial index", { path: indexPath });
 
 			// 2. 途中結果からfull.md/chunksを生成（ベストエフォート）
 			try {
