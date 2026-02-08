@@ -26,7 +26,7 @@ const CODE_BLOCK_PRIORITY_SELECTORS = [
 
 /** 一意なマーカーIDを生成 */
 function generateMarkerId(index: number): string {
-	return `CODEBLOCK_${index}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+	return `CODEBLOCK_${index}`;
 }
 
 /** コードブロックを保護（マーカーに置き換え） */
