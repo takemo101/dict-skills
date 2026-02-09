@@ -78,6 +78,7 @@
 ```
 link-crawler/
 ├── SKILL.md                    # piスキル定義
+├── install.sh                  # セットアップスクリプト
 ├── src/
 │   ├── crawl.ts                # エントリーポイント
 │   ├── config.ts               # 設定パース
@@ -134,7 +135,7 @@ link-crawler/
 | `PlaywrightFetcher` | ページ取得 | URL | HTML |
 | `RobotsChecker` | robots.txt のパースとURL許可判定 | robots.txt, URL | boolean |
 | `CrawlLogger` | クロールログ出力（開始、進捗、完了、エラー等） | Config, Events | コンソール出力 |
-| `PostProcessor` | 後処理実行（Merger/Chunkerを呼び出し、ページ内容読み込み、full.md書き込み） | CrawledPages | full.md, chunks/ |
+| `PostProcessor` | 後処理実行（Merger/Chunkerを呼び出し、ページ内容読み込み、full.md書き込み） | CrawledPages | full.md (write), chunks/ (via Chunker) |
 | `Extractor` | 本文抽出 | HTML | ContentHTML |
 | `Converter` | Markdown変換 | ContentHTML | Markdown |
 | `LinksParser` | リンク抽出 | HTML | URLs |

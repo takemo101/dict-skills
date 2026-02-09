@@ -28,6 +28,7 @@ bun run dev --help
 ```
 link-crawler/
 ├── SKILL.md                    # piスキル定義
+├── install.sh                  # セットアップスクリプト
 ├── src/
 │   ├── crawl.ts                # エントリーポイント
 │   ├── config.ts               # 設定パース
