@@ -21,6 +21,7 @@
 | [issue-826-coverage-gitignore-verification.md](./issue-826-coverage-gitignore-verification.md) | #826 | 2026-02-07 | ✅ 解決済み |
 | [issue-917-coverage-verification.md](./issue-917-coverage-verification.md) | #917 | 2026-02-08 | ✅ 解決済み |
 | [issue-966-verification.md](./issue-966-verification.md) | #966 | 2026-02-08 | ✅ 解決済み |
+| [issue-1017-playwright-cli-npm-verification.md](./issue-1017-playwright-cli-npm-verification.md) | #1017 | 2026-02-08 | ✅ 解決済み |
 
 ## 検証内容の概要
 
@@ -41,6 +42,6 @@
 
 ## 関連ドキュメント
 
-- [.gitignore](./.../../.gitignore) - ルートの除外設定
-- [link-crawler/.gitignore](./../../link-crawler/.gitignore) - クローラーの除外設定
+- [.gitignore](../../.gitignore) - ルートの除外設定
+- [link-crawler/.gitignore](../../link-crawler/.gitignore) - クローラーの除外設定
 - [Decision 001](../decisions/001-playwright-cli-session.md) - playwright-cli セッション制約
