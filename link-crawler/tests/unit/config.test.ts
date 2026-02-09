@@ -4,7 +4,7 @@ import { ConfigError } from "../../src/errors.js";
 
 describe("parseConfig", () => {
 	it("should parse config with default values", () => {
-		const config = parseConfig({}, "https://example.com", "test-version");
+		const { config } = parseConfig({}, "https://example.com", "test-version");
 
 		expect(config.startUrl).toBe("https://example.com");
 		expect(config.maxDepth).toBe(1);
@@ -22,7 +22,7 @@ describe("parseConfig", () => {
 	});
 
 	it("should parse config with custom options", () => {
-		const config = parseConfig(
+		const { config } = parseConfig(
 			{
 				depth: 3,
 				output: "./output",
@@ -41,61 +41,61 @@ describe("parseConfig", () => {
 	});
 
 	it("should cap maxDepth at 10", () => {
-		const config = parseConfig({ depth: 100 }, "https://example.com", "test-version");
+		const { config } = parseConfig({ depth: 100 }, "https://example.com", "test-version");
 
 		expect(config.maxDepth).toBe(10);
 	});
 
 	it("should handle depth 0 correctly", () => {
-		const config = parseConfig({ depth: 0 }, "https://example.com", "test-version");
+		const { config } = parseConfig({ depth: 0 }, "https://example.com", "test-version");
 
 		expect(config.maxDepth).toBe(0);
 	});
 
 	it("should handle depth as string '0' correctly", () => {
-		const config = parseConfig({ depth: "0" }, "https://example.com", "test-version");
+		const { config } = parseConfig({ depth: "0" }, "https://example.com", "test-version");
 
 		expect(config.maxDepth).toBe(0);
 	});
 
 	it("should handle delay 0 correctly", () => {
-		const config = parseConfig({ delay: 0 }, "https://example.com", "test-version");
+		const { config } = parseConfig({ delay: 0 }, "https://example.com", "test-version");
 
 		expect(config.delay).toBe(0);
 	});
 
 	it("should handle delay as string '0' correctly", () => {
-		const config = parseConfig({ delay: "0" }, "https://example.com", "test-version");
+		const { config } = parseConfig({ delay: "0" }, "https://example.com", "test-version");
 
 		expect(config.delay).toBe(0);
 	});
 
 	it("should handle timeout 0 correctly", () => {
-		const config = parseConfig({ timeout: 0 }, "https://example.com", "test-version");
+		const { config } = parseConfig({ timeout: 0 }, "https://example.com", "test-version");
 
 		expect(config.timeout).toBe(1000); // Minimum timeout is 1 second
 	});
 
 	it("should handle timeout as string '0' correctly", () => {
-		const config = parseConfig({ timeout: "0" }, "https://example.com", "test-version");
+		const { config } = parseConfig({ timeout: "0" }, "https://example.com", "test-version");
 
 		expect(config.timeout).toBe(1000); // Minimum timeout is 1 second
 	});
 
 	it("should handle spaWait 0 correctly", () => {
-		const config = parseConfig({ wait: 0 }, "https://example.com", "test-version");
+		const { config } = parseConfig({ wait: 0 }, "https://example.com", "test-version");
 
 		expect(config.spaWait).toBe(0);
 	});
 
 	it("should handle spaWait as string '0' correctly", () => {
-		const config = parseConfig({ wait: "0" }, "https://example.com", "test-version");
+		const { config } = parseConfig({ wait: "0" }, "https://example.com", "test-version");
 
 		expect(config.spaWait).toBe(0);
 	});
 
 	it("should parse include/exclude patterns", () => {
-		const config = parseConfig(
+		const { config } = parseConfig(
 			{
 				include: "^/docs",
 				exclude: "\\.pdf$",
@@ -111,37 +111,37 @@ describe("parseConfig", () => {
 	});
 
 	it("should parse keepSession option", () => {
-		const configWithKeep = parseConfig(
+		const { config: configWithKeep } = parseConfig(
 			{ keepSession: true },
 			"https://example.com",
 			"test-version",
 		);
 		expect(configWithKeep.keepSession).toBe(true);
 
-		const configWithoutKeep = parseConfig(
+		const { config: configWithoutKeep } = parseConfig(
 			{ keepSession: false },
 			"https://example.com",
 			"test-version",
 		);
 		expect(configWithoutKeep.keepSession).toBe(false);
 
-		const configDefault = parseConfig({}, "https://example.com", "test-version");
+		const { config: configDefault } = parseConfig({}, "https://example.com", "test-version");
 		expect(configDefault.keepSession).toBe(false);
 	});
 
 	it("should generate site-specific output directory from URL", () => {
-		const config1 = parseConfig({}, "https://nextjs.org/docs", "test-version");
+		const { config: config1 } = parseConfig({}, "https://nextjs.org/docs", "test-version");
 		expect(config1.outputDir).toBe("./.context/nextjs-docs");
 
-		const config2 = parseConfig({}, "https://docs.python.org/3/", "test-version");
+		const { config: config2 } = parseConfig({}, "https://docs.python.org/3/", "test-version");
 		expect(config2.outputDir).toBe("./.context/python-3");
 
-		const config3 = parseConfig({}, "https://www.example.com", "test-version");
+		const { config: config3 } = parseConfig({}, "https://www.example.com", "test-version");
 		expect(config3.outputDir).toBe("./.context/example");
 	});
 
 	it("should allow custom output directory to override default", () => {
-		const config = parseConfig(
+		const { config } = parseConfig(
 			{ output: "./custom-dir" },
 			"https://nextjs.org/docs",
 			"test-version",
@@ -150,7 +150,7 @@ describe("parseConfig", () => {
 	});
 
 	it("should allow legacy ./.context directory to be specified explicitly", () => {
-		const config = parseConfig({ output: "./.context" }, "https://nextjs.org/docs", "test-version");
+		const { config } = parseConfig({ output: "./.context" }, "https://nextjs.org/docs", "test-version");
 		expect(config.outputDir).toBe("./.context");
 	});
 });
@@ -183,7 +183,7 @@ describe("parseConfig - regex pattern validation", () => {
 	});
 
 	it("should continue to work with valid patterns after error fix", () => {
-		const config = parseConfig(
+		const { config } = parseConfig(
 			{
 				include: "^/docs",
 				exclude: "\\.pdf$",
@@ -218,7 +218,55 @@ describe("parseConfig - regex pattern validation", () => {
 });
 
 describe("parseConfig - output format warnings", () => {
-	it("should warn when all output formats are disabled", () => {
+	it("should return warnings when all output formats are disabled", () => {
+		const { warnings } = parseConfig(
+			{ pages: false, merge: false, chunks: false },
+			"https://example.com",
+			"test-version",
+		);
+
+		expect(warnings).toHaveLength(1);
+		expect(warnings[0]).toContain("All output formats are disabled");
+		expect(warnings[0]).toContain("Consider adding --chunks");
+	});
+
+	it("should not return warnings when at least one output format is enabled - pages", () => {
+		const { warnings } = parseConfig(
+			{ pages: true, merge: false, chunks: false },
+			"https://example.com",
+			"test-version",
+		);
+
+		expect(warnings).toHaveLength(0);
+	});
+
+	it("should not return warnings when at least one output format is enabled - merge", () => {
+		const { warnings } = parseConfig(
+			{ pages: false, merge: true, chunks: false },
+			"https://example.com",
+			"test-version",
+		);
+
+		expect(warnings).toHaveLength(0);
+	});
+
+	it("should not return warnings when at least one output format is enabled - chunks", () => {
+		const { warnings } = parseConfig(
+			{ pages: false, merge: false, chunks: true },
+			"https://example.com",
+			"test-version",
+		);
+
+		expect(warnings).toHaveLength(0);
+	});
+
+	it("should not return warnings with default configuration", () => {
+		const { warnings } = parseConfig({}, "https://example.com", "test-version");
+
+		expect(warnings).toHaveLength(0);
+	});
+
+	it("should not call console.warn directly (no side effects)", () => {
 		const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
 		parseConfig(
@@ -226,63 +274,6 @@ describe("parseConfig - output format warnings", () => {
 			"https://example.com",
 			"test-version",
 		);
-
-		expect(consoleSpy).toHaveBeenCalledWith(
-			"⚠️  Warning: All output formats are disabled (--no-pages --no-merge without --chunks).",
-		);
-		expect(consoleSpy).toHaveBeenCalledWith(
-			"   Only index.json will be generated. Consider adding --chunks.",
-		);
-
-		consoleSpy.mockRestore();
-	});
-
-	it("should not warn when at least one output format is enabled - pages", () => {
-		const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-
-		parseConfig(
-			{ pages: true, merge: false, chunks: false },
-			"https://example.com",
-			"test-version",
-		);
-
-		expect(consoleSpy).not.toHaveBeenCalled();
-
-		consoleSpy.mockRestore();
-	});
-
-	it("should not warn when at least one output format is enabled - merge", () => {
-		const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-
-		parseConfig(
-			{ pages: false, merge: true, chunks: false },
-			"https://example.com",
-			"test-version",
-		);
-
-		expect(consoleSpy).not.toHaveBeenCalled();
-
-		consoleSpy.mockRestore();
-	});
-
-	it("should not warn when at least one output format is enabled - chunks", () => {
-		const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-
-		parseConfig(
-			{ pages: false, merge: false, chunks: true },
-			"https://example.com",
-			"test-version",
-		);
-
-		expect(consoleSpy).not.toHaveBeenCalled();
-
-		consoleSpy.mockRestore();
-	});
-
-	it("should not warn with default configuration", () => {
-		const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-
-		parseConfig({}, "https://example.com", "test-version");
 
 		expect(consoleSpy).not.toHaveBeenCalled();
 
@@ -332,40 +323,40 @@ describe("parseConfig - URL validation", () => {
 	});
 
 	it("should accept valid URLs", () => {
-		const config1 = parseConfig({}, "https://example.com", "test-version");
+		const { config: config1 } = parseConfig({}, "https://example.com", "test-version");
 		expect(config1.startUrl).toBe("https://example.com");
 
-		const config2 = parseConfig({}, "http://localhost:3000", "test-version");
+		const { config: config2 } = parseConfig({}, "http://localhost:3000", "test-version");
 		expect(config2.startUrl).toBe("http://localhost:3000");
 
-		const config3 = parseConfig({}, "https://example.com/path/to/page", "test-version");
+		const { config: config3 } = parseConfig({}, "https://example.com/path/to/page", "test-version");
 		expect(config3.startUrl).toBe("https://example.com/path/to/page");
 	});
 });
 
 describe("parseConfig - negative value validation", () => {
 	it("should clamp negative delay to 0", () => {
-		const config = parseConfig({ delay: -100 }, "https://example.com", "test-version");
+		const { config } = parseConfig({ delay: -100 }, "https://example.com", "test-version");
 		expect(config.delay).toBe(0);
 	});
 
 	it("should clamp negative timeout to 1 second (1000ms)", () => {
-		const config = parseConfig({ timeout: -10 }, "https://example.com", "test-version");
+		const { config } = parseConfig({ timeout: -10 }, "https://example.com", "test-version");
 		expect(config.timeout).toBe(1000);
 	});
 
 	it("should clamp negative spaWait to 0", () => {
-		const config = parseConfig({ wait: -500 }, "https://example.com", "test-version");
+		const { config } = parseConfig({ wait: -500 }, "https://example.com", "test-version");
 		expect(config.spaWait).toBe(0);
 	});
 
 	it("should clamp negative depth to 0", () => {
-		const config = parseConfig({ depth: -5 }, "https://example.com", "test-version");
+		const { config } = parseConfig({ depth: -5 }, "https://example.com", "test-version");
 		expect(config.maxDepth).toBe(0);
 	});
 
 	it("should clamp very large negative values appropriately", () => {
-		const config = parseConfig(
+		const { config } = parseConfig(
 			{
 				delay: -999999,
 				timeout: -999999,
@@ -385,37 +376,37 @@ describe("parseConfig - negative value validation", () => {
 
 describe("parseConfig - boundary value validation", () => {
 	it("should allow delay of exactly 0", () => {
-		const config = parseConfig({ delay: 0 }, "https://example.com", "test-version");
+		const { config } = parseConfig({ delay: 0 }, "https://example.com", "test-version");
 		expect(config.delay).toBe(0);
 	});
 
 	it("should allow depth of exactly 0", () => {
-		const config = parseConfig({ depth: 0 }, "https://example.com", "test-version");
+		const { config } = parseConfig({ depth: 0 }, "https://example.com", "test-version");
 		expect(config.maxDepth).toBe(0);
 	});
 
 	it("should allow spaWait of exactly 0", () => {
-		const config = parseConfig({ wait: 0 }, "https://example.com", "test-version");
+		const { config } = parseConfig({ wait: 0 }, "https://example.com", "test-version");
 		expect(config.spaWait).toBe(0);
 	});
 
 	it("should enforce minimum timeout of 1 second (1000ms)", () => {
-		const config = parseConfig({ timeout: 0.5 }, "https://example.com", "test-version");
+		const { config } = parseConfig({ timeout: 0.5 }, "https://example.com", "test-version");
 		expect(config.timeout).toBe(1000);
 	});
 
 	it("should allow timeout of exactly 1 second", () => {
-		const config = parseConfig({ timeout: 1 }, "https://example.com", "test-version");
+		const { config } = parseConfig({ timeout: 1 }, "https://example.com", "test-version");
 		expect(config.timeout).toBe(1000);
 	});
 
 	it("should allow timeout greater than 1 second", () => {
-		const config = parseConfig({ timeout: 5 }, "https://example.com", "test-version");
+		const { config } = parseConfig({ timeout: 5 }, "https://example.com", "test-version");
 		expect(config.timeout).toBe(5000);
 	});
 
 	it("should allow positive values for all numeric options", () => {
-		const config = parseConfig(
+		const { config } = parseConfig(
 			{
 				delay: 100,
 				timeout: 10,
@@ -546,12 +537,12 @@ describe("parseConfig - pattern length limit", () => {
 
 describe("parseConfig - URL scheme validation", () => {
 	it("should accept https URLs", () => {
-		const config = parseConfig({}, "https://example.com", "test-version");
+		const { config } = parseConfig({}, "https://example.com", "test-version");
 		expect(config.startUrl).toBe("https://example.com");
 	});
 
 	it("should accept http URLs", () => {
-		const config = parseConfig({}, "http://localhost:3000", "test-version");
+		const { config } = parseConfig({}, "http://localhost:3000", "test-version");
 		expect(config.startUrl).toBe("http://localhost:3000");
 	});
 
@@ -608,38 +599,38 @@ describe("parseConfig - URL scheme validation", () => {
 
 describe("parseConfig - maxPages validation", () => {
 	it("should set maxPages to null by default (unlimited)", () => {
-		const config = parseConfig({}, "https://example.com", "test-version");
+		const { config } = parseConfig({}, "https://example.com", "test-version");
 		expect(config.maxPages).toBeNull();
 	});
 
 	it("should parse positive integer maxPages", () => {
-		const config = parseConfig({ maxPages: 100 }, "https://example.com", "test-version");
+		const { config } = parseConfig({ maxPages: 100 }, "https://example.com", "test-version");
 		expect(config.maxPages).toBe(100);
 	});
 
 	it("should parse maxPages as string", () => {
-		const config = parseConfig({ maxPages: "50" }, "https://example.com", "test-version");
+		const { config } = parseConfig({ maxPages: "50" }, "https://example.com", "test-version");
 		expect(config.maxPages).toBe(50);
 	});
 
 	it("should set maxPages to null when 0 (unlimited)", () => {
-		const config = parseConfig({ maxPages: 0 }, "https://example.com", "test-version");
+		const { config } = parseConfig({ maxPages: 0 }, "https://example.com", "test-version");
 		expect(config.maxPages).toBeNull();
 	});
 
 	it("should set maxPages to null when negative (unlimited)", () => {
-		const config = parseConfig({ maxPages: -1 }, "https://example.com", "test-version");
+		const { config } = parseConfig({ maxPages: -1 }, "https://example.com", "test-version");
 		expect(config.maxPages).toBeNull();
 
-		const config2 = parseConfig({ maxPages: -100 }, "https://example.com", "test-version");
+		const { config: config2 } = parseConfig({ maxPages: -100 }, "https://example.com", "test-version");
 		expect(config2.maxPages).toBeNull();
 	});
 
 	it("should set maxPages to null when NaN (unlimited)", () => {
-		const config = parseConfig({ maxPages: "abc" }, "https://example.com", "test-version");
+		const { config } = parseConfig({ maxPages: "abc" }, "https://example.com", "test-version");
 		expect(config.maxPages).toBeNull();
 
-		const config2 = parseConfig(
+		const { config: config2 } = parseConfig(
 			{ maxPages: "not-a-number" },
 			"https://example.com",
 			"test-version",
@@ -648,59 +639,59 @@ describe("parseConfig - maxPages validation", () => {
 	});
 
 	it("should floor decimal maxPages values", () => {
-		const config = parseConfig({ maxPages: 42.7 }, "https://example.com", "test-version");
+		const { config } = parseConfig({ maxPages: 42.7 }, "https://example.com", "test-version");
 		expect(config.maxPages).toBe(42);
 
-		const config2 = parseConfig({ maxPages: 99.9 }, "https://example.com", "test-version");
+		const { config: config2 } = parseConfig({ maxPages: 99.9 }, "https://example.com", "test-version");
 		expect(config2.maxPages).toBe(99);
 	});
 
 	it("should handle very large maxPages values", () => {
-		const config = parseConfig({ maxPages: 1000000 }, "https://example.com", "test-version");
+		const { config } = parseConfig({ maxPages: 1000000 }, "https://example.com", "test-version");
 		expect(config.maxPages).toBe(1000000);
 	});
 });
 
 describe("parseConfig - respectRobots validation", () => {
 	it("should set respectRobots to true by default", () => {
-		const config = parseConfig({}, "https://example.com", "test-version");
+		const { config } = parseConfig({}, "https://example.com", "test-version");
 		expect(config.respectRobots).toBe(true);
 	});
 
 	it("should set respectRobots to false when robots option is false", () => {
-		const config = parseConfig({ robots: false }, "https://example.com", "test-version");
+		const { config } = parseConfig({ robots: false }, "https://example.com", "test-version");
 		expect(config.respectRobots).toBe(false);
 	});
 
 	it("should set respectRobots to true when robots option is true", () => {
-		const config = parseConfig({ robots: true }, "https://example.com", "test-version");
+		const { config } = parseConfig({ robots: true }, "https://example.com", "test-version");
 		expect(config.respectRobots).toBe(true);
 	});
 
 	it("should set respectRobots to true when robots option is undefined", () => {
-		const config = parseConfig({ robots: undefined }, "https://example.com", "test-version");
+		const { config } = parseConfig({ robots: undefined }, "https://example.com", "test-version");
 		expect(config.respectRobots).toBe(true);
 	});
 });
 
 describe("parseConfig - upper bound validation", () => {
 	it("should cap delay at MAX_DELAY_MS (60000ms)", () => {
-		const config = parseConfig({ delay: 999999 }, "https://example.com", "test-version");
+		const { config } = parseConfig({ delay: 999999 }, "https://example.com", "test-version");
 		expect(config.delay).toBe(60000);
 	});
 
 	it("should cap timeout at MAX_TIMEOUT_SEC (300 seconds = 300000ms)", () => {
-		const config = parseConfig({ timeout: 999999 }, "https://example.com", "test-version");
+		const { config } = parseConfig({ timeout: 999999 }, "https://example.com", "test-version");
 		expect(config.timeout).toBe(300000);
 	});
 
 	it("should cap spaWait at MAX_SPA_WAIT_MS (30000ms)", () => {
-		const config = parseConfig({ wait: 999999 }, "https://example.com", "test-version");
+		const { config } = parseConfig({ wait: 999999 }, "https://example.com", "test-version");
 		expect(config.spaWait).toBe(30000);
 	});
 
 	it("should allow values below upper bounds", () => {
-		const config = parseConfig(
+		const { config } = parseConfig(
 			{
 				delay: 1000,
 				timeout: 60,
@@ -716,7 +707,7 @@ describe("parseConfig - upper bound validation", () => {
 	});
 
 	it("should handle exact upper bound values", () => {
-		const config = parseConfig(
+		const { config } = parseConfig(
 			{
 				delay: 60000,
 				timeout: 300,
@@ -732,7 +723,7 @@ describe("parseConfig - upper bound validation", () => {
 	});
 
 	it("should cap string values that exceed upper bounds", () => {
-		const config = parseConfig(
+		const { config } = parseConfig(
 			{
 				delay: "999999",
 				timeout: "999999",
