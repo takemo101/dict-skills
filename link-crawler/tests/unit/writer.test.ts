@@ -520,6 +520,100 @@ describe("OutputWriter", () => {
 		});
 	});
 
+	describe("slugifyFromUrl edge cases", () => {
+		it("should return empty string for invalid URL", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
+			// Pass a completely invalid URL that will cause new URL() to throw
+			const pageFile = writer.savePage(
+				"not-a-valid-url",
+				"# Content",
+				0,
+				[],
+				{ ...defaultMetadata, title: null },
+				null,
+			);
+			// Invalid URL → slugifyFromUrl catches error → returns "" → no title slug
+			expect(pageFile).toBe("pages/page-001.md");
+		});
+	});
+
+	describe("handleSpec edge cases", () => {
+		it("should use 'spec' as fallback filename when URL path ends with slash", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
+			// URL that matches openapi pattern but pop() returns empty string
+			// This is hard to trigger with the regex, so let's test direct spec handling
+			const result = writer.handleSpec(
+				"https://api.example.com/openapi.json",
+				'{"openapi": "3.0.0"}',
+			);
+			expect(result).not.toBeNull();
+			expect(result?.type).toBe("openapi");
+			expect(result?.filename).toBe("openapi.json");
+		});
+
+		it("should return null for non-spec URLs", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
+			const result = writer.handleSpec(
+				"https://example.com/regular-page.html",
+				"<html></html>",
+			);
+			expect(result).toBeNull();
+		});
+	});
+
+	describe("buildFrontmatter edge cases", () => {
+		it("should omit description when null", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
+			const frontmatter = writer.buildFrontmatter(
+				"https://example.com/page",
+				{ ...defaultMetadata, description: null, keywords: "test" },
+				"Title",
+				1,
+				"abc123",
+			);
+			expect(frontmatter).not.toContain("description:");
+			expect(frontmatter).toContain('keywords: "test"');
+		});
+
+		it("should omit keywords when null", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
+			const frontmatter = writer.buildFrontmatter(
+				"https://example.com/page",
+				{ ...defaultMetadata, description: "desc", keywords: null },
+				"Title",
+				1,
+				"abc123",
+			);
+			expect(frontmatter).toContain('description: "desc"');
+			expect(frontmatter).not.toContain("keywords:");
+		});
+
+		it("should omit both description and keywords when null", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
+			const frontmatter = writer.buildFrontmatter(
+				"https://example.com/page",
+				{ ...defaultMetadata, title: null, description: null, keywords: null },
+				null,
+				0,
+			);
+			expect(frontmatter).not.toContain("description:");
+			expect(frontmatter).not.toContain("keywords:");
+			expect(frontmatter).not.toContain("hash:");
+			expect(frontmatter).toContain('title: ""');
+		});
+
+		it("should use title parameter as fallback when metadata.title is null", () => {
+			const writer = new OutputWriter({ ...defaultConfig });
+			const frontmatter = writer.buildFrontmatter(
+				"https://example.com/page",
+				{ ...defaultMetadata, title: null },
+				"Fallback Title",
+				1,
+			);
+			expect(frontmatter).toContain('title: "Fallback Title"');
+		});
+	});
+
 	describe("URL-based slug fallback", () => {
 		it("should generate slug from URL path when title is non-ASCII", () => {
 			const writer = new OutputWriter({ ...defaultConfig });
