@@ -10,6 +10,9 @@ export default async function globalTeardown() {
 	// Clean up .tmp-* directories in link-crawler root
 	cleanupTestDirectories(linkCrawlerDir, (entry) => entry.startsWith(".tmp-"), "");
 
+	// Clean up .test-* directories in link-crawler root (e.g. .test-fix-shebang-tmp)
+	cleanupTestDirectories(linkCrawlerDir, (entry) => entry.startsWith(".test-"), "");
+
 	const testsUnitDir = join(linkCrawlerDir, "tests", "unit");
 
 	// Clean up all .test-* directories in tests/unit

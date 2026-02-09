@@ -22,6 +22,14 @@ export default async function globalSetup() {
 		"Cleaned up (pre-test)",
 	);
 
+	// Clean up .test-* directories in link-crawler root (e.g. .test-fix-shebang-tmp)
+	cleanupTestDirectories(
+		linkCrawlerDir,
+		(entry) => entry.startsWith(".test-"),
+		"",
+		"Cleaned up (pre-test)",
+	);
+
 	const testsUnitDir = join(linkCrawlerDir, "tests", "unit");
 
 	// Clean up all .test-* directories in tests/unit
