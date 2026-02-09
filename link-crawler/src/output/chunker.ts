@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { FILENAME } from "../constants.js";
 
 /**
  * Markdownチャンク分割クラス
@@ -92,7 +93,7 @@ export class Chunker {
 		}
 
 		// chunksディレクトリ作成（古いチャンクを削除してから）
-		const chunksDir = join(this.outputDir, "chunks");
+		const chunksDir = join(this.outputDir, FILENAME.CHUNKS_DIR);
 		if (existsSync(chunksDir)) {
 			rmSync(chunksDir, { recursive: true, force: true });
 		}

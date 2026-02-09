@@ -1,5 +1,6 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { FILENAME } from "../constants.js";
 import { Chunker } from "../output/chunker.js";
 import { Merger } from "../output/merger.js";
 import type { CrawlConfig, CrawledPage } from "../types.js";
@@ -53,7 +54,7 @@ export class PostProcessor {
 		// Merger出力 (full.md書き込み)
 		if (this.config.merge && fullMdContent) {
 			this.logger.logMergerStart();
-			const outputPath = join(this.outputDir, "full.md");
+			const outputPath = join(this.outputDir, FILENAME.FULL_MD);
 			writeFileSync(outputPath, fullMdContent);
 			this.logger.logMergerComplete(outputPath);
 		}
