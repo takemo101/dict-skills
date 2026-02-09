@@ -82,10 +82,7 @@ export function parseConfig(
 		excludePattern: parsePattern(options.exclude as string | undefined, "exclude"),
 		delay: Math.min(
 			DEFAULTS.MAX_DELAY_MS,
-			Math.max(
-				0,
-				Number.isNaN(Number(options.delay)) ? DEFAULTS.DELAY_MS : Number(options.delay),
-			),
+			Math.max(0, Number.isNaN(Number(options.delay)) ? DEFAULTS.DELAY_MS : Number(options.delay)),
 		),
 		timeout:
 			Math.min(
@@ -97,10 +94,7 @@ export function parseConfig(
 			) * 1000,
 		spaWait: Math.min(
 			DEFAULTS.MAX_SPA_WAIT_MS,
-			Math.max(
-				0,
-				Number.isNaN(Number(options.wait)) ? DEFAULTS.SPA_WAIT_MS : Number(options.wait),
-			),
+			Math.max(0, Number.isNaN(Number(options.wait)) ? DEFAULTS.SPA_WAIT_MS : Number(options.wait)),
 		),
 		headed: Boolean(options.headed),
 		diff: Boolean(options.diff),

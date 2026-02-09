@@ -55,9 +55,8 @@ export class Crawler {
 		if (fetcher) {
 			this.fetcher = fetcher;
 		} else {
-			this.fetcherPromise = createPlaywrightFetcher(
-				config,
-				(msg, data) => this.logger.logDebug(msg, data),
+			this.fetcherPromise = createPlaywrightFetcher(config, (msg, data) =>
+				this.logger.logDebug(msg, data),
 			);
 		}
 	}
