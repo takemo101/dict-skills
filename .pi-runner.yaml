@@ -24,15 +24,6 @@ auto:
   model: claude-haiku-4-5
 
 workflows:
-  default:
-    description: "Standard workflow - plan, implement, test, review, merge"
-    steps:
-      - plan
-      - implement
-      - test
-      - review
-      - merge
-
   quick:
     description: "Quick validation - linting and type checking only (no tests)"
     steps:
