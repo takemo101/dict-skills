@@ -7,6 +7,9 @@ export default async function globalTeardown() {
 	// Clean up test-output-* directories in link-crawler root
 	cleanupTestDirectories(linkCrawlerDir, (entry) => entry.startsWith("test-output-"), "");
 
+	// Clean up .tmp-* directories in link-crawler root
+	cleanupTestDirectories(linkCrawlerDir, (entry) => entry.startsWith(".tmp-"), "");
+
 	const testsUnitDir = join(linkCrawlerDir, "tests", "unit");
 
 	// Clean up all .test-* directories in tests/unit
