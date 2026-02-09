@@ -34,7 +34,7 @@
 | Linter/Formatter | Biome | 高速、設定シンプル |
 | Test Framework | Vitest | 高速、ESM対応、Bun互換 |
 | CLI Parser | Commander | 軽量、標準的 |
-| Browser | playwright-cli | SPA完全対応、セッション管理 |
+| Browser | @playwright/cli (playwright-cli) | SPA完全対応、セッション管理 |
 | DOM Parser | JSDOM | Node.js標準的なDOM実装 |
 | Content Extractor | @mozilla/readability | Firefox由来、高品質 |
 | Markdown Converter | Turndown | GFM対応、カスタマイズ可能 |
