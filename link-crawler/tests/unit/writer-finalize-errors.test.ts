@@ -7,18 +7,29 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CrawlConfig, Logger, PageMetadata } from "../../src/types.js";
 
+// Type definitions for fs functions
+type RenameSyncFn = (oldPath: string, newPath: string) => void;
+type RmSyncFn = (path: string, options?: { recursive?: boolean; force?: boolean }) => void;
+type ExistsSyncFn = (path: string) => boolean;
+type MkdirSyncFn = (
+	path: string,
+	options?: { recursive?: boolean; mode?: number },
+) => string | undefined;
+type ReaddirSyncFn = (path: string) => string[];
+
 // Mutable interceptors - tests set these to inject errors
-let renameSyncInterceptor: ((...args: any[]) => any) | null = null;
-let rmSyncInterceptor: ((...args: any[]) => any) | null = null;
+let renameSyncInterceptor: RenameSyncFn | null = null;
+let rmSyncInterceptor: RmSyncFn | null = null;
 
 // Store real implementations inside the mock factory to avoid hoisting issues
+// These are initialized in the mock factory below and never null during tests
 const originals = vi.hoisted(() => {
 	return {
-		renameSync: null as any,
-		rmSync: null as any,
-		existsSync: null as any,
-		mkdirSync: null as any,
-		readdirSync: null as any,
+		renameSync: undefined as unknown as RenameSyncFn,
+		rmSync: undefined as unknown as RmSyncFn,
+		existsSync: undefined as unknown as ExistsSyncFn,
+		mkdirSync: undefined as unknown as MkdirSyncFn,
+		readdirSync: undefined as unknown as ReaddirSyncFn,
 	};
 });
 
@@ -33,18 +44,18 @@ vi.mock("node:fs", async (importOriginal) => {
 
 	return {
 		...actual,
-		renameSync: (...args: any[]) => {
+		renameSync: ((oldPath: string, newPath: string) => {
 			if (renameSyncInterceptor) {
-				return renameSyncInterceptor(...args);
+				return renameSyncInterceptor(oldPath, newPath);
 			}
-			return actual.renameSync(args[0], args[1]);
-		},
-		rmSync: (...args: any[]) => {
+			return actual.renameSync(oldPath, newPath);
+		}) as RenameSyncFn,
+		rmSync: ((path: string, options?: { recursive?: boolean; force?: boolean }) => {
 			if (rmSyncInterceptor) {
-				return rmSyncInterceptor(...args);
+				return rmSyncInterceptor(path, options);
 			}
-			return actual.rmSync(args[0], args[1]);
-		},
+			return actual.rmSync(path, options);
+		}) as RmSyncFn,
 	};
 });
 
@@ -103,9 +114,9 @@ describe("OutputWriter finalize() error paths", () => {
 		renameSyncInterceptor = null;
 		rmSyncInterceptor = null;
 		try {
-			const entries = originals.readdirSync(".").filter((e: string) =>
-				e.startsWith("test-finalize-errors"),
-			);
+			const entries = originals
+				.readdirSync(".")
+				.filter((e: string) => e.startsWith("test-finalize-errors"));
 			for (const entry of entries) {
 				originals.rmSync(entry, { recursive: true, force: true });
 			}
@@ -126,13 +137,11 @@ describe("OutputWriter finalize() error paths", () => {
 
 			// Make renameSync fail only for recovery rename (.bak → final)
 			// Throw non-Error to cover the `String(error)` branch in error handling
-			renameSyncInterceptor = (...args: any[]) => {
-				const src = String(args[0]);
-				const dest = String(args[1]);
-				if (src === backupDir && dest === testOutputDir) {
+			renameSyncInterceptor = (oldPath: string, newPath: string) => {
+				if (oldPath === backupDir && newPath === testOutputDir) {
 					throw "Simulated recovery rename failure (string)"; // non-Error value
 				}
-				return originals.renameSync(args[0], args[1]);
+				return originals.renameSync(oldPath, newPath);
 			};
 
 			// finalize should not throw (recovery failure is non-fatal)
@@ -146,7 +155,10 @@ describe("OutputWriter finalize() error paths", () => {
 				"Detected incomplete previous finalization, recovering from backup",
 				expect.any(Object),
 			);
-			expect(logger.logDebug).toHaveBeenCalledWith("Failed to recover from backup", expect.any(Object));
+			expect(logger.logDebug).toHaveBeenCalledWith(
+				"Failed to recover from backup",
+				expect.any(Object),
+			);
 			expect(logger.logDebug).toHaveBeenCalledWith("Output finalized successfully");
 		});
 	});
@@ -155,7 +167,14 @@ describe("OutputWriter finalize() error paths", () => {
 		it("should restore backup and rethrow when promoteTemp fails", () => {
 			// 1. Create existing output
 			const writer1 = new OutputWriter({ ...defaultConfig, diff: false });
-			writer1.savePage("https://example.com/original", "# Original", 0, [], defaultMetadata, "Original");
+			writer1.savePage(
+				"https://example.com/original",
+				"# Original",
+				0,
+				[],
+				defaultMetadata,
+				"Original",
+			);
 			writer1.saveIndex();
 			writer1.finalize();
 
@@ -168,13 +187,11 @@ describe("OutputWriter finalize() error paths", () => {
 			const workingDir = writer2.getWorkingOutputDir();
 
 			// Make renameSync fail when renaming temp → final (promoteTemp)
-			renameSyncInterceptor = (...args: any[]) => {
-				const src = String(args[0]);
-				const dest = String(args[1]);
-				if (src === workingDir && dest === testOutputDir) {
+			renameSyncInterceptor = (oldPath: string, newPath: string) => {
+				if (oldPath === workingDir && newPath === testOutputDir) {
 					throw new Error("Simulated promoteTemp rename failure");
 				}
-				return originals.renameSync(args[0], args[1]);
+				return originals.renameSync(oldPath, newPath);
 			};
 
 			// finalize should throw (promoteTemp failure is fatal)
@@ -194,7 +211,14 @@ describe("OutputWriter finalize() error paths", () => {
 		it("should handle promoteTemp failure when backup restore also fails", () => {
 			// 1. Create existing output
 			const writer1 = new OutputWriter({ ...defaultConfig, diff: false });
-			writer1.savePage("https://example.com/original", "# Original", 0, [], defaultMetadata, "Original");
+			writer1.savePage(
+				"https://example.com/original",
+				"# Original",
+				0,
+				[],
+				defaultMetadata,
+				"Original",
+			);
 			writer1.saveIndex();
 			writer1.finalize();
 
@@ -209,27 +233,24 @@ describe("OutputWriter finalize() error paths", () => {
 			let backupDone = false;
 
 			// Allow backup, fail promoteTemp and backup restore
-			renameSyncInterceptor = (...args: any[]) => {
-				const src = String(args[0]);
-				const dest = String(args[1]);
-
+			renameSyncInterceptor = (oldPath: string, newPath: string) => {
 				// backupExistingOutput: final → .bak (allow once)
-				if (dest === backupDir && !backupDone) {
+				if (newPath === backupDir && !backupDone) {
 					backupDone = true;
-					return originals.renameSync(args[0], args[1]);
+					return originals.renameSync(oldPath, newPath);
 				}
 
 				// promoteTemp: temp → final (fail)
-				if (src === workingDir && dest === testOutputDir) {
+				if (oldPath === workingDir && newPath === testOutputDir) {
 					throw new Error("Simulated promoteTemp failure");
 				}
 
 				// backup restore: .bak → final (fail)
-				if (src === backupDir && dest === testOutputDir) {
+				if (oldPath === backupDir && newPath === testOutputDir) {
 					throw new Error("Simulated backup restore failure");
 				}
 
-				return originals.renameSync(args[0], args[1]);
+				return originals.renameSync(oldPath, newPath);
 			};
 
 			// Should still throw the original promoteTemp error
@@ -248,7 +269,14 @@ describe("OutputWriter finalize() error paths", () => {
 		it("should silently handle removeBackup failure (non-fatal)", () => {
 			// 1. Create existing output
 			const writer1 = new OutputWriter({ ...defaultConfig, diff: false });
-			writer1.savePage("https://example.com/original", "# Original", 0, [], defaultMetadata, "Original");
+			writer1.savePage(
+				"https://example.com/original",
+				"# Original",
+				0,
+				[],
+				defaultMetadata,
+				"Original",
+			);
 			writer1.saveIndex();
 			writer1.finalize();
 
@@ -261,12 +289,11 @@ describe("OutputWriter finalize() error paths", () => {
 			const backupDir = `${testOutputDir}.bak`;
 
 			// Make rmSync fail for backup removal (throw non-Error to cover String(error) branch)
-			rmSyncInterceptor = (...args: any[]) => {
-				const target = String(args[0]);
-				if (target === backupDir) {
+			rmSyncInterceptor = (path: string, options?: { recursive?: boolean; force?: boolean }) => {
+				if (path === backupDir) {
 					throw "Simulated rmSync failure (string)"; // non-Error value
 				}
-				return originals.rmSync(args[0], args[1]);
+				return originals.rmSync(path, options);
 			};
 
 			// finalize should NOT throw (removeBackup failure is non-fatal)

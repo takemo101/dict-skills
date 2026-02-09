@@ -1265,7 +1265,10 @@ describe("OutputWriter", () => {
 			writer.savePage("https://example.com/page", "# Content", 0, [], defaultMetadata, "Test");
 			writer.cleanup();
 
-			expect(logger.logDebug).toHaveBeenCalledWith("Temporary output cleaned up", expect.any(Object));
+			expect(logger.logDebug).toHaveBeenCalledWith(
+				"Temporary output cleaned up",
+				expect.any(Object),
+			);
 		});
 
 		it("should recover from incomplete finalization (.bak exists, final doesn't)", () => {
