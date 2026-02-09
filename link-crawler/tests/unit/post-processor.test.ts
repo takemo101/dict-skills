@@ -63,8 +63,6 @@ describe("PostProcessor", () => {
 		mockLogger = {
 			logStart: vi.fn(),
 			logLoadedHashes: vi.fn(),
-			logLoadedIndex: vi.fn(),
-			logIndexLoadFailed: vi.fn(),
 			logCrawlStart: vi.fn(),
 			logPageSaved: vi.fn(),
 			logSkipped: vi.fn(),
@@ -77,7 +75,6 @@ describe("PostProcessor", () => {
 			logChunkerStart: vi.fn(),
 			logChunkerComplete: vi.fn(),
 			logComplete: vi.fn(),
-			getSkippedCount: vi.fn().mockReturnValue(0),
 			logDebug: vi.fn(),
 		} as unknown as CrawlLogger;
 	});

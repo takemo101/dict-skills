@@ -43,16 +43,6 @@ export class CrawlLogger implements Logger {
 		}
 	}
 
-	/** 既存index.json読み込みログ */
-	logLoadedIndex(count: number): void {
-		console.log(`  📂 Loaded existing index.json: ${count} pages`);
-	}
-
-	/** index.json読み込み失敗ログ */
-	logIndexLoadFailed(): void {
-		console.log("  ⚠️ Failed to load existing index.json (will create new)");
-	}
-
 	/** index.json形式エラーログ */
 	logIndexFormatError(indexPath: string): void {
 		console.warn(`[WARN] Invalid index.json format at ${indexPath}`);
@@ -142,11 +132,6 @@ export class CrawlLogger implements Logger {
 		}
 		console.log(`   Specs: ${specsCount}`);
 		console.log(`   Index: ${indexPath}`);
-	}
-
-	/** スキップカウントを取得 */
-	getSkippedCount(): number {
-		return this.skippedCount;
 	}
 
 	/** 警告ログ */

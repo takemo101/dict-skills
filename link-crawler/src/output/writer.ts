@@ -82,11 +82,6 @@ export class OutputWriter {
 		mkdirSync(specsDir, { recursive: true });
 	}
 
-	/** 既存ページのハッシュを取得 */
-	getExistingHash(url: string): string | undefined {
-		return this.indexManager.getExistingHash(url);
-	}
-
 	/** API仕様ファイルを検出・保存 */
 	handleSpec(url: string, content: string): { type: string; filename: string } | null {
 		for (const [type, pattern] of Object.entries(SPEC_PATTERNS)) {

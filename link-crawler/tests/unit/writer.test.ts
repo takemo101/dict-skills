@@ -95,43 +95,6 @@ describe("OutputWriter", () => {
 		expect(hash1).toBe(hash2);
 	});
 
-	it("should read existing index.json", () => {
-		// Create initial index.json
-		mkdirSync(join(testOutputDir, "pages"), { recursive: true });
-		mkdirSync(join(testOutputDir, "specs"), { recursive: true });
-
-		const existingResult: CrawlResult = {
-			crawledAt: "2026-01-01T00:00:00.000Z",
-			baseUrl: "https://example.com",
-			config: { maxDepth: 2, sameDomain: true },
-			totalPages: 1,
-			pages: [
-				{
-					url: "https://example.com/existing",
-					title: "Existing Page",
-					file: "pages/page-001.md",
-					depth: 0,
-					links: [],
-					metadata: defaultMetadata,
-					hash: "abc123",
-					crawledAt: "2026-01-01T00:00:00.000Z",
-				},
-			],
-			specs: [],
-		};
-
-		writeFileSync(join(testOutputDir, "index.json"), JSON.stringify(existingResult, null, 2));
-
-		// Create new writer in diff mode that should read existing index
-		const writer = new OutputWriter({ ...defaultConfig, diff: true });
-
-		const existingHash = writer.getExistingHash("https://example.com/existing");
-		expect(existingHash).toBe("abc123");
-
-		const nonExistingHash = writer.getExistingHash("https://example.com/new");
-		expect(nonExistingHash).toBeUndefined();
-	});
-
 	it("should save index.json with hash and crawledAt fields", () => {
 		const writer = new OutputWriter({ ...defaultConfig });
 		writer.savePage("https://example.com", "# Content", 0, [], defaultMetadata, "Title");
