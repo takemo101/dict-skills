@@ -93,7 +93,9 @@ link-crawler/
 │   │   ├── post-processor.test.ts
 │   │   ├── robots.test.ts
 │   │   ├── runtime.test.ts
+│   │   ├── signal-handler.test.ts
 │   │   ├── site-name.test.ts
+│   │   ├── writer-finalize-errors.test.ts
 │   │   └── writer.test.ts
 │   └── integration/             # 統合テスト
 │       ├── crawler.test.ts
