@@ -1,27 +1,5 @@
-import { readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
-
-/**
- * Clean up test directories matching the given pattern in the specified directory
- */
-function cleanupTestDirectories(
-	baseDir: string,
-	pattern: (entry: string) => boolean,
-	relativePath: string,
-) {
-	try {
-		const entries = readdirSync(baseDir);
-		for (const entry of entries) {
-			if (pattern(entry)) {
-				const fullPath = join(baseDir, entry);
-				rmSync(fullPath, { recursive: true, force: true });
-				console.log(`✓ Cleaned up: ${relativePath}${entry}`);
-			}
-		}
-	} catch (error) {
-		console.warn(`Warning: Failed to clean up in ${relativePath}`, error);
-	}
-}
+import { cleanupTestDirectories } from "./test-utils.js";
 
 export default async function globalTeardown() {
 	const linkCrawlerDir = join(import.meta.dirname, "..");
