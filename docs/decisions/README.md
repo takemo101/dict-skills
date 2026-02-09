@@ -19,6 +19,7 @@ NNN-問題名.md
 | [005](005-issue-581-unreachable-code.md) | extractor.ts ブランチカバレッジ改善 | 解決済み |
 | [006](006-skill-output-directory.md) | スキル実行時の出力ディレクトリ問題 | 有効 |
 | [007](007-coverage-already-untracked.md) | カバレッジディレクトリは既に未追跡 | 解決済み |
+| [008](008-issue-1077-already-resolved.md) | Issue #1077 は PR #1065/#1067 で解決済み | 解決済み |
 
 ## 記録すべき内容
 
