@@ -153,16 +153,22 @@ function getTextWithoutLineNumbers(el: Element): string {
 	// 行区切り要素（div.line など）の閉じタグを改行に変換
 	html = html.replace(/<\/div>/gi, "\n");
 	// 残りのタグを除去して textContent 相当を取得
-	return html
-		.replace(/<[^>]+>/g, "")
-		.replace(/&amp;/g, "&")
-		.replace(/&lt;/g, "<")
-		.replace(/&gt;/g, ">")
-		.replace(/&quot;/g, '"')
-		.replace(/&#39;/g, "'")
-		.replace(/&nbsp;/g, " ")
-		.replace(/\n{2,}/g, "\n") // 連続改行を1つに
-		.trim();
+	return (
+		html
+			.replace(/<[^>]+>/g, "")
+			// 数値エンティティの汎用デコード（名前付きエンティティより前に処理）
+			.replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
+			.replace(/&#(\d+);/g, (_, dec) => String.fromCodePoint(parseInt(dec, 10)))
+			// 名前付きエンティティのデコード
+			.replace(/&amp;/g, "&")
+			.replace(/&lt;/g, "<")
+			.replace(/&gt;/g, ">")
+			.replace(/&quot;/g, '"')
+			.replace(/&#39;/g, "'")
+			.replace(/&nbsp;/g, " ")
+			.replace(/\n{2,}/g, "\n") // 連続改行を1つに
+			.trim()
+	);
 }
 
 /** コード要素から実際のコード内容を抽出（行番号を除去） */

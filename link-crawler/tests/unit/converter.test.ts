@@ -462,4 +462,37 @@ describe("htmlToMarkdown - syntax highlighter support", () => {
 		expect(result).toContain('console.log("hello");');
 		expect(result).not.toContain("1console");
 	});
+
+	it("should decode decimal numeric HTML entities in code blocks with line numbers", () => {
+		const html = `
+			<pre><code class="torchlight">
+				<div class="line"><span class="line-number">1</span><span>if (a &#60; b &#38;&#38; c &#62; d) &#123;</span></div>
+				<div class="line"><span class="line-number">2</span><span>    return &#34;hello&#34;;</span></div>
+				<div class="line"><span class="line-number">3</span><span>&#125;</span></div>
+			</code></pre>
+		`;
+		const result = htmlToMarkdown(html);
+
+		expect(result).toContain("if (a < b && c > d) {");
+		expect(result).toContain('return "hello";');
+		expect(result).toContain("}");
+		expect(result).not.toContain("&#60;");
+		expect(result).not.toContain("&#123;");
+		expect(result).not.toContain("&#125;");
+	});
+
+	it("should decode hexadecimal numeric HTML entities in code blocks with line numbers", () => {
+		const html = `
+			<pre><code class="torchlight">
+				<div class="line"><span class="line-number">1</span><span>const obj = &#x7B; key: &#x22;value&#x22; &#x7D;;</span></div>
+				<div class="line"><span class="line-number">2</span><span>if (x &#x3C; 10) &#x7B; return; &#x7D;</span></div>
+			</code></pre>
+		`;
+		const result = htmlToMarkdown(html);
+
+		expect(result).toContain('const obj = { key: "value" };');
+		expect(result).toContain("if (x < 10) { return; }");
+		expect(result).not.toContain("&#x7B;");
+		expect(result).not.toContain("&#x3C;");
+	});
 });
