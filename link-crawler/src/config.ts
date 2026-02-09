@@ -66,7 +66,7 @@ export function parseConfig(
 	}
 
 	// Generate site-specific output directory if not specified
-	const defaultOutputDir = `./.context/${generateSiteName(startUrl)}`;
+	const defaultOutputDir = `${DEFAULTS.OUTPUT_DIR}/${generateSiteName(startUrl)}`;
 	const outputDir = String(options.output || defaultOutputDir);
 
 	// Parse depth value safely (handle 0 correctly)
