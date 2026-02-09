@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CrawlLogger } from "../../src/crawler/logger.js";
@@ -434,8 +434,14 @@ This is the second page content.`;
 				createPage("https://example.com/page2", "Page 2", "pages/page-002.md"),
 			];
 			const contents = new Map([
-				["pages/page-001.md", "---\nurl: https://example.com/page1\n---\n\n# Page 1\n\nContent from memory A"],
-				["pages/page-002.md", "---\nurl: https://example.com/page2\n---\n\n# Page 2\n\nContent from memory B"],
+				[
+					"pages/page-001.md",
+					"---\nurl: https://example.com/page1\n---\n\n# Page 1\n\nContent from memory A",
+				],
+				[
+					"pages/page-002.md",
+					"---\nurl: https://example.com/page2\n---\n\n# Page 2\n\nContent from memory B",
+				],
 			]);
 
 			await processor.process(pages, contents);
@@ -471,12 +477,8 @@ This is the second page content.`;
 			const config = { ...baseConfig, pages: false, merge: false, chunks: true };
 			const processor = new PostProcessor(config, config.outputDir, mockLogger);
 
-			const pages = [
-				createPage("https://example.com/page1", "Page 1", "pages/page-001.md"),
-			];
-			const contents = new Map([
-				["pages/page-001.md", "# Page 1\n\nIn-memory only content"],
-			]);
+			const pages = [createPage("https://example.com/page1", "Page 1", "pages/page-001.md")];
+			const contents = new Map([["pages/page-001.md", "# Page 1\n\nIn-memory only content"]]);
 
 			await processor.process(pages, contents);
 
