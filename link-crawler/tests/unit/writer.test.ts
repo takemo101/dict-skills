@@ -8,9 +8,9 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { OutputWriter } from "../../src/output/writer.js";
-import type { CrawlConfig, CrawlResult, PageMetadata } from "../../src/types.js";
+import type { CrawlConfig, CrawlResult, Logger, PageMetadata } from "../../src/types.js";
 
 const testOutputDir = "./test-output-writer";
 
@@ -1222,6 +1222,52 @@ describe("OutputWriter", () => {
 			expect(existsSync(backupDir)).toBe(false);
 		});
 
+		it("should log messages during successful finalize with logger", () => {
+			const logger = {
+				logIndexFormatError: vi.fn(),
+				logIndexLoadError: vi.fn(),
+				logDebug: vi.fn(),
+			};
+
+			const writer = new OutputWriter({ ...defaultConfig, diff: false }, logger);
+			writer.savePage("https://example.com/page", "# Content", 0, [], defaultMetadata, "Test");
+			writer.saveIndex();
+			writer.finalize();
+
+			// Verify finalize logged start and completion messages
+			expect(logger.logDebug).toHaveBeenCalledWith("Finalizing output", expect.any(Object));
+			expect(logger.logDebug).toHaveBeenCalledWith("Output finalized successfully");
+		});
+
+		it("should build frontmatter without hash when not provided", () => {
+			const writer = new OutputWriter({ ...defaultConfig, diff: false });
+			const frontmatter = writer.buildFrontmatter(
+				"https://example.com/page",
+				defaultMetadata,
+				"Test Title",
+				1,
+				// hash is undefined
+			);
+
+			expect(frontmatter).toContain("url: https://example.com/page");
+			expect(frontmatter).toContain('title: "Test Page"');
+			expect(frontmatter).not.toContain("hash:");
+		});
+
+		it("should log cleanup message with logger", () => {
+			const logger = {
+				logIndexFormatError: vi.fn(),
+				logIndexLoadError: vi.fn(),
+				logDebug: vi.fn(),
+			};
+
+			const writer = new OutputWriter({ ...defaultConfig, diff: false }, logger);
+			writer.savePage("https://example.com/page", "# Content", 0, [], defaultMetadata, "Test");
+			writer.cleanup();
+
+			expect(logger.logDebug).toHaveBeenCalledWith("Temporary output cleaned up", expect.any(Object));
+		});
+
 		it("should recover from incomplete finalization (.bak exists, final doesn't)", () => {
 			// 1. 初回クロールで既存データを作成
 			const writer1 = new OutputWriter({ ...defaultConfig, diff: false });
@@ -1245,8 +1291,13 @@ describe("OutputWriter", () => {
 			expect(existsSync(testOutputDir)).toBe(false);
 			expect(existsSync(backupDir)).toBe(true);
 
-			// 3. 新しいクロールでリカバリが発動するはず
-			const writer2 = new OutputWriter({ ...defaultConfig, diff: false });
+			// 3. 新しいクロールでリカバリが発動するはず（loggerを渡してカバレッジ向上）
+			const logger: Logger = {
+				logIndexFormatError: vi.fn(),
+				logIndexLoadError: vi.fn(),
+				logDebug: vi.fn(),
+			};
+			const writer2 = new OutputWriter({ ...defaultConfig, diff: false }, logger);
 			writer2.savePage(
 				"https://example.com/new",
 				"# New Content",
@@ -1261,6 +1312,13 @@ describe("OutputWriter", () => {
 			// 4. リカバリが成功し、新しいコンテンツで置き換わっていることを確認
 			expect(existsSync(testOutputDir)).toBe(true);
 			expect(existsSync(backupDir)).toBe(false);
+
+			// リカバリのログが出力されていることを確認
+			expect(logger.logDebug).toHaveBeenCalledWith(
+				"Detected incomplete previous finalization, recovering from backup",
+				expect.any(Object),
+			);
+			expect(logger.logDebug).toHaveBeenCalledWith("Successfully recovered from backup");
 
 			const newPagePath = join(testOutputDir, "pages/page-001-new.md");
 			expect(readFileSync(newPagePath, "utf-8")).toContain("# New Content");
