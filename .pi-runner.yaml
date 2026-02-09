@@ -14,7 +14,7 @@ agent:
     - --provider
     - anthropic
     - --model
-    - claude-sonnet-4-5
+    - claude-opus-4-6
 
 parallel:
   max_concurrent: 10
@@ -39,6 +39,13 @@ workflows:
       - plan
       - implement
       - review
+    agent:
+      type: pi
+      args:
+        - --provider
+        - anthropic
+        - --model
+        - claude-sonnet-4-20250514
     context: |
       Bun + TypeScript crawler project. Quick workflow for rapid feedback.
       Working directory: link-crawler/
@@ -52,6 +59,11 @@ workflows:
       - test
       - review
       - merge
+    agent:
+      type: opencode
+      args:
+        - -m
+        - anthropic/claude-opus-4-6
     context: |
       Bun + TypeScript web crawler (dict-skills).
 
@@ -139,6 +151,13 @@ workflows:
       - plan
       - implement
       - review
+    agent:
+      type: pi
+      args:
+        - --provider
+        - anthropic
+        - --model
+        - claude-sonnet-4-20250514
     context: |
       Documentation workflow for dict-skills.
 
