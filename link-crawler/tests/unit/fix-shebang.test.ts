@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 describe("fix-shebang.js", () => {
-	const tmpDir = join(import.meta.dirname, "../../.tmp-fix-shebang-test");
+	const tmpDir = join(import.meta.dirname, "../../.test-fix-shebang-tmp");
 	const distDir = join(tmpDir, "dist");
 	const distFile = join(distDir, "crawl.js");
 	const scriptsDir = join(tmpDir, "scripts");
