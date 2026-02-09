@@ -70,6 +70,7 @@ link-crawler/
 ├── tests/                       # テストファイル
 │   ├── global-setup.ts          # テスト全体のセットアップ
 │   ├── global-teardown.ts       # テスト全体のクリーンアップ
+│   ├── test-utils.ts            # テスト共通ユーティリティ
 │   ├── unit/                    # ユニットテスト
 │   │   ├── chunker.test.ts
 │   │   ├── cli-options.test.ts
