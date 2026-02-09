@@ -350,14 +350,18 @@ export class Crawler {
 		// 1. JSDOM生成
 		const dom = new JSDOM(html, { url });
 
-		// 2. ページ解析
-		const parsed = this.parsePage(dom);
+		try {
+			// 2. ページ解析
+			const parsed = this.parsePage(dom);
 
-		// 3. 保存処理
-		this.processAndSavePage(url, parsed, depth);
+			// 3. 保存処理
+			this.processAndSavePage(url, parsed, depth);
 
-		// 4. 再帰クロール
-		await this.crawlLinks(parsed.links, depth);
+			// 4. 再帰クロール
+			await this.crawlLinks(parsed.links, depth);
+		} finally {
+			dom.window.close();
+		}
 	}
 
 	/** ページ解析: メタデータ・リンク・コンテンツの抽出と変換 */
