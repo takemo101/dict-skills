@@ -553,10 +553,7 @@ describe("OutputWriter", () => {
 
 		it("should return null for non-spec URLs", () => {
 			const writer = new OutputWriter({ ...defaultConfig });
-			const result = writer.handleSpec(
-				"https://example.com/regular-page.html",
-				"<html></html>",
-			);
+			const result = writer.handleSpec("https://example.com/regular-page.html", "<html></html>");
 			expect(result).toBeNull();
 		});
 	});
