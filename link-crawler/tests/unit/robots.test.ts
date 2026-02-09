@@ -274,6 +274,33 @@ Disallow: */private
 				expect(checker.isAllowed("https://example.com/docs/private")).toBe(false);
 				expect(checker.isAllowed("https://example.com/public")).toBe(true);
 			});
+
+			it("should handle wildcard at the beginning with exact end", () => {
+				const robotsTxt = `
+User-agent: *
+Disallow: *.pdf$
+				`.trim();
+
+				const checker = new RobotsChecker(robotsTxt);
+				// * で始まるパターン: 先頭の前方一致チェックをスキップし、任意位置でマッチ
+				expect(checker.isAllowed("https://example.com/doc.pdf")).toBe(false);
+				expect(checker.isAllowed("https://example.com/a/b/c.pdf")).toBe(false);
+				expect(checker.isAllowed("https://example.com/doc.txt")).toBe(true);
+				expect(checker.isAllowed("https://example.com/doc.pdf.bak")).toBe(true);
+			});
+
+			it("should handle wildcard-only at the beginning (no prefix match required)", () => {
+				const robotsTxt = `
+User-agent: *
+Disallow: */api/*/internal
+				`.trim();
+
+				const checker = new RobotsChecker(robotsTxt);
+				// * で始まるパターン: パスの任意位置から /api/*/internal にマッチ
+				expect(checker.isAllowed("https://example.com/api/v1/internal")).toBe(false);
+				expect(checker.isAllowed("https://example.com/prefix/api/v2/internal")).toBe(false);
+				expect(checker.isAllowed("https://example.com/api/v1/public")).toBe(true);
+			});
 		});
 
 		describe("End-of-line ($) patterns", () => {

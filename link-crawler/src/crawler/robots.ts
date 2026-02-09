@@ -185,7 +185,10 @@ export class RobotsChecker {
 			const isFirstSegment = i === 0;
 			const isLastSegment = i === segments.length - 1;
 
-			// 空のセグメントはスキップ（連続する ** の場合など）
+			// 空のセグメントはスキップ
+			// - パターンが * で始まる場合: 先頭セグメントが空文字列となり、
+			//   isFirstSegment の前方一致チェックが不要になる（意図通り）
+			// - 連続する ** の場合: 中間の空セグメントをスキップ
 			if (segment.length === 0) {
 				continue;
 			}
