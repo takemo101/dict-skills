@@ -150,7 +150,11 @@ describe("parseConfig", () => {
 	});
 
 	it("should allow legacy ./.context directory to be specified explicitly", () => {
-		const { config } = parseConfig({ output: "./.context" }, "https://nextjs.org/docs", "test-version");
+		const { config } = parseConfig(
+			{ output: "./.context" },
+			"https://nextjs.org/docs",
+			"test-version",
+		);
 		expect(config.outputDir).toBe("./.context");
 	});
 });
@@ -622,7 +626,11 @@ describe("parseConfig - maxPages validation", () => {
 		const { config } = parseConfig({ maxPages: -1 }, "https://example.com", "test-version");
 		expect(config.maxPages).toBeNull();
 
-		const { config: config2 } = parseConfig({ maxPages: -100 }, "https://example.com", "test-version");
+		const { config: config2 } = parseConfig(
+			{ maxPages: -100 },
+			"https://example.com",
+			"test-version",
+		);
 		expect(config2.maxPages).toBeNull();
 	});
 
@@ -642,7 +650,11 @@ describe("parseConfig - maxPages validation", () => {
 		const { config } = parseConfig({ maxPages: 42.7 }, "https://example.com", "test-version");
 		expect(config.maxPages).toBe(42);
 
-		const { config: config2 } = parseConfig({ maxPages: 99.9 }, "https://example.com", "test-version");
+		const { config: config2 } = parseConfig(
+			{ maxPages: 99.9 },
+			"https://example.com",
+			"test-version",
+		);
 		expect(config2.maxPages).toBe(99);
 	});
 
