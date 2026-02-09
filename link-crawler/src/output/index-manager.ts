@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { FILENAME } from "../constants.js";
 import type { CrawledPage, CrawlResult, Logger, PageMetadata } from "../types.js";
 
 /**
@@ -56,7 +57,7 @@ export class IndexManager {
 	 * 既存のindex.jsonを読み込む
 	 */
 	private loadExistingIndex(): void {
-		const indexPath = join(this.outputDir, "index.json");
+		const indexPath = join(this.outputDir, FILENAME.INDEX_JSON);
 		if (!existsSync(indexPath)) {
 			return;
 		}
@@ -201,7 +202,7 @@ export class IndexManager {
 		// totalPages を pages.length から算出
 		this.result.totalPages = this.result.pages.length;
 
-		const indexPath = join(this.outputDir, "index.json");
+		const indexPath = join(this.outputDir, FILENAME.INDEX_JSON);
 		writeFileSync(indexPath, JSON.stringify(this.result, null, 2));
 		return indexPath;
 	}
