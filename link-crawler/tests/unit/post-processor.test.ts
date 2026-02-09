@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CrawlLogger } from "../../src/crawler/logger.js";
@@ -383,6 +383,110 @@ This is the second page content.`;
 			expect(content).toContain("Content 1");
 			expect(content).toContain("Content 2");
 			expect(content).toContain("Content 3");
+		});
+	});
+
+	describe("--no-pages + --chunks (in-memory content path)", () => {
+		it("should generate chunks from in-memory content when --no-pages --no-merge --chunks", async () => {
+			const config = { ...baseConfig, pages: false, merge: false, chunks: true };
+			const processor = new PostProcessor(config, config.outputDir, mockLogger);
+
+			const pages = [
+				createPage("https://example.com/page1", "Page 1", "pages/page-001.md"),
+				createPage("https://example.com/page2", "Page 2", "pages/page-002.md"),
+			];
+			const contents = new Map([
+				["pages/page-001.md", "---\nurl: https://example.com/page1\n---\n\n# Page 1\n\nContent 1"],
+				["pages/page-002.md", "---\nurl: https://example.com/page2\n---\n\n# Page 2\n\nContent 2"],
+			]);
+
+			await processor.process(pages, contents);
+
+			// chunks/ ディレクトリにファイルが生成されることを検証
+			const chunksDir = join(testOutputDir, "chunks");
+			expect(existsSync(chunksDir)).toBe(true);
+			const chunkFiles = readdirSync(chunksDir).filter((f) => f.endsWith(".md"));
+			expect(chunkFiles.length).toBeGreaterThan(0);
+
+			// チャンク内容にページコンテンツが含まれることを検証
+			const allChunkContent = chunkFiles
+				.map((f) => readFileSync(join(chunksDir, f), "utf-8"))
+				.join("\n");
+			expect(allChunkContent).toContain("Content 1");
+			expect(allChunkContent).toContain("Content 2");
+
+			// full.md が生成されないことを検証
+			const fullMdPath = join(testOutputDir, "full.md");
+			expect(existsSync(fullMdPath)).toBe(false);
+
+			// merger は呼ばれないが chunker は呼ばれる
+			expect(mockLogger.logMergerStart).not.toHaveBeenCalled();
+			expect(mockLogger.logChunkerStart).toHaveBeenCalled();
+			expect(mockLogger.logChunkerComplete).toHaveBeenCalled();
+		});
+
+		it("should generate full.md and chunks from in-memory content when --no-pages --merge --chunks", async () => {
+			const config = { ...baseConfig, pages: false, merge: true, chunks: true };
+			const processor = new PostProcessor(config, config.outputDir, mockLogger);
+
+			const pages = [
+				createPage("https://example.com/page1", "Page 1", "pages/page-001.md"),
+				createPage("https://example.com/page2", "Page 2", "pages/page-002.md"),
+			];
+			const contents = new Map([
+				["pages/page-001.md", "---\nurl: https://example.com/page1\n---\n\n# Page 1\n\nContent from memory A"],
+				["pages/page-002.md", "---\nurl: https://example.com/page2\n---\n\n# Page 2\n\nContent from memory B"],
+			]);
+
+			await processor.process(pages, contents);
+
+			// full.md が生成されることを検証
+			const fullMdPath = join(testOutputDir, "full.md");
+			expect(existsSync(fullMdPath)).toBe(true);
+			const fullContent = readFileSync(fullMdPath, "utf-8");
+			expect(fullContent).toContain("Content from memory A");
+			expect(fullContent).toContain("Content from memory B");
+
+			// chunks/ ディレクトリにファイルが生成されることを検証
+			const chunksDir = join(testOutputDir, "chunks");
+			expect(existsSync(chunksDir)).toBe(true);
+			const chunkFiles = readdirSync(chunksDir).filter((f) => f.endsWith(".md"));
+			expect(chunkFiles.length).toBeGreaterThan(0);
+
+			// チャンク内容にページコンテンツが含まれることを検証
+			const allChunkContent = chunkFiles
+				.map((f) => readFileSync(join(chunksDir, f), "utf-8"))
+				.join("\n");
+			expect(allChunkContent).toContain("Content from memory A");
+			expect(allChunkContent).toContain("Content from memory B");
+
+			// merger と chunker 両方が呼ばれる
+			expect(mockLogger.logMergerStart).toHaveBeenCalled();
+			expect(mockLogger.logMergerComplete).toHaveBeenCalled();
+			expect(mockLogger.logChunkerStart).toHaveBeenCalled();
+			expect(mockLogger.logChunkerComplete).toHaveBeenCalled();
+		});
+
+		it("should not create page files on disk when --no-pages", async () => {
+			const config = { ...baseConfig, pages: false, merge: false, chunks: true };
+			const processor = new PostProcessor(config, config.outputDir, mockLogger);
+
+			const pages = [
+				createPage("https://example.com/page1", "Page 1", "pages/page-001.md"),
+			];
+			const contents = new Map([
+				["pages/page-001.md", "# Page 1\n\nIn-memory only content"],
+			]);
+
+			await processor.process(pages, contents);
+
+			// pages/ ディレクトリにファイルが作成されていないことを検証
+			const pageFile = join(testOutputDir, "pages", "page-001.md");
+			expect(existsSync(pageFile)).toBe(false);
+
+			// chunks は生成される
+			const chunksDir = join(testOutputDir, "chunks");
+			expect(existsSync(chunksDir)).toBe(true);
 		});
 	});
 
