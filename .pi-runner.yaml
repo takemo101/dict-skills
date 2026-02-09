@@ -183,16 +183,18 @@ plans:
   keep_recent: 10
   dir: docs/plans
 
-improve_logs:
-  keep_recent: 10
-  keep_days: 7
-  dir: .improve-logs
+improve:
+  logs:
+    keep_recent: 10
+    keep_days: 7
+    dir: ".improve-logs"
 
 github:
   include_comments: true
   max_comments: 10
 
 hooks:
+  allow_inline: true
   on_success: |
     osascript -e 'display notification "Issue #'"$PI_ISSUE_NUMBER"' が完了しました" with title "Pi Issue Runner" subtitle "✅ 完了" sound name "Glass"'
 
