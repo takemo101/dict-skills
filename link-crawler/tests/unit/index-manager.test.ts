@@ -34,8 +34,9 @@ describe("IndexManager", () => {
 				sameDomain: true,
 			});
 
-			expect(manager.getTotalPages()).toBe(0);
-			expect(manager.getSpecsCount()).toBe(0);
+			const result = manager.getResult();
+			expect(result.pages.length).toBe(0);
+			expect(result.specs.length).toBe(0);
 		});
 
 		it("should load existing index.json", async () => {
@@ -72,7 +73,7 @@ describe("IndexManager", () => {
 				sameDomain: true,
 			});
 
-			expect(manager.getExistingPageCount()).toBe(1);
+			expect(manager.getExistingHashes().size).toBe(1);
 			expect(manager.getExistingHash("https://example.com/page1")).toBe("abc123");
 		});
 	});
@@ -84,7 +85,7 @@ describe("IndexManager", () => {
 				sameDomain: true,
 			});
 
-			expect(manager.getExistingPageCount()).toBe(0);
+			expect(manager.getExistingHashes().size).toBe(0);
 			expect(manager.getExistingHash("https://example.com/unknown")).toBeUndefined();
 		});
 
@@ -104,7 +105,7 @@ describe("IndexManager", () => {
 				mockLogger,
 			);
 
-			expect(manager.getExistingPageCount()).toBe(0);
+			expect(manager.getExistingHashes().size).toBe(0);
 			expect(mockLogger.logIndexLoadError).toHaveBeenCalledTimes(1);
 			expect(mockLogger.logIndexLoadError).toHaveBeenCalledWith(expect.any(String));
 		});
@@ -125,7 +126,7 @@ describe("IndexManager", () => {
 				sameDomain: true,
 			});
 
-			expect(manager.getExistingPageCount()).toBe(0);
+			expect(manager.getExistingHashes().size).toBe(0);
 		});
 
 		it("should handle pages property not being an array", async () => {
@@ -152,7 +153,7 @@ describe("IndexManager", () => {
 				mockLogger,
 			);
 
-			expect(manager.getExistingPageCount()).toBe(0);
+			expect(manager.getExistingHashes().size).toBe(0);
 			expect(mockLogger.logIndexFormatError).toHaveBeenCalledWith(
 				expect.stringContaining(join(testDir, "index.json")),
 			);
@@ -181,7 +182,7 @@ describe("IndexManager", () => {
 				mockLogger,
 			);
 
-			expect(manager.getExistingPageCount()).toBe(0);
+			expect(manager.getExistingHashes().size).toBe(0);
 			expect(mockLogger.logIndexFormatError).toHaveBeenCalledWith(
 				expect.stringContaining(join(testDir, "index.json")),
 			);
@@ -203,7 +204,7 @@ describe("IndexManager", () => {
 				mockLogger,
 			);
 
-			expect(manager.getExistingPageCount()).toBe(0);
+			expect(manager.getExistingHashes().size).toBe(0);
 			expect(mockLogger.logIndexFormatError).toHaveBeenCalledWith(
 				expect.stringContaining(join(testDir, "index.json")),
 			);
@@ -225,7 +226,7 @@ describe("IndexManager", () => {
 				mockLogger,
 			);
 
-			expect(manager.getExistingPageCount()).toBe(0);
+			expect(manager.getExistingHashes().size).toBe(0);
 			expect(mockLogger.logIndexFormatError).toHaveBeenCalledWith(
 				expect.stringContaining(join(testDir, "index.json")),
 			);
@@ -455,40 +456,6 @@ describe("IndexManager", () => {
 		});
 	});
 
-	describe("getExistingPageCount", () => {
-		it("should return count of existing pages", async () => {
-			const indexData = {
-				crawledAt: "2025-01-01T00:00:00.000Z",
-				baseUrl: "https://example.com",
-				config: {},
-				totalPages: 3,
-				pages: [
-					{ url: "https://example.com/page1", hash: "hash1" },
-					{ url: "https://example.com/page2", hash: "hash2" },
-					{ url: "https://example.com/page3", hash: "hash3" },
-				],
-				specs: [],
-			};
-			writeFileSync(join(testDir, "index.json"), JSON.stringify(indexData));
-
-			const manager = new IndexManager(testDir, "https://example.com", {
-				maxDepth: 2,
-				sameDomain: true,
-			});
-
-			expect(manager.getExistingPageCount()).toBe(3);
-		});
-
-		it("should return 0 when no existing index", () => {
-			const manager = new IndexManager(testDir, "https://example.com", {
-				maxDepth: 2,
-				sameDomain: true,
-			});
-
-			expect(manager.getExistingPageCount()).toBe(0);
-		});
-	});
-
 	describe("getNextPageNumber", () => {
 		it("should return 1 for new manager", () => {
 			const manager = new IndexManager(testDir, "https://example.com", {
@@ -586,7 +553,7 @@ describe("IndexManager", () => {
 				ogType: null,
 			};
 
-			expect(manager.getTotalPages()).toBe(0);
+			expect(manager.getResult().pages.length).toBe(0);
 			manager.registerPage(
 				"https://example.com/page1",
 				"pages/page-001.md",
@@ -596,7 +563,7 @@ describe("IndexManager", () => {
 				"Page 1",
 				"hash1",
 			);
-			expect(manager.getTotalPages()).toBe(1);
+			expect(manager.getResult().pages.length).toBe(1);
 			manager.registerPage(
 				"https://example.com/page2",
 				"pages/page-002.md",
@@ -606,7 +573,7 @@ describe("IndexManager", () => {
 				"Page 2",
 				"hash2",
 			);
-			expect(manager.getTotalPages()).toBe(2);
+			expect(manager.getResult().pages.length).toBe(2);
 		});
 
 		it("should use metadata.title over title parameter when available", () => {
@@ -671,9 +638,9 @@ describe("IndexManager", () => {
 				sameDomain: true,
 			});
 
-			expect(manager.getSpecsCount()).toBe(0);
+			expect(manager.getResult().specs.length).toBe(0);
 			manager.addSpec("https://example.com/openapi.yaml", "openapi", "specs/openapi.yaml");
-			expect(manager.getSpecsCount()).toBe(1);
+			expect(manager.getResult().specs.length).toBe(1);
 		});
 
 		it("should add multiple specs", () => {
@@ -685,7 +652,7 @@ describe("IndexManager", () => {
 			manager.addSpec("https://example.com/openapi.yaml", "openapi", "specs/openapi.yaml");
 			manager.addSpec("https://example.com/schema.json", "jsonSchema", "specs/schema.json");
 
-			expect(manager.getSpecsCount()).toBe(2);
+			expect(manager.getResult().specs.length).toBe(2);
 		});
 	});
 

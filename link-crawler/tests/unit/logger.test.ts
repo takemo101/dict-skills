@@ -107,17 +107,6 @@ describe("CrawlLogger", () => {
 			expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining("⏭️  Skipped (unchanged)"));
 		});
 
-		it("should increment skipped count when called", () => {
-			const logger = new CrawlLogger(baseConfig);
-			expect(logger.getSkippedCount()).toBe(0);
-
-			logger.logSkipped(0);
-			expect(logger.getSkippedCount()).toBe(1);
-
-			logger.logSkipped(1);
-			expect(logger.getSkippedCount()).toBe(2);
-		});
-
 		it("should use correct indentation for depth 1", () => {
 			const logger = new CrawlLogger(baseConfig);
 			logger.logSkipped(1);
@@ -192,21 +181,6 @@ describe("CrawlLogger", () => {
 		});
 	});
 
-	describe("getSkippedCount", () => {
-		it("should return 0 initially", () => {
-			const logger = new CrawlLogger(baseConfig);
-			expect(logger.getSkippedCount()).toBe(0);
-		});
-
-		it("should return correct count after multiple skips", () => {
-			const logger = new CrawlLogger(baseConfig);
-			logger.logSkipped(0);
-			logger.logSkipped(1);
-			logger.logSkipped(2);
-			expect(logger.getSkippedCount()).toBe(3);
-		});
-	});
-
 	describe("other log methods", () => {
 		it("should log loaded hashes when count > 0", () => {
 			const logger = new CrawlLogger(baseConfig);
@@ -222,24 +196,6 @@ describe("CrawlLogger", () => {
 			logger.logLoadedHashes(0);
 
 			expect(consoleLogSpy).not.toHaveBeenCalled();
-		});
-
-		it("should log loaded index", () => {
-			const logger = new CrawlLogger(baseConfig);
-			logger.logLoadedIndex(3);
-
-			expect(consoleLogSpy).toHaveBeenCalledWith(
-				expect.stringContaining("📂 Loaded existing index.json: 3 pages"),
-			);
-		});
-
-		it("should log index load failure", () => {
-			const logger = new CrawlLogger(baseConfig);
-			logger.logIndexLoadFailed();
-
-			expect(consoleLogSpy).toHaveBeenCalledWith(
-				expect.stringContaining("⚠️ Failed to load existing index.json"),
-			);
 		});
 
 		it("should log index format error", () => {

@@ -103,13 +103,6 @@ export class IndexManager {
 	}
 
 	/**
-	 * 既存ページ数を取得
-	 */
-	getExistingPageCount(): number {
-		return this.existingPages.size;
-	}
-
-	/**
 	 * 次のページ番号を取得
 	 */
 	getNextPageNumber(): number {
@@ -214,19 +207,5 @@ export class IndexManager {
 		// totalPages を pages.length と同期
 		this.result.totalPages = this.result.pages.length;
 		return this.result;
-	}
-
-	/**
-	 * 登録済みページ数を取得
-	 */
-	getTotalPages(): number {
-		return this.result.pages.length;
-	}
-
-	/**
-	 * 登録済み仕様ファイル数を取得
-	 */
-	getSpecsCount(): number {
-		return this.result.specs.length;
 	}
 }

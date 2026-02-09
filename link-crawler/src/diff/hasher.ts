@@ -1,11 +1,5 @@
 import { createHash } from "node:crypto";
 
-/** ページハッシュマップ型 */
-export interface PageHash {
-	url: string;
-	hash: string;
-}
-
 /**
  * コンテンツのSHA256ハッシュを計算
  * @param content ハッシュ計算対象の文字列

@@ -1,1 +1,1 @@
-export { computeHash, Hasher, type PageHash } from "./hasher.js";
+export { computeHash, Hasher } from "./hasher.js";
