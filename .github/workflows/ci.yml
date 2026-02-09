@@ -47,3 +47,17 @@ jobs:
       - run: bun install
       - run: npm install -g @playwright/cli
       - run: bun run test:coverage
+
+  shellcheck:
+    name: ShellCheck
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: "./scripts"
+          additional_files: "link-crawler/install.sh"
