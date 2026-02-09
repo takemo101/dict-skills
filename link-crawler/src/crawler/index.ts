@@ -352,7 +352,7 @@ export class Crawler {
 
 		try {
 			// 2. ページ解析
-			const parsed = this.parsePage(url, dom, depth);
+			const parsed = this.parsePage(dom);
 
 			// 3. 保存処理
 			this.processAndSavePage(url, parsed, depth);
@@ -365,7 +365,7 @@ export class Crawler {
 	}
 
 	/** ページ解析: メタデータ・リンク・コンテンツの抽出と変換 */
-	private parsePage(_url: string, dom: JSDOM, _depth: number): ParsedPage {
+	private parsePage(dom: JSDOM): ParsedPage {
 		// メタデータ抽出
 		const metadata = extractMetadata(dom);
 		this.logger.logDebug("Metadata extracted", {
