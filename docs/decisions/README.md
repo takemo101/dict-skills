@@ -18,6 +18,7 @@ NNN-問題名.md
 | [004](004-issue-965-duplicate.md) | Issue #965 は Issue #961 と重複 | 解決済み |
 | [005](005-issue-581-unreachable-code.md) | extractor.ts ブランチカバレッジ改善 | 解決済み |
 | [006](006-skill-output-directory.md) | スキル実行時の出力ディレクトリ問題 | 有効 |
+| [007](007-coverage-already-untracked.md) | カバレッジディレクトリは既に未追跡 | 解決済み |
 
 ## 記録すべき内容
 
