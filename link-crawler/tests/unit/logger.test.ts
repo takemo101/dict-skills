@@ -368,6 +368,17 @@ describe("CrawlLogger", () => {
 		});
 	});
 
+	describe("logWarning", () => {
+		it("should log warning message via console.warn with emoji prefix", () => {
+			const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+			const logger = new CrawlLogger(baseConfig);
+			logger.logWarning("All output formats are disabled.");
+
+			expect(consoleWarnSpy).toHaveBeenCalledWith("⚠️  All output formats are disabled.");
+			consoleWarnSpy.mockRestore();
+		});
+	});
+
 	describe("debug logging", () => {
 		it("should respect debug parameter when explicitly set to true", () => {
 			const logger = new CrawlLogger(baseConfig, true);

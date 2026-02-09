@@ -6,6 +6,7 @@ import { program } from "commander";
 import { parseConfig } from "./config.js";
 import { EXIT_CODES } from "./constants.js";
 import { Crawler } from "./crawler/index.js";
+import { CrawlLogger } from "./crawler/logger.js";
 import { handleError } from "./error-handler.js";
 import { SignalHandler } from "./signal-handler.js";
 
@@ -62,7 +63,16 @@ async function main(): Promise<void> {
 
 	signalHandler.install();
 
-	const config = parseConfig(options, startUrl, packageJson.version);
+	const { config, warnings } = parseConfig(options, startUrl, packageJson.version);
+
+	// 設定パース時の警告を CrawlLogger 経由で出力
+	if (warnings.length > 0) {
+		const logger = new CrawlLogger(config);
+		for (const warning of warnings) {
+			logger.logWarning(warning);
+		}
+	}
+
 	crawler = new Crawler(config);
 	await crawler.run();
 }

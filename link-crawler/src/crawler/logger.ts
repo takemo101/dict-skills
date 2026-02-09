@@ -149,6 +149,11 @@ export class CrawlLogger implements Logger {
 		return this.skippedCount;
 	}
 
+	/** 警告ログ */
+	logWarning(message: string): void {
+		console.warn(`⚠️  ${message}`);
+	}
+
 	/** デバッグログ（DEBUG=1時のみ） */
 	logDebug(message: string, data?: unknown): void {
 		if (this.debug) {

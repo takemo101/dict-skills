@@ -4,6 +4,15 @@ import type { CrawlConfig } from "./types.js";
 import { generateSiteName } from "./utils/site-name.js";
 
 /**
+ * parseConfig の戻り値
+ * config パース結果と、呼び出し側で表示すべき警告メッセージを含む
+ */
+export interface ParseConfigResult {
+	config: CrawlConfig;
+	warnings: string[];
+}
+
+/**
  * Parse a regex pattern string into a RegExp object
  * @param pattern - The regex pattern string
  * @param name - The name of the pattern (for error messages)
@@ -39,7 +48,7 @@ export function parseConfig(
 	options: Record<string, unknown>,
 	startUrl: string,
 	version: string,
-): CrawlConfig {
+): ParseConfigResult {
 	// Validate startUrl format
 	let parsed: URL;
 	try {
@@ -106,13 +115,13 @@ export function parseConfig(
 		version,
 	};
 
-	// Warn when all output formats are disabled
+	// Collect warnings (output is delegated to the caller via CrawlLogger)
+	const warnings: string[] = [];
 	if (!config.pages && !config.merge && !config.chunks) {
-		console.warn(
-			"⚠️  Warning: All output formats are disabled (--no-pages --no-merge without --chunks).",
+		warnings.push(
+			"All output formats are disabled (--no-pages --no-merge without --chunks). Only index.json will be generated. Consider adding --chunks.",
 		);
-		console.warn("   Only index.json will be generated. Consider adding --chunks.");
 	}
 
-	return config;
+	return { config, warnings };
 }
