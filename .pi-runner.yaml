@@ -45,7 +45,7 @@ workflows:
         - --provider
         - anthropic
         - --model
-        - claude-sonnet-4-20250514
+        - claude-sonnet-4-5
     context: |
       Bun + TypeScript crawler project. Quick workflow for rapid feedback.
       Working directory: link-crawler/
@@ -157,7 +157,7 @@ workflows:
         - --provider
         - anthropic
         - --model
-        - claude-sonnet-4-20250514
+        - claude-sonnet-4-5
     context: |
       Documentation workflow for dict-skills.
 
