@@ -126,7 +126,7 @@ describe("OutputWriter finalize() error paths", () => {
 	});
 
 	describe("recoverFromIncompleteFinalization - rename failure", () => {
-		it("should continue finalize when recovery rename fails", () => {
+		it("should continue finalize when recovery rename fails (non-Error thrown)", () => {
 			const backupDir = `${testOutputDir}.bak`;
 			originals.mkdirSync(backupDir, { recursive: true });
 
@@ -160,6 +160,34 @@ describe("OutputWriter finalize() error paths", () => {
 				expect.any(Object),
 			);
 			expect(logger.logDebug).toHaveBeenCalledWith("Output finalized successfully");
+		});
+
+		it("should continue finalize when recovery rename fails (Error thrown)", () => {
+			const backupDir = `${testOutputDir}.bak`;
+			originals.mkdirSync(backupDir, { recursive: true });
+
+			const logger = createMockLogger();
+			const writer = new OutputWriter({ ...defaultConfig, diff: false }, logger);
+			writer.savePage("https://example.com/page", "# Content", 0, [], defaultMetadata, "Test");
+			writer.saveIndex();
+
+			// Throw an Error object to cover the `error.message` branch
+			renameSyncInterceptor = (oldPath: string, newPath: string) => {
+				if (oldPath === backupDir && newPath === testOutputDir) {
+					throw new Error("Simulated recovery rename failure (Error)");
+				}
+				return originals.renameSync(oldPath, newPath);
+			};
+
+			expect(() => writer.finalize()).not.toThrow();
+			expect(originals.existsSync(testOutputDir)).toBe(true);
+
+			expect(logger.logDebug).toHaveBeenCalledWith(
+				"Failed to recover from backup",
+				expect.objectContaining({
+					error: "Simulated recovery rename failure (Error)",
+				}),
+			);
 		});
 	});
 
@@ -204,6 +232,48 @@ describe("OutputWriter finalize() error paths", () => {
 			expect(logger.logDebug).toHaveBeenCalledWith(
 				"Failed to rename temp directory, restoring backup",
 				expect.any(Object),
+			);
+			expect(logger.logDebug).toHaveBeenCalledWith("Restored backup after finalize failure");
+		});
+
+		it("should restore backup when promoteTemp fails with non-Error value", () => {
+			// 1. Create existing output
+			const writer1 = new OutputWriter({ ...defaultConfig, diff: false });
+			writer1.savePage(
+				"https://example.com/original",
+				"# Original",
+				0,
+				[],
+				defaultMetadata,
+				"Original",
+			);
+			writer1.saveIndex();
+			writer1.finalize();
+
+			// 2. Create new writer with logger
+			const logger = createMockLogger();
+			const writer2 = new OutputWriter({ ...defaultConfig, diff: false }, logger);
+			writer2.savePage("https://example.com/new", "# New", 0, [], defaultMetadata, "New");
+			writer2.saveIndex();
+
+			const workingDir = writer2.getWorkingOutputDir();
+
+			// Throw non-Error to cover `String(error)` branch in promoteTemp
+			renameSyncInterceptor = (oldPath: string, newPath: string) => {
+				if (oldPath === workingDir && newPath === testOutputDir) {
+					throw "Simulated promoteTemp failure (string)"; // non-Error value
+				}
+				return originals.renameSync(oldPath, newPath);
+			};
+
+			expect(() => writer2.finalize()).toThrow();
+
+			// Verify logger logged the error with String(error) path
+			expect(logger.logDebug).toHaveBeenCalledWith(
+				"Failed to rename temp directory, restoring backup",
+				expect.objectContaining({
+					error: "Simulated promoteTemp failure (string)",
+				}),
 			);
 			expect(logger.logDebug).toHaveBeenCalledWith("Restored backup after finalize failure");
 		});
@@ -263,6 +333,55 @@ describe("OutputWriter finalize() error paths", () => {
 			);
 			expect(logger.logDebug).toHaveBeenCalledWith("Failed to restore backup", expect.any(Object));
 		});
+
+		it("should handle promoteTemp failure when backup restore fails with non-Error", () => {
+			// 1. Create existing output
+			const writer1 = new OutputWriter({ ...defaultConfig, diff: false });
+			writer1.savePage(
+				"https://example.com/original",
+				"# Original",
+				0,
+				[],
+				defaultMetadata,
+				"Original",
+			);
+			writer1.saveIndex();
+			writer1.finalize();
+
+			// 2. Create new writer with logger
+			const logger = createMockLogger();
+			const writer2 = new OutputWriter({ ...defaultConfig, diff: false }, logger);
+			writer2.savePage("https://example.com/new", "# New", 0, [], defaultMetadata, "New");
+			writer2.saveIndex();
+
+			const workingDir = writer2.getWorkingOutputDir();
+			const backupDir = `${testOutputDir}.bak`;
+			let backupDone = false;
+
+			renameSyncInterceptor = (oldPath: string, newPath: string) => {
+				if (newPath === backupDir && !backupDone) {
+					backupDone = true;
+					return originals.renameSync(oldPath, newPath);
+				}
+				if (oldPath === workingDir && newPath === testOutputDir) {
+					throw new Error("Simulated promoteTemp failure");
+				}
+				// backup restore fails with non-Error to cover String(restoreError) branch
+				if (oldPath === backupDir && newPath === testOutputDir) {
+					throw "Simulated backup restore failure (string)"; // non-Error value
+				}
+				return originals.renameSync(oldPath, newPath);
+			};
+
+			expect(() => writer2.finalize()).toThrow("Simulated promoteTemp failure");
+
+			expect(logger.logDebug).toHaveBeenCalledWith(
+				"Failed to restore backup",
+				expect.objectContaining({
+					error: "Simulated backup restore failure (string)",
+				}),
+			);
+		});
 	});
 
 	describe("removeBackup - rmSync failure", () => {
@@ -306,6 +425,47 @@ describe("OutputWriter finalize() error paths", () => {
 			expect(logger.logDebug).toHaveBeenCalledWith(
 				"Failed to remove backup (non-fatal)",
 				expect.any(Object),
+			);
+		});
+
+		it("should silently handle removeBackup failure with Error object", () => {
+			// 1. Create existing output
+			const writer1 = new OutputWriter({ ...defaultConfig, diff: false });
+			writer1.savePage(
+				"https://example.com/original",
+				"# Original",
+				0,
+				[],
+				defaultMetadata,
+				"Original",
+			);
+			writer1.saveIndex();
+			writer1.finalize();
+
+			// 2. Create new writer with logger
+			const logger = createMockLogger();
+			const writer2 = new OutputWriter({ ...defaultConfig, diff: false }, logger);
+			writer2.savePage("https://example.com/new", "# New", 0, [], defaultMetadata, "New");
+			writer2.saveIndex();
+
+			const backupDir = `${testOutputDir}.bak`;
+
+			// Throw Error object to cover `error.message` branch in removeBackup
+			rmSyncInterceptor = (path: string, options?: { recursive?: boolean; force?: boolean }) => {
+				if (path === backupDir) {
+					throw new Error("Simulated rmSync failure (Error)");
+				}
+				return originals.rmSync(path, options);
+			};
+
+			expect(() => writer2.finalize()).not.toThrow();
+			expect(originals.existsSync(testOutputDir)).toBe(true);
+
+			expect(logger.logDebug).toHaveBeenCalledWith(
+				"Failed to remove backup (non-fatal)",
+				expect.objectContaining({
+					error: "Simulated rmSync failure (Error)",
+				}),
 			);
 		});
 	});
