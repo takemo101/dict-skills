@@ -212,3 +212,6 @@ hooks:
 
   on_review_complete: |
     osascript -e 'display notification "レビュー完了: '"$PI_REVIEW_ISSUES_COUNT"' 件の問題を発見" with title "Pi Issue Runner" subtitle "🔍 レビュー完了" sound name "Tink"'
+
+watcher:
+  force_cleanup_on_timeout: true
