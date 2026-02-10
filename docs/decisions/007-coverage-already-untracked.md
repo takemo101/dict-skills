@@ -1,4 +1,4 @@
-# 001: Coverage Directory Already Untracked (2026-02-09)
+# 007: Coverage Directory Already Untracked (2026-02-09)
 
 ## 問題
 
