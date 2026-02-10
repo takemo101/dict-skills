@@ -796,7 +796,7 @@ const chunkPaths = chunker.chunkAndWrite(fullMarkdown);
 
 | エラー種別 | 検知方法 | 対応 |
 |-----------|---------|------|
-| playwright-cli未インストール | `which` 失敗 | exit 3、インストール手順表示 |
+| playwright-cli未インストール | `PATHS` 定数の候補を順次 `spawn --version` で試行、全失敗 | exit 3、インストール手順表示 |
 | ネットワークエラー | fetch例外 | ログ出力、スキップ、続行 |
 | タイムアウト | playwright-cli タイムアウト | ログ出力、スキップ、続行 |
 | パースエラー | Readability失敗 | フォールバック抽出、警告ログ |
