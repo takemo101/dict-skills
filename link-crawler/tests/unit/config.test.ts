@@ -658,9 +658,24 @@ describe("parseConfig - maxPages validation", () => {
 		expect(config2.maxPages).toBe(99);
 	});
 
-	it("should handle very large maxPages values", () => {
+	it("should cap very large maxPages at MAX_PAGES_LIMIT (10000)", () => {
 		const { config } = parseConfig({ maxPages: 1000000 }, "https://example.com", "test-version");
-		expect(config.maxPages).toBe(1000000);
+		expect(config.maxPages).toBe(10000);
+	});
+
+	it("should allow maxPages at exactly MAX_PAGES_LIMIT", () => {
+		const { config } = parseConfig({ maxPages: 10000 }, "https://example.com", "test-version");
+		expect(config.maxPages).toBe(10000);
+	});
+
+	it("should allow maxPages below MAX_PAGES_LIMIT", () => {
+		const { config } = parseConfig({ maxPages: 9999 }, "https://example.com", "test-version");
+		expect(config.maxPages).toBe(9999);
+	});
+
+	it("should cap string maxPages exceeding MAX_PAGES_LIMIT", () => {
+		const { config } = parseConfig({ maxPages: "99999" }, "https://example.com", "test-version");
+		expect(config.maxPages).toBe(10000);
 	});
 });
 

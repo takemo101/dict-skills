@@ -79,7 +79,9 @@ export function parseConfig(
 	// Parse maxPages value safely (0 or negative = unlimited)
 	const maxPagesValue = Number(options.maxPages);
 	const maxPages =
-		Number.isNaN(maxPagesValue) || maxPagesValue <= 0 ? null : Math.floor(maxPagesValue);
+		Number.isNaN(maxPagesValue) || maxPagesValue <= 0
+			? null
+			: Math.min(DEFAULTS.MAX_PAGES_LIMIT, Math.floor(maxPagesValue));
 
 	const config: CrawlConfig = {
 		startUrl,
