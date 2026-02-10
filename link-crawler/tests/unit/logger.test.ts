@@ -97,6 +97,21 @@ describe("CrawlLogger", () => {
 
 			expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining("Chunks: yes"));
 		});
+
+		it("should log respectRobots as respect when true", () => {
+			const logger = new CrawlLogger(baseConfig);
+			logger.logStart();
+
+			expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining("Robots.txt: respect"));
+		});
+
+		it("should log respectRobots as ignore when false", () => {
+			const configNoRobots = { ...baseConfig, respectRobots: false };
+			const logger = new CrawlLogger(configNoRobots);
+			logger.logStart();
+
+			expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining("Robots.txt: ignore"));
+		});
 	});
 
 	describe("logSkipped", () => {
