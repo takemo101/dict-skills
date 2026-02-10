@@ -117,6 +117,9 @@ link-crawler/
 │       ├── runtime.ts          # ランタイムアダプター
 │       └── site-name.ts        # サイト名生成
 │
+├── scripts/
+│   └── fix-shebang.js           # ビルド後のshebang修正スクリプト
+│
 ├── package.json
 ├── tsconfig.json
 ├── biome.json
