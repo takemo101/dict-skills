@@ -38,15 +38,6 @@ export class Hasher {
 	}
 
 	/**
-	 * 既存のハッシュを取得
-	 * @param url 対象URL
-	 * @returns ハッシュ値、存在しなければundefined
-	 */
-	getHash(url: string): string | undefined {
-		return this.hashes.get(url);
-	}
-
-	/**
 	 * 読み込まれたハッシュの数を取得
 	 */
 	get size(): number {

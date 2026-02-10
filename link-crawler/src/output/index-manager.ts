@@ -80,15 +80,6 @@ export class IndexManager {
 	}
 
 	/**
-	 * 既存ページのハッシュを取得
-	 * @param url 対象URL
-	 * @returns ハッシュ値、存在しなければundefined
-	 */
-	getExistingHash(url: string): string | undefined {
-		return this.existingPages.get(url)?.hash;
-	}
-
-	/**
 	 * 既存の全ハッシュを取得
 	 * @returns URL → ハッシュのMap
 	 */
