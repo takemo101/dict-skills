@@ -645,6 +645,41 @@ if (hasher.isChanged(url, newHash)) {
 
 ## 9. 出力処理
 
+### 9.0 PostProcessor（後処理統括）
+
+#### 設計意図
+
+クロール完了後の後処理（Merger/Chunkerの呼び出し）を一元管理します。これにより：
+
+- 後処理フローを一箇所に集約
+- Merger/Chunkerの呼び出しロジックをカプセル化
+- ページ内容の読み込み（ディスク/メモリ）を適切に処理
+
+#### 主要インターフェース
+
+```typescript
+class PostProcessor {
+  constructor(config: CrawlConfig, outputDir: string, logger?: CrawlLogger)
+  process(pages: CrawledPage[], pageContents?: Map<string, string>): void
+}
+```
+
+**メソッドの役割:**
+- `process()`: ページ内容の読み込み、Merger による結合、Chunker による分割を実行
+  - `pageContents` 引数: `--no-pages` 時にメモリ上のコンテンツを受け取る（省略可能）
+
+**処理フロー:**
+
+1. ページ内容の読み込み
+   - `--pages` 時: ディスクから各ページファイルを読み込み
+   - `--no-pages` 時: 引数 `pageContents` から取得
+2. Merger による結合（`--merge` または `--chunks` 時）
+   - `buildFullContent()` でメモリ上にコンテンツを生成
+3. full.md 書き込み（`--merge` 時）
+4. Chunker による分割（`--chunks` 時）
+
+**実装詳細:** `link-crawler/src/crawler/post-processor.ts`
+
 ### 9.1 Merger（全ページ結合）
 
 #### 設計意図
