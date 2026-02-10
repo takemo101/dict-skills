@@ -167,6 +167,54 @@ describe("shouldCrawl", () => {
 		expect(shouldCrawl("https://example.com/archive.zip", visited, baseConfig)).toBe(false);
 	});
 
+	it("should return false for modern image formats (webp, avif, bmp, tiff)", () => {
+		const visited = new Set<string>();
+		expect(shouldCrawl("https://example.com/image.webp", visited, baseConfig)).toBe(false);
+		expect(shouldCrawl("https://example.com/image.avif", visited, baseConfig)).toBe(false);
+		expect(shouldCrawl("https://example.com/image.bmp", visited, baseConfig)).toBe(false);
+		expect(shouldCrawl("https://example.com/image.tiff", visited, baseConfig)).toBe(false);
+	});
+
+	it("should return false for font files (otf)", () => {
+		const visited = new Set<string>();
+		expect(shouldCrawl("https://example.com/font.otf", visited, baseConfig)).toBe(false);
+	});
+
+	it("should return false for archive formats (rar, 7z, bz2, xz)", () => {
+		const visited = new Set<string>();
+		expect(shouldCrawl("https://example.com/archive.rar", visited, baseConfig)).toBe(false);
+		expect(shouldCrawl("https://example.com/archive.7z", visited, baseConfig)).toBe(false);
+		expect(shouldCrawl("https://example.com/archive.bz2", visited, baseConfig)).toBe(false);
+		expect(shouldCrawl("https://example.com/archive.xz", visited, baseConfig)).toBe(false);
+	});
+
+	it("should return false for video/audio formats (webm, ogg, avi, mov)", () => {
+		const visited = new Set<string>();
+		expect(shouldCrawl("https://example.com/video.webm", visited, baseConfig)).toBe(false);
+		expect(shouldCrawl("https://example.com/audio.ogg", visited, baseConfig)).toBe(false);
+		expect(shouldCrawl("https://example.com/video.avi", visited, baseConfig)).toBe(false);
+		expect(shouldCrawl("https://example.com/video.mov", visited, baseConfig)).toBe(false);
+	});
+
+	it("should return false for dev-related non-HTML files (css, js, mjs, map, wasm)", () => {
+		const visited = new Set<string>();
+		expect(shouldCrawl("https://example.com/style.css", visited, baseConfig)).toBe(false);
+		expect(shouldCrawl("https://example.com/app.js", visited, baseConfig)).toBe(false);
+		expect(shouldCrawl("https://example.com/module.mjs", visited, baseConfig)).toBe(false);
+		expect(shouldCrawl("https://example.com/app.js.map", visited, baseConfig)).toBe(false);
+		expect(shouldCrawl("https://example.com/module.wasm", visited, baseConfig)).toBe(false);
+	});
+
+	it("should return false for document formats (doc, docx, xls, xlsx, ppt, pptx)", () => {
+		const visited = new Set<string>();
+		expect(shouldCrawl("https://example.com/file.doc", visited, baseConfig)).toBe(false);
+		expect(shouldCrawl("https://example.com/file.docx", visited, baseConfig)).toBe(false);
+		expect(shouldCrawl("https://example.com/file.xls", visited, baseConfig)).toBe(false);
+		expect(shouldCrawl("https://example.com/file.xlsx", visited, baseConfig)).toBe(false);
+		expect(shouldCrawl("https://example.com/file.ppt", visited, baseConfig)).toBe(false);
+		expect(shouldCrawl("https://example.com/file.pptx", visited, baseConfig)).toBe(false);
+	});
+
 	it("should handle include and exclude patterns together", () => {
 		const visited = new Set<string>();
 		const config = {
