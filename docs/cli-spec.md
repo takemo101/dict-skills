@@ -308,10 +308,26 @@ npm install...
 
 ページ単位でfrontmatter付きMarkdown。
 
+#### フィールド一覧
+
+| フィールド | 必須 | 説明 |
+|-----------|------|------|
+| `url` | ✓ | ページURL |
+| `title` | ✓ | ページタイトル（空文字列の場合あり） |
+| `description` | | メタディスクリプション（存在する場合のみ） |
+| `keywords` | | メタキーワード（存在する場合のみ） |
+| `hash` | ✓ | コンテンツのSHA-256ハッシュ |
+| `crawledAt` | ✓ | クロール日時（ISO 8601） |
+| `depth` | ✓ | クロール深度（開始URL=0） |
+
+#### 出力例
+
 ```markdown
 ---
 url: https://docs.example.com/getting-started
 title: "Getting Started"
+description: "Quick start guide for beginners"
+keywords: "guide, tutorial, quickstart"
 hash: "a1b2c3d4e5f6..."
 crawledAt: 2026-02-01T14:00:01.000Z
 depth: 1
