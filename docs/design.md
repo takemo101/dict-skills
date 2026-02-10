@@ -186,8 +186,8 @@ link-crawler/
 │  │ 3.1 playwright-cli でHTML取得       ││
 │  │ 3.2 contentType判定 (API spec分岐)  ││
 │  │ 3.3 メタデータ抽出 (JSDOM)          ││
-│  │ 3.4 コンテンツ抽出 (Readability)    ││
-│  │ 3.5 リンク抽出 (JSDOM)              ││
+│  │ 3.4 リンク抽出 (JSDOM)              ││
+│  │ 3.5 コンテンツ抽出 (Readability)    ││
 │  │ 3.6 Markdown変換 (Turndown)         ││
 │  │ 3.7 ハッシュ計算                    ││
 │  │ 3.8 差分チェック (--diff時)         ││
