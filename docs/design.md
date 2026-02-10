@@ -515,14 +515,12 @@ interface RuntimeAdapter {
 **主要な処理フロー:**
 
 1. **初期化**: playwright-cliの存在確認（初回のみ）
-2. **robots.txt 取得**: 初回クロール時に robots.txt を取得しパース（`--no-robots`未指定時）
-3. **robots.txt チェック**: URLがrobots.txtで許可されているか確認（`--no-robots`未指定時、不許可ならスキップ）
-4. **ページオープン**: `playwright-cli open <url>` でページを開く
-5. **メタデータ取得**: `playwright-cli network` でステータスコード・content-typeを取得
-6. **レンダリング待機**: SPAの動的レンダリング完了を待つ
-7. **HTML取得**: `playwright-cli eval` でDOMを取得
-8. **エラーハンドリング**: 404やタイムアウトを適切に処理
-9. **クリーンアップ**: セッション終了、一時ディレクトリ削除
+2. **ページオープン**: `playwright-cli open <url>` でページを開く
+3. **メタデータ取得**: `playwright-cli network` でステータスコード・content-typeを取得
+4. **レンダリング待機**: SPAの動的レンダリング完了を待つ
+5. **HTML取得**: `playwright-cli eval` でDOMを取得
+6. **エラーハンドリング**: 404やタイムアウトを適切に処理
+7. **クリーンアップ**: セッション終了、一時ディレクトリ削除
 
 **playwright-cli 0.0.63+ 互換性について:**
 
