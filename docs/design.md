@@ -344,11 +344,21 @@ interface DetectedSpec {
     │   ├── chunk-001.md
     │   └── ...
     ├── pages/           # ページ単位
-    │   ├── page-001.md
+    │   ├── page-001-getting-started.md
     │   └── ...
     └── specs/           # API仕様
         └── ...
 ```
+
+**ページファイルの命名規則:**
+- 形式: `page-<番号>-<タイトルスラグ>.md`（例: `page-001-getting-started.md`）
+- タイトルが取得できない場合: `page-<番号>.md`（例: `page-001.md`）
+- スラグ生成ルール:
+  - タイトルを小文字化
+  - 特殊文字（英数字・スペース・アンダースコア・ハイフン以外）を除去
+  - スペースとアンダースコアをハイフンに変換
+  - 連続するハイフンを1つに統合
+  - 最大50文字に切り詰め
 
 **Note**: ディレクトリ構成の詳細、サイト名の命名規則、各ファイルの役割については [docs/cli-spec.md](cli-spec.md) のセクション5を参照してください。
 
@@ -417,7 +427,7 @@ H1見出し（`#`）を境界として分割:
     {
       "url": "https://docs.example.com/getting-started",
       "title": "Getting Started",
-      "file": "pages/page-001.md",
+      "file": "pages/page-001-getting-started.md",
       "depth": 1,
       "links": [
         "https://docs.example.com/installation",

@@ -155,13 +155,23 @@ crawl https://docs.example.com -d 10 --max-pages 50
     │   ├── chunk-002.md
     │   └── ...
     ├── pages/           # ページ単位
-    │   ├── page-001.md
-    │   ├── page-002.md
+    │   ├── page-001-getting-started.md
+    │   ├── page-002-installation.md
     │   └── ...
     └── specs/           # 検出されたAPI仕様
         ├── openapi.yaml
         └── ...
 ```
+
+**ページファイルの命名規則:**
+- 形式: `page-<番号>-<タイトルスラグ>.md`（例: `page-001-getting-started.md`）
+- タイトルが取得できない場合: `page-<番号>.md`（例: `page-001.md`）
+- スラグ生成ルール:
+  - タイトルを小文字化
+  - 特殊文字（英数字・スペース・アンダースコア・ハイフン以外）を除去
+  - スペースとアンダースコアをハイフンに変換
+  - 連続するハイフンを1つに統合
+  - 最大50文字に切り詰め
 
 **サイト名の命名規則:**
 
@@ -199,7 +209,7 @@ crawl https://docs.example.com -d 10 --max-pages 50
     {
       "url": "https://docs.example.com/getting-started",
       "title": "Getting Started",
-      "file": "pages/page-001.md",
+      "file": "pages/page-001-getting-started.md",
       "depth": 1,
       "links": [
         "https://docs.example.com/installation",
