@@ -6,6 +6,8 @@ export const DEFAULTS = {
 	MAX_DEPTH_LIMIT: 10,
 	/** 最大クロールページ数（nullは無制限） */
 	MAX_PAGES_DEFAULT: null,
+	/** 最大クロールページ数の上限 */
+	MAX_PAGES_LIMIT: 10000,
 	/** 出力ディレクトリ */
 	OUTPUT_DIR: "./.context",
 	/** リクエスト間の遅延(ms) */
