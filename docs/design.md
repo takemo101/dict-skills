@@ -909,7 +909,7 @@ class OutputWriter {
 - **非diffモード**: 一時ディレクトリ（`{outputDir}.tmp-{timestamp}-{pid}`）に書き込み、成功時に `finalize()` でリネーム
 - **diffモード**: 既存ディレクトリに直接書き込み（既存ファイルを保持）
 
-**finalize の3段階処理:**
+**finalize の4段階処理:**
 
 1. **リカバリチェック**: 前回の finalize 中断を検出し、`.bak` から自動復旧
 2. **バックアップ**: 既存の最終ディレクトリを `.bak` にリネーム
