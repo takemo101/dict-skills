@@ -148,6 +148,7 @@ link-crawler/
 | `Merger` | 全ページ結合（メモリ上）、コンテンツ生成 | Pages | Markdown文字列 |
 | `Chunker` | チャンク分割 | full.md | chunks/*.md |
 | `RuntimeAdapter` | ランタイム抽象化（Bun/Node.js互換） | Command | SpawnResult |
+| `generateSiteName` | URLから出力ディレクトリ用のサイト名を生成 | URL | サイト名文字列 |
 
 ---
 
