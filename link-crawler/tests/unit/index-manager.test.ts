@@ -74,7 +74,7 @@ describe("IndexManager", () => {
 			});
 
 			expect(manager.getExistingHashes().size).toBe(1);
-			expect(manager.getExistingHash("https://example.com/page1")).toBe("abc123");
+			expect(manager.getExistingHashes().get("https://example.com/page1")).toBe("abc123");
 		});
 	});
 
@@ -86,7 +86,6 @@ describe("IndexManager", () => {
 			});
 
 			expect(manager.getExistingHashes().size).toBe(0);
-			expect(manager.getExistingHash("https://example.com/unknown")).toBeUndefined();
 		});
 
 		it("should handle invalid JSON", async () => {
@@ -230,100 +229,6 @@ describe("IndexManager", () => {
 			expect(mockLogger.logIndexFormatError).toHaveBeenCalledWith(
 				expect.stringContaining(join(testDir, "index.json")),
 			);
-		});
-	});
-
-	describe("getExistingHash", () => {
-		it("should return hash for existing URL", async () => {
-			const indexData = {
-				crawledAt: "2025-01-01T00:00:00.000Z",
-				baseUrl: "https://example.com",
-				config: {},
-				totalPages: 2,
-				pages: [
-					{
-						url: "https://example.com/page1",
-						title: "Page 1",
-						file: "pages/page-001.md",
-						depth: 0,
-						links: [],
-						metadata: {
-							title: "Page 1",
-							description: null,
-							keywords: null,
-							author: null,
-							ogTitle: null,
-							ogType: null,
-						},
-						hash: "hash1",
-						crawledAt: "2025-01-01T00:00:00.000Z",
-					},
-					{
-						url: "https://example.com/page2",
-						title: "Page 2",
-						file: "pages/page-002.md",
-						depth: 1,
-						links: [],
-						metadata: {
-							title: "Page 2",
-							description: null,
-							keywords: null,
-							author: null,
-							ogTitle: null,
-							ogType: null,
-						},
-						hash: "hash2",
-						crawledAt: "2025-01-01T00:00:00.000Z",
-					},
-				],
-				specs: [],
-			};
-			writeFileSync(join(testDir, "index.json"), JSON.stringify(indexData));
-
-			const manager = new IndexManager(testDir, "https://example.com", {
-				maxDepth: 2,
-				sameDomain: true,
-			});
-
-			expect(manager.getExistingHash("https://example.com/page1")).toBe("hash1");
-			expect(manager.getExistingHash("https://example.com/page2")).toBe("hash2");
-		});
-
-		it("should return undefined for non-existing URL", async () => {
-			const indexData = {
-				crawledAt: "2025-01-01T00:00:00.000Z",
-				baseUrl: "https://example.com",
-				config: {},
-				totalPages: 1,
-				pages: [
-					{
-						url: "https://example.com/page1",
-						title: "Page 1",
-						file: "pages/page-001.md",
-						depth: 0,
-						links: [],
-						metadata: {
-							title: "Page 1",
-							description: null,
-							keywords: null,
-							author: null,
-							ogTitle: null,
-							ogType: null,
-						},
-						hash: "hash1",
-						crawledAt: "2025-01-01T00:00:00.000Z",
-					},
-				],
-				specs: [],
-			};
-			writeFileSync(join(testDir, "index.json"), JSON.stringify(indexData));
-
-			const manager = new IndexManager(testDir, "https://example.com", {
-				maxDepth: 2,
-				sameDomain: true,
-			});
-
-			expect(manager.getExistingHash("https://example.com/unknown")).toBeUndefined();
 		});
 	});
 

@@ -44,7 +44,6 @@ describe("Hasher", () => {
 		it("should initialize with empty map by default", () => {
 			const hasher = new Hasher();
 
-			expect(hasher.getHash("https://example.com/page1")).toBeUndefined();
 			expect(hasher.size).toBe(0);
 		});
 
@@ -55,8 +54,6 @@ describe("Hasher", () => {
 			]);
 			const hasher = new Hasher(hashes);
 
-			expect(hasher.getHash("https://example.com/page1")).toBe("abc123");
-			expect(hasher.getHash("https://example.com/page2")).toBe("def456");
 			expect(hasher.size).toBe(2);
 		});
 
@@ -68,7 +65,6 @@ describe("Hasher", () => {
 			hashes.set("https://example.com/page2", "def456");
 
 			// Hasher should not be affected
-			expect(hasher.getHash("https://example.com/page2")).toBeUndefined();
 			expect(hasher.size).toBe(1);
 		});
 	});
@@ -108,21 +104,6 @@ describe("Hasher", () => {
 			const result = hasher.isChanged("https://example.com/page1", "abc123");
 
 			expect(result).toBe(true);
-		});
-	});
-
-	describe("getHash", () => {
-		it("should return hash for existing URL", () => {
-			const hashes = new Map([["https://example.com/page1", "abc123"]]);
-			const hasher = new Hasher(hashes);
-
-			expect(hasher.getHash("https://example.com/page1")).toBe("abc123");
-		});
-
-		it("should return undefined for non-existing URL", () => {
-			const hasher = new Hasher();
-
-			expect(hasher.getHash("https://example.com/unknown")).toBeUndefined();
 		});
 	});
 
