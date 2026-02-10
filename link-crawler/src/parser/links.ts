@@ -1,6 +1,9 @@
 import type { JSDOM } from "jsdom";
 import type { CrawlConfig } from "../types.js";
 
+/** バイナリ・非HTMLファイルの拡張子パターン */
+const SKIP_EXTENSIONS = /\.(png|jpg|jpeg|gif|svg|ico|pdf|zip|tar|gz|mp4|mp3|woff|woff2|ttf|eot)$/i;
+
 /** URL を正規化 */
 export function normalizeUrl(url: string, baseUrl: string): string | null {
 	try {
@@ -31,8 +34,7 @@ export function shouldCrawl(url: string, visited: Set<string>, config: CrawlConf
 	if (config.excludePattern?.test(url)) return false;
 
 	// バイナリファイルを除外
-	const skipExtensions = /\.(png|jpg|jpeg|gif|svg|ico|pdf|zip|tar|gz|mp4|mp3|woff|woff2|ttf|eot)$/i;
-	if (skipExtensions.test(url)) return false;
+	if (SKIP_EXTENSIONS.test(url)) return false;
 
 	return true;
 }
