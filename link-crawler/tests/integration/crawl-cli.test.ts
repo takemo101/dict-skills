@@ -35,6 +35,7 @@ describe("crawl CLI integration", () => {
 		const result = execSync("bun run src/crawl.ts --help", {
 			encoding: "utf-8",
 			cwd: process.cwd(),
+			timeout: 10000,
 		});
 
 		expect(result).toContain("Crawl technical documentation sites recursively");
@@ -46,6 +47,7 @@ describe("crawl CLI integration", () => {
 		const result = execSync("bun run src/crawl.ts --version", {
 			encoding: "utf-8",
 			cwd: process.cwd(),
+			timeout: 10000,
 		});
 
 		// Should output a version number (from package.json)
@@ -59,6 +61,7 @@ describe("crawl CLI integration", () => {
 			const result = execSync("bun run src/crawl.ts --version", {
 				encoding: "utf-8",
 				cwd: process.cwd(),
+				timeout: 10000,
 			});
 
 			expect(result.trim()).toBe(packageJson.version);
@@ -71,6 +74,7 @@ describe("crawl CLI integration", () => {
 				encoding: "utf-8",
 				cwd: process.cwd(),
 				stdio: "pipe",
+				timeout: 10000,
 			});
 			// Should not reach here
 			expect.fail("Should have thrown an error");
@@ -89,6 +93,7 @@ describe("crawl CLI integration", () => {
 					encoding: "utf-8",
 					cwd: process.cwd(),
 					stdio: "pipe",
+					timeout: 10000,
 				});
 				expect.fail("Should have thrown an error");
 			} catch (error: unknown) {
@@ -107,6 +112,7 @@ describe("crawl CLI integration", () => {
 					encoding: "utf-8",
 					cwd: process.cwd(),
 					stdio: "pipe",
+					timeout: 10000,
 				});
 				expect.fail("Should have thrown an error");
 			} catch (error: unknown) {
@@ -122,6 +128,7 @@ describe("crawl CLI integration", () => {
 					encoding: "utf-8",
 					cwd: process.cwd(),
 					stdio: "pipe",
+					timeout: 10000,
 				});
 				expect.fail("Should have thrown an error");
 			} catch (error: unknown) {
@@ -144,6 +151,7 @@ describe("crawl CLI integration", () => {
 						encoding: "utf-8",
 						cwd: process.cwd(),
 						stdio: "pipe",
+						timeout: 10000,
 					});
 					expect.fail(`Should have rejected URL: ${url}`);
 				} catch (error: unknown) {
@@ -161,6 +169,7 @@ describe("crawl CLI integration", () => {
 				encoding: "utf-8",
 				cwd: process.cwd(),
 				stdio: "pipe",
+				timeout: 10000,
 			});
 			expect.fail("Should have thrown an error");
 		} catch (error: unknown) {
