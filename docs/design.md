@@ -237,6 +237,41 @@ link-crawler/
                           └────────┘  └────────┘
 ```
 
+### 4.3 リトライ機能
+
+フェッチ失敗時のリトライ動作：
+
+- **最大リトライ回数**: 2回（`MAX_RETRIES = 2`）
+- **リトライ方式**: 失敗したURLを `visited` セットから除去し、他のページからのリンクで再訪問された際にリトライ
+- **リトライ上限到達**: `visited` に残したままにし、以降のリトライを抑止
+- **maxPages制限**: `attemptedCount` カウンタを使用（リトライによる `visited` 削除の影響を回避）
+
+**実装の主要な要素:**
+
+```typescript
+/** フェッチ失敗URLのリトライ管理 */
+private failedUrls = new Map<string, number>(); // URL → retry count
+
+/** リトライ上限 */
+private static readonly MAX_RETRIES = 2;
+
+/** クロール試行数カウンタ (maxPages制限用、リトライによる visited 削除の影響を受けない) */
+private attemptedCount = 0;
+```
+
+**動作フロー:**
+
+1. ページフェッチ失敗時、`handleFetchFailure()` が呼ばれる
+2. リトライ回数が `MAX_RETRIES` 未満の場合:
+   - `visited` から削除（再訪問可能にする）
+   - `failedUrls` のカウントを増加
+   - 他のページからリンクされた際に再試行
+3. リトライ上限到達時:
+   - `visited` に残したまま（以降の再試行を抑止）
+   - ログに記録してスキップ
+
+**実装詳細:** `link-crawler/src/crawler/index.ts`
+
 ---
 
 ## 5. データ構造
@@ -888,7 +923,7 @@ class OutputWriter {
 | エラー種別 | 検知方法 | 対応 |
 |-----------|---------|------|
 | playwright-cli未インストール | `PATHS` 定数の候補を順次 `spawn --version` で試行、全失敗 | exit 3、インストール手順表示 |
-| ネットワークエラー | fetch例外 | ログ出力、スキップ、続行 |
+| ネットワークエラー | fetch例外 | ログ出力、最大2回リトライ、上限到達時はスキップして続行 |
 | タイムアウト | playwright-cli タイムアウト | ログ出力、スキップ、続行 |
 | パースエラー | Readability失敗 | フォールバック抽出、警告ログ |
 | 書き込みエラー | FS例外 | エラー表示、exit 1 |
