@@ -104,7 +104,7 @@ const getDefaultConfig = (): CrawlConfig => ({
 	version: "test-version",
 });
 
-describe("CrawlerEngine Integration", () => {
+describe("Crawler Integration", () => {
 	let testCounter = 0;
 
 	beforeEach(() => {

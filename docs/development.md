@@ -39,7 +39,7 @@ link-crawler/
 │   ├── signal-handler.ts       # シグナルハンドリング（SIGINT/SIGTERM）
 │   │
 │   ├── crawler/
-│   │   ├── index.ts            # CrawlerEngine
+│   │   ├── index.ts            # Crawler
 │   │   ├── fetcher.ts          # PlaywrightFetcher
 │   │   ├── logger.ts           # ログ出力
 │   │   ├── robots.ts           # robots.txt パーサー
@@ -231,7 +231,7 @@ try {
 | 対象 | 規則 | 例 |
 |------|------|-----|
 | ファイル | kebab-case | `writer.ts` |
-| クラス | PascalCase | `CrawlerEngine` |
+| クラス | PascalCase | `Crawler` |
 | 関数・変数 | camelCase | `fetchPage` |
 | 定数 | UPPER_SNAKE_CASE | `MAX_DEPTH` |
 | 型・interface | PascalCase | `CrawlConfig` |
@@ -245,7 +245,7 @@ try {
 | レイヤー | 対象 | テスト方法 |
 |---------|------|-----------|
 | Unit | Hasher, Merger, Chunker, Converter, Links | 純粋関数のI/Oテスト |
-| Integration | CrawlerEngine | モックFetcherでE2E風テスト |
+| Integration | Crawler | モックFetcherでE2E風テスト |
 
 ### 5.2 Vitest設定
 
@@ -344,7 +344,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { Crawler } from "../../src/crawler/index.js";
 import type { CrawlConfig, Fetcher, FetchResult } from "../../src/types.js";
 
-describe("CrawlerEngine Integration", () => {
+describe("Crawler Integration", () => {
   describe("E2E-style crawling with mock Fetcher", () => {
     it("should crawl single page and generate output files", async () => {
       // モックFetcherを使用したE2Eテスト
