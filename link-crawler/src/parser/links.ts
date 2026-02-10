@@ -2,7 +2,8 @@ import type { JSDOM } from "jsdom";
 import type { CrawlConfig } from "../types.js";
 
 /** バイナリ・非HTMLファイルの拡張子パターン */
-const SKIP_EXTENSIONS = /\.(png|jpg|jpeg|gif|svg|ico|pdf|zip|tar|gz|mp4|mp3|woff|woff2|ttf|eot)$/i;
+const SKIP_EXTENSIONS =
+	/\.(png|jpg|jpeg|gif|svg|ico|webp|avif|bmp|tiff|pdf|zip|tar|gz|rar|7z|bz2|xz|mp4|mp3|webm|ogg|avi|mov|woff|woff2|ttf|eot|otf|css|js|mjs|map|wasm|doc|docx|xls|xlsx|ppt|pptx)$/i;
 
 /** URL を正規化 */
 export function normalizeUrl(url: string, baseUrl: string): string | null {
