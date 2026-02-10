@@ -160,11 +160,11 @@ function getTextWithoutLineNumbers(el: Element): string {
 			.replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
 			.replace(/&#(\d+);/g, (_, dec) => String.fromCodePoint(parseInt(dec, 10)))
 			// 名前付きエンティティのデコード
-			.replace(/&amp;/g, "&")
 			.replace(/&lt;/g, "<")
 			.replace(/&gt;/g, ">")
 			.replace(/&quot;/g, '"')
 			.replace(/&#39;/g, "'")
+			.replace(/&amp;/g, "&") // &amp; は最後にデコード（二重デコード防止）
 			.replace(/&nbsp;/g, " ")
 			.replace(/\n{2,}/g, "\n") // 連続改行を1つに
 			.trim()

@@ -481,6 +481,17 @@ describe("htmlToMarkdown - syntax highlighter support", () => {
 		expect(result).not.toContain("&#125;");
 	});
 
+	it("should not double-decode &amp;lt; in code blocks with line numbers", () => {
+		const html = `
+			<pre><code class="torchlight">
+				<div class="line"><span class="line-number">1</span><span>Use &amp;lt;br&amp;gt; for line breaks</span></div>
+			</code></pre>
+		`;
+		const result = htmlToMarkdown(html);
+		expect(result).toContain("Use &lt;br&gt; for line breaks");
+		expect(result).not.toContain("Use <br> for line breaks");
+	});
+
 	it("should decode hexadecimal numeric HTML entities in code blocks with line numbers", () => {
 		const html = `
 			<pre><code class="torchlight">
