@@ -790,6 +790,89 @@ const chunkPaths = chunker.chunkAndWrite(fullMarkdown);
 
 **実装詳細:** `link-crawler/src/output/chunker.ts`
 
+### 9.3 OutputWriter（ページ書き込み・原子的出力）
+
+#### 設計意図
+
+ページファイルの保存と出力ディレクトリの原子的な管理を担当します。これにより：
+
+- ページの確実な保存とメタデータ管理
+- クロール失敗時の中間状態を防止
+- 既存データの安全な更新
+
+非diffモードでは一時ディレクトリを使用し、クロール完了時にリネームすることで原子性を保証します。
+
+#### 主要インターフェース
+
+```typescript
+class OutputWriter {
+  constructor(config: CrawlConfig, logger?: Logger)
+  
+  // API仕様ファイル検出・保存
+  handleSpec(url: string, content: string): { type: string; filename: string } | null
+  
+  // ページファイル名生成（public: --no-pages モードで使用）
+  buildPageFilename(url: string, metadata: PageMetadata, title: string | null): string
+  
+  // frontmatter構築（public: --no-pages モードで使用）
+  buildFrontmatter(url: string, metadata: PageMetadata, title: string | null, depth: number, hash?: string): string
+  
+  // ページ登録（インデックスに追加）
+  registerPage(url: string, file: string, depth: number, links: string[], metadata: PageMetadata, title: string | null, hash: string): CrawledPage
+  
+  // ページ保存（ファイル書き込み + 登録）
+  savePage(url: string, markdown: string, depth: number, links: string[], metadata: PageMetadata, title: string | null, hash?: string): string
+  
+  // index.json 保存
+  saveIndex(): string
+  
+  // クロール結果取得
+  getResult(): CrawlResult
+  
+  // IndexManager 取得
+  getIndexManager(): IndexManager
+  
+  // 作業ディレクトリ取得（PostProcessorなどで使用）
+  getWorkingOutputDir(): string
+  
+  // 訪問済みURL設定（差分クロール時のマージ範囲制限用）
+  setVisitedUrls(urls: Set<string>): void
+  
+  // クロール成功時: 一時ディレクトリを最終ディレクトリにリネーム
+  finalize(): void
+  
+  // クロール失敗時: 一時ディレクトリを削除
+  cleanup(): void
+}
+```
+
+#### 原子的書き込み戦略
+
+**モード別の動作:**
+
+- **非diffモード**: 一時ディレクトリ（`{outputDir}.tmp-{timestamp}-{pid}`）に書き込み、成功時に `finalize()` でリネーム
+- **diffモード**: 既存ディレクトリに直接書き込み（既存ファイルを保持）
+
+**finalize の3段階処理:**
+
+1. **リカバリチェック**: 前回の finalize 中断を検出し、`.bak` から自動復旧
+2. **バックアップ**: 既存の最終ディレクトリを `.bak` にリネーム
+3. **プロモート**: 一時ディレクトリを最終ディレクトリにリネーム
+4. **クリーンアップ**: バックアップディレクトリを削除
+
+**リカバリロジック:**
+
+前回の finalize が中断された場合（`.bak` が存在し、最終ディレクトリが存在しない）、自動的に `.bak` から復元します。これにより、以下のケースで安全性を確保：
+
+- Step 2（バックアップ）完了後、Step 3（プロモート）実行前のクラッシュ
+- 電源断、強制終了、シグナル受信などの異常終了
+
+**cleanup の役割:**
+
+クロール失敗時に一時ディレクトリを削除し、ディスク容量を解放します。既存の最終ディレクトリは保持されるため、失敗しても以前のデータが失われることはありません。
+
+**実装詳細:** `link-crawler/src/output/writer.ts`
+
 ---
 
 ## 10. エラーハンドリング
