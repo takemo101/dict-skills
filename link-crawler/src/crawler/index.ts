@@ -20,7 +20,7 @@ interface ParsedPage {
 	hash: string;
 }
 
-/** クローラーエンジン */
+/** クローラー */
 export class Crawler {
 	private fetcher!: Fetcher;
 	private writer: OutputWriter;
