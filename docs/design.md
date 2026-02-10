@@ -596,7 +596,6 @@ function computeHash(content: string): string
 class Hasher {
   constructor(existingHashes: Map<string, string>)
   isChanged(url: string, newHash: string): boolean
-  getHash(url: string): string | undefined
   get size(): number
 }
 ```
