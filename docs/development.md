@@ -85,6 +85,7 @@ link-crawler/
 │   │   ├── errors.test.ts
 │   │   ├── extractor.test.ts
 │   │   ├── fetcher.test.ts
+│   │   ├── fix-shebang.test.ts
 │   │   ├── hasher.test.ts
 │   │   ├── index-manager.test.ts
 │   │   ├── links.test.ts
@@ -101,6 +102,9 @@ link-crawler/
 │   └── integration/             # 統合テスト
 │       ├── crawler.test.ts
 │       └── crawl-cli.test.ts
+│
+├── scripts/
+│   └── fix-shebang.js           # ビルド後のshebang修正スクリプト
 │
 ├── vitest.config.ts             # Vitest設定
 ├── package.json
