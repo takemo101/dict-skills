@@ -476,6 +476,16 @@ H1見出し（`#`）を境界として分割:
 - **テスタビリティ**: モックRuntimeAdapterを注入してテスト可能
 - **保守性**: プロセス実行ロジックを一箇所に集約
 
+**SpawnResultインターフェース：**
+```typescript
+interface SpawnResult {
+  success: boolean;
+  stdout: string;
+  stderr: string;
+  exitCode: number | null;
+}
+```
+
 **RuntimeAdapterインターフェース：**
 ```typescript
 interface RuntimeAdapter {
