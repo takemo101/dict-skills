@@ -535,7 +535,7 @@ playwright-cli 0.0.63+ では、名前付きセッション（`--session=xxx`）
 - HTTPステータスコード確認（2xx範囲外をスキップ）
 - エラーページ検出（chrome-error://をスキップ）
 - セッション後のクリーンアップ（`.playwright-cli` ディレクトリ削除）
-- `this.runtime.cwd()` の使用（テスタビリティ向上）
+- `resolve(this.config.outputDir)` による作業ディレクトリ決定（outputDir基準）
 - デバッグログ（`debug` フラグ有効時にセッション停止やクリーンアップのエラーを出力）
 
 **実装詳細:**
