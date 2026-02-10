@@ -285,16 +285,9 @@ describe("createRuntimeAdapter", () => {
 	});
 
 	it("should return NodeRuntimeAdapter when Bun is not available (mocked)", () => {
-		// globalThis.Bun を一時的に undefined にして Node.js パスをテスト
-		const originalBun = globalThis.Bun;
-		try {
-			// @ts-expect-error - テストのために一時的に undefined を設定
-			globalThis.Bun = undefined;
-			const adapter = createRuntimeAdapter();
-			expect(adapter).toBeInstanceOf(NodeRuntimeAdapter);
-		} finally {
-			// 元に戻す
-			globalThis.Bun = originalBun;
-		}
+		vi.stubGlobal("Bun", undefined);
+		const adapter = createRuntimeAdapter();
+		expect(adapter).toBeInstanceOf(NodeRuntimeAdapter);
+		// vi.stubGlobal は restoreMocks: true（vitest.config.ts）により自動復元される
 	});
 });
